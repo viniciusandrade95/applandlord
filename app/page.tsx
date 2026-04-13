@@ -110,6 +110,7 @@ export default function Home() {
   const [notice, setNotice] = useState<Notice>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState<string | null>(null)
+  const [sendingInvoiceId, setSendingInvoiceId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -148,6 +149,39 @@ export default function Home() {
       await load()
     } finally {
       setSubmitting(null)
+    }
+  }
+
+  async function sendInvoiceViaWhatsApp(invoice: Row) {
+    const invoiceId = typeof invoice.id === 'string' ? invoice.id : ''
+    const tenantId =
+      typeof invoice.lease?.renter?.id === 'string' ? (invoice.lease.renter.id as string) : ''
+
+    if (!invoiceId || !tenantId) {
+      setNotice({ kind: 'error', text: 'Nao foi possivel identificar a fatura ou o inquilino.' })
+      return
+    }
+
+    setSendingInvoiceId(invoiceId)
+
+    try {
+      const response = await fetch('/api/whatsapp/send-invoice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenantId, invoiceId }),
+      })
+
+      const data = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(data?.error || 'Falha ao enviar mensagem')
+
+      setNotice({ kind: 'success', text: data?.detail || 'Mensagem enviada por WhatsApp.' })
+    } catch (error) {
+      setNotice({
+        kind: 'error',
+        text: error instanceof Error ? error.message : 'Falha ao enviar mensagem',
+      })
+    } finally {
+      setSendingInvoiceId(null)
     }
   }
 
@@ -339,6 +373,20 @@ export default function Home() {
                 <strong>{invoice.lease?.renter?.fullName ?? '—'}</strong><br />
                 <span className="muted">{periodLabel(invoice.period as string)} · {money(Number(invoice.amount ?? 0))}</span><br />
                 <span className={chipClass(invoice.status as string)}>{invoice.status as string}</span>
+                <div className="table-actions" style={{ marginTop: 10 }}>
+                  <button
+                    className="small-button"
+                    type="button"
+                    disabled={!invoice.lease?.renter?.phone || sendingInvoiceId === invoice.id}
+                    onClick={() => void sendInvoiceViaWhatsApp(invoice)}
+                  >
+                    {sendingInvoiceId === invoice.id
+                      ? 'A enviar...'
+                      : invoice.lease?.renter?.phone
+                        ? 'Enviar por WhatsApp'
+                        : 'Sem telefone'}
+                  </button>
+                </div>
               </div>
             )} />
           </Panel>

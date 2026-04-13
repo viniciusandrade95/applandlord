@@ -109,6 +109,7 @@ export default function Home() {
   const [state, setState] = useState<State>(initialState)
   const [notice, setNotice] = useState<Notice>(null)
   const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -136,11 +137,18 @@ export default function Home() {
   }, [load])
 
   async function postJson(endpoint: string, body: Record<string, unknown>, message: string) {
-    const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-    const data = await response.json().catch(() => null)
-    if (!response.ok) throw new Error(data?.error || 'Falha na operação')
-    setNotice({ kind: 'success', text: message })
-    await load()
+    if (submitting) return
+
+    setSubmitting(endpoint)
+    try {
+      const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      const data = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(data?.error || 'Falha na operação')
+      setNotice({ kind: 'success', text: message })
+      await load()
+    } finally {
+      setSubmitting(null)
+    }
   }
 
   const dashboard = state.dashboard
@@ -220,7 +228,7 @@ export default function Home() {
                 <div className="field"><label htmlFor="property-country">País</label><input id="property-country" name="country" defaultValue="Portugal" /></div>
                 <div className="field field-full"><label htmlFor="property-description">Descrição</label><textarea id="property-description" name="description" /></div>
               </div>
-              <div className="form-actions"><button className="button button-primary" type="submit">Criar imóvel</button></div>
+              <div className="form-actions"><button className="button button-primary" type="submit" disabled={submitting === '/api/properties'}>{submitting === '/api/properties' ? 'A criar...' : 'Criar imóvel'}</button></div>
             </form>
             <RecordList items={state.properties} empty="Ainda não há propriedades." render={(property) => (
               <div key={property.id} className="empty">
@@ -240,7 +248,7 @@ export default function Home() {
                 <div className="field"><label htmlFor="unit-bathrooms">Casas de banho</label><input id="unit-bathrooms" name="bathrooms" type="number" step="0.5" /></div>
                 <div className="field field-full"><label htmlFor="unit-notes">Notas</label><textarea id="unit-notes" name="notes" /></div>
               </div>
-              <div className="form-actions"><button className="button button-primary" type="submit" disabled={propertyOptions.length === 0}>Criar unidade</button></div>
+              <div className="form-actions"><button className="button button-primary" type="submit" disabled={propertyOptions.length === 0 || submitting === '/api/units'}>{submitting === '/api/units' ? 'A criar...' : 'Criar unidade'}</button></div>
             </form>
             <RecordList items={state.units} empty="Ainda não há unidades." render={(unit) => (
               <div key={unit.id} className="empty">
@@ -260,7 +268,7 @@ export default function Home() {
                 <div className="field field-full"><label htmlFor="renter-id">Documento / NIF</label><input id="renter-id" name="governmentId" /></div>
                 <div className="field field-full"><label htmlFor="renter-notes">Notas</label><textarea id="renter-notes" name="notes" /></div>
               </div>
-              <div className="form-actions"><button className="button button-primary" type="submit">Criar inquilino</button></div>
+              <div className="form-actions"><button className="button button-primary" type="submit" disabled={submitting === '/api/renters'}>{submitting === '/api/renters' ? 'A criar...' : 'Criar inquilino'}</button></div>
             </form>
             <RecordList items={state.renters} empty="Ainda não há inquilinos." render={(renter) => (
               <div key={renter.id} className="empty">
@@ -294,7 +302,7 @@ export default function Home() {
                 <div className="field"><label htmlFor="lease-status">Estado</label><select id="lease-status" name="status" defaultValue="Active"><option value="Active">Active</option><option value="Planned">Planned</option><option value="Ended">Ended</option></select></div>
                 <div className="field field-full"><label htmlFor="lease-notes">Notas</label><textarea id="lease-notes" name="notes" /></div>
               </div>
-              <div className="form-actions"><button className="button button-primary" type="submit" disabled={propertyOptions.length === 0 || unitOptions.length === 0 || renterOptions.length === 0}>Criar contrato</button></div>
+              <div className="form-actions"><button className="button button-primary" type="submit" disabled={propertyOptions.length === 0 || unitOptions.length === 0 || renterOptions.length === 0 || submitting === '/api/leases'}>{submitting === '/api/leases' ? 'A criar...' : 'Criar contrato'}</button></div>
             </form>
           </Panel>
 
@@ -324,7 +332,7 @@ export default function Home() {
                 <div className="field"><label htmlFor="invoice-period">Período</label><input id="invoice-period" name="period" type="month" defaultValue={new Date().toISOString().slice(0, 7)} /></div>
                 <div className="field"><label>Contratos ativos</label><input value={`${activeLeaseCount}`} readOnly /></div>
               </div>
-              <div className="form-actions"><button className="button button-primary" type="submit" disabled={activeLeaseCount === 0}>Gerar faturas</button></div>
+              <div className="form-actions"><button className="button button-primary" type="submit" disabled={activeLeaseCount === 0 || submitting === '/api/invoices/generate'}>{submitting === '/api/invoices/generate' ? 'A gerar...' : 'Gerar faturas'}</button></div>
             </form>
             <RecordList items={state.invoices} empty="Ainda não há faturas." render={(invoice) => (
               <div key={invoice.id} className="empty">
@@ -344,7 +352,7 @@ export default function Home() {
                 <div className="field field-full"><label htmlFor="payment-reference">Referência</label><input id="payment-reference" name="reference" /></div>
                 <div className="field field-full"><label htmlFor="payment-notes">Notas</label><textarea id="payment-notes" name="notes" /></div>
               </div>
-              <div className="form-actions"><button className="button button-primary" type="submit" disabled={invoiceOptions.length === 0}>Registar pagamento</button></div>
+              <div className="form-actions"><button className="button button-primary" type="submit" disabled={invoiceOptions.length === 0 || submitting === '/api/payments'}>{submitting === '/api/payments' ? 'A registar...' : 'Registar pagamento'}</button></div>
             </form>
             <RecordList items={state.payments} empty="Ainda não há pagamentos." render={(payment) => (
               <div key={payment.id} className="empty">
@@ -375,7 +383,7 @@ export default function Home() {
                 <div className="field"><label htmlFor="ticket-status">Estado</label><select id="ticket-status" name="status" defaultValue="Open"><option>Open</option><option>In progress</option><option>Resolved</option></select></div>
                 <div className="field field-full"><label htmlFor="ticket-description">Descrição</label><textarea id="ticket-description" name="description" /></div>
               </div>
-              <div className="form-actions"><button className="button button-primary" type="submit">Criar ticket</button></div>
+              <div className="form-actions"><button className="button button-primary" type="submit" disabled={submitting === '/api/maintenance'}>{submitting === '/api/maintenance' ? 'A criar...' : 'Criar ticket'}</button></div>
             </form>
           </Panel>
 

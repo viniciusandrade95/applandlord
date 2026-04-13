@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Apartment {
+  id         String   @id @default(cuid())
+  name       String
+  address    String
+  rentAmount Float
+  status     String   @default("Vacant")
+  beds       Int
+  baths      Float
+  createdAt  DateTime @default(now())
+  tenants    Tenant[]
+}
+
+model Tenant {
+  id            String    @id @default(cuid())
+  fullName      String
+  phone         String
+  email         String?
+  leaseStart    DateTime
+  leaseEnd      DateTime?
+  paymentStatus String    @default("Paid")
+  balance       Float     @default(0)
+  apartmentId   String
+  apartment     Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+  payments      Payment[]
+  createdAt     DateTime  @default(now())
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  amount    Float
+  dueDate   DateTime
+  paidDate  DateTime?
+  status    String   @default("Pending")
+  createdAt DateTime @default(now())
+}

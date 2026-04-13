@@ -1,0 +1,22 @@
+﻿services:
+  - type: web
+    name: applandlord-web
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    preDeployCommand: npm run db:push
+    startCommand: npm run start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: DATABASE_URL
+        fromDatabase:
+          name: applandlord-db
+          property: connectionString
+
+databases:
+  - name: applandlord-db
+    databaseName: applandlord
+    user: applandlord
+    plan: free

@@ -184,7 +184,7 @@ export default function Home() {
           </div>
           <aside className="status-panel">
             <h2>Centro de comando</h2>
-            <p>O ciclo MVP já está operacional e sem dependências externas. Os dados são gravados via Prisma/SQLite e aparecem em tempo real no painel.</p>
+            <p>O ciclo MVP já está operacional e sem dependências externas. Os dados são gravados via Prisma/PostgreSQL e aparecem em tempo real no painel.</p>
             <div className="pills">
               <span className="pill pill-soft">CRUD principal</span>
               <span className="pill pill-positive">Cobrança manual</span>

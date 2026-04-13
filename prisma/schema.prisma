@@ -7,40 +7,129 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Apartment {
-  id         String   @id @default(cuid())
-  name       String
-  address    String
-  rentAmount Float
-  status     String   @default("Vacant")
-  beds       Int
-  baths      Float
-  createdAt  DateTime @default(now())
-  tenants    Tenant[]
+model Property {
+  id            String   @id @default(cuid())
+  name          String
+  addressLine1  String
+  addressLine2  String?
+  city          String
+  region        String
+  postalCode    String
+  country       String   @default("Portugal")
+  description   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  units         Unit[]
+  leases        Lease[]
+  maintenance   MaintenanceTicket[]
 }
 
-model Tenant {
-  id            String    @id @default(cuid())
+model Unit {
+  id            String   @id @default(cuid())
+  propertyId    String
+  name          String
+  bedrooms      Int      @default(0)
+  bathrooms     Float    @default(0)
+  floor         String?
+  areaSqm       Float?
+  monthlyRent   Float
+  status        String   @default("Vacant")
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  property      Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  leases        Lease[]
+  maintenance   MaintenanceTicket[]
+
+  @@index([propertyId])
+}
+
+model Renter {
+  id            String   @id @default(cuid())
   fullName      String
-  phone         String
   email         String?
-  leaseStart    DateTime
-  leaseEnd      DateTime?
-  paymentStatus String    @default("Paid")
-  balance       Float     @default(0)
-  apartmentId   String
-  apartment     Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+  phone         String?
+  governmentId  String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  leases        Lease[]
+}
+
+model Lease {
+  id            String   @id @default(cuid())
+  propertyId    String
+  unitId        String
+  renterId      String
+  startDate     DateTime
+  endDate       DateTime?
+  monthlyRent   Float
+  depositAmount Float    @default(0)
+  dueDay        Int      @default(1)
+  status        String   @default("Active")
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  property      Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  unit          Unit     @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  renter        Renter   @relation(fields: [renterId], references: [id], onDelete: Cascade)
+  invoices      Invoice[]
+
+  @@index([propertyId])
+  @@index([unitId])
+  @@index([renterId])
+}
+
+model Invoice {
+  id            String   @id @default(cuid())
+  leaseId       String
+  period        String
+  dueDate       DateTime
+  amount        Float
+  status        String   @default("Pending")
+  paidAt        DateTime?
+  paymentMethod String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  lease         Lease    @relation(fields: [leaseId], references: [id], onDelete: Cascade)
   payments      Payment[]
-  createdAt     DateTime  @default(now())
+
+  @@unique([leaseId, period])
+  @@index([dueDate])
+  @@index([status])
 }
 
 model Payment {
-  id        String   @id @default(cuid())
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  amount    Float
-  dueDate   DateTime
-  paidDate  DateTime?
-  status    String   @default("Pending")
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  invoiceId   String
+  amount      Float
+  paidAt      DateTime @default(now())
+  method      String
+  reference   String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+model MaintenanceTicket {
+  id          String   @id @default(cuid())
+  propertyId  String?
+  unitId      String?
+  title       String
+  description String?
+  priority    String   @default("Normal")
+  status      String   @default("Open")
+  requestedAt DateTime @default(now())
+  resolvedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  property    Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  unit        Unit?     @relation(fields: [unitId], references: [id], onDelete: SetNull)
+
+  @@index([propertyId])
+  @@index([unitId])
+  @@index([status])
 }

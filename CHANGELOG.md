@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-04-18 (Sprint 12 — segurança e estabilidade)
+- **Autor:** Codex
+- **Tipo:** feat
+- **Escopo:** hardening de validações backend, rate limiting, logs estruturados, drill de backup/restore e revisão de segredos/permissões
+- **Descrição:** adicionados utilitários de segurança (`lib/security.ts`) com `ValidationError`, validação forte de email/senha/data e verificação de secrets obrigatórios; implementado rate limiting em memória (`lib/rate-limit.ts`) aplicado em `POST /api/auth/login`, `POST /api/whatsapp/webhook` e `POST /api/jobs/reminders/daily`; criada camada de observabilidade (`lib/observability.ts`) com logs JSON estruturados e redaction de campos sensíveis; rotas críticas atualizadas para respostas padronizadas (400/401/429/500) e `Retry-After`; criado script operacional `scripts/backup-restore-drill.sh` com evidência de restore em `docs/evidence/SPRINT12_RESTORE_EVIDENCE.md`; criada documentação técnica completa em `docs/SPRINT12_HARDENING_REPORT.md` e checklist `docs/SPRINT12_SECURITY_CHECKLIST.md`; atualizado `.env.example`, `TEMPORAL_CHECKLIST.md` (Semana 12 concluída) e `README.md`.
+- **Impacto no roadmap:** conclui integralmente a Semana 12 (Dias 56–60), fortalecendo base operacional para QA final e go-live controlado (Semanas 13–14).
+- **Risco/rollback:** risco baixo/moderado (sem mudança de schema); rollback por reversão dos arquivos da sprint e desativação dos novos limites/configurações.
+
 ## 2026-04-18
 - **Autor:** Codex
 - **Tipo:** docs

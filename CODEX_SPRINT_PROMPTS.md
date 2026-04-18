@@ -88,6 +88,31 @@ Obrigatório documentar tudo:
 ## Sprint 3 (Dias 11–15) — Modelo de dados robusto
 
 ```txt
+Para cada função criada ou alterada, documentar:
+objetivo da função;
+parâmetros de entrada (tipos, validações, exemplos);
+saída (tipo, formato, exemplos);
+erros possíveis e comportamento esperado;
+efeitos colaterais (DB, chamadas externas, jobs).
+Para cada endpoint/API criada ou alterada, documentar:
+contrato de entrada (body/query/headers);
+contrato de saída (status code + payload);
+regras de autenticação/autorização;
+casos de erro e mensagens.
+Para cada mudança de dados, documentar:
+schema afetado;
+migração aplicada;
+impacto em dados existentes;
+plano de rollback.
+Para cada feature, incluir:
+como testar manualmente (passo a passo);
+testes automatizados executados;
+evidência de sucesso.
+Atualizar obrigatoriamente:
+CHANGELOG.md;
+TEMPORAL_CHECKLIST.md (marcando progresso da semana);
+documentação técnica relacionada.
+
 Quero que executes o Sprint 3 no repo applandlord.
 
 Objetivo:
@@ -114,6 +139,32 @@ Obrigatório documentar tudo:
 ## Sprint 4 (Dias 16–20) — Fluxo contrato (wizard)
 
 ```txt
+
+Para cada função criada ou alterada, documentar:
+objetivo da função;
+parâmetros de entrada (tipos, validações, exemplos);
+saída (tipo, formato, exemplos);
+erros possíveis e comportamento esperado;
+efeitos colaterais (DB, chamadas externas, jobs).
+Para cada endpoint/API criada ou alterada, documentar:
+contrato de entrada (body/query/headers);
+contrato de saída (status code + payload);
+regras de autenticação/autorização;
+casos de erro e mensagens.
+Para cada mudança de dados, documentar:
+schema afetado;
+migração aplicada;
+impacto em dados existentes;
+plano de rollback.
+Para cada feature, incluir:
+como testar manualmente (passo a passo);
+testes automatizados executados;
+evidência de sucesso.
+Atualizar obrigatoriamente:
+CHANGELOG.md;
+TEMPORAL_CHECKLIST.md (marcando progresso da semana);
+documentação técnica relacionada.
+
 Quero que executes o Sprint 4 no repo applandlord.
 
 Objetivo:
@@ -139,6 +190,33 @@ Obrigatório documentar tudo:
 ## Sprint 5 (Dias 21–25) — Geração automática de rendas + estados
 
 ```txt
+
+Para cada função criada ou alterada, documentar:
+objetivo da função;
+parâmetros de entrada (tipos, validações, exemplos);
+saída (tipo, formato, exemplos);
+erros possíveis e comportamento esperado;
+efeitos colaterais (DB, chamadas externas, jobs).
+Para cada endpoint/API criada ou alterada, documentar:
+contrato de entrada (body/query/headers);
+contrato de saída (status code + payload);
+regras de autenticação/autorização;
+casos de erro e mensagens.
+Para cada mudança de dados, documentar:
+schema afetado;
+migração aplicada;
+impacto em dados existentes;
+plano de rollback.
+Para cada feature, incluir:
+como testar manualmente (passo a passo);
+testes automatizados executados;
+evidência de sucesso.
+Atualizar obrigatoriamente:
+CHANGELOG.md;
+TEMPORAL_CHECKLIST.md (marcando progresso da semana);
+documentação técnica relacionada.
+
+
 Quero que executes o Sprint 5 no repo applandlord.
 
 Objetivo:
@@ -165,6 +243,32 @@ Obrigatório documentar tudo:
 ## Sprint 6 (Dias 26–30) — Pagamento e despesas
 
 ```txt
+
+Para cada função criada ou alterada, documentar:
+objetivo da função;
+parâmetros de entrada (tipos, validações, exemplos);
+saída (tipo, formato, exemplos);
+erros possíveis e comportamento esperado;
+efeitos colaterais (DB, chamadas externas, jobs).
+Para cada endpoint/API criada ou alterada, documentar:
+contrato de entrada (body/query/headers);
+contrato de saída (status code + payload);
+regras de autenticação/autorização;
+casos de erro e mensagens.
+Para cada mudança de dados, documentar:
+schema afetado;
+migração aplicada;
+impacto em dados existentes;
+plano de rollback.
+Para cada feature, incluir:
+como testar manualmente (passo a passo);
+testes automatizados executados;
+evidência de sucesso.
+Atualizar obrigatoriamente:
+CHANGELOG.md;
+TEMPORAL_CHECKLIST.md (marcando progresso da semana);
+documentação técnica relacionada.
+
 Quero que executes o Sprint 6 no repo applandlord.
 
 Objetivo:
@@ -191,6 +295,32 @@ Obrigatório documentar tudo:
 ## Sprint 7 (Dias 31–35) — Dashboard de atenção
 
 ```txt
+
+Para cada função criada ou alterada, documentar:
+objetivo da função;
+parâmetros de entrada (tipos, validações, exemplos);
+saída (tipo, formato, exemplos);
+erros possíveis e comportamento esperado;
+efeitos colaterais (DB, chamadas externas, jobs).
+Para cada endpoint/API criada ou alterada, documentar:
+contrato de entrada (body/query/headers);
+contrato de saída (status code + payload);
+regras de autenticação/autorização;
+casos de erro e mensagens.
+Para cada mudança de dados, documentar:
+schema afetado;
+migração aplicada;
+impacto em dados existentes;
+plano de rollback.
+Para cada feature, incluir:
+como testar manualmente (passo a passo);
+testes automatizados executados;
+evidência de sucesso.
+Atualizar obrigatoriamente:
+CHANGELOG.md;
+TEMPORAL_CHECKLIST.md (marcando progresso da semana);
+documentação técnica relacionada.
+
 Quero que executes o Sprint 7 no repo applandlord.
 
 Objetivo:
@@ -216,6 +346,31 @@ Obrigatório documentar tudo:
 ## Sprint 8 (Dias 36–40) — UX de foco e microcopy
 
 ```txt
+Para cada função criada ou alterada, documentar:
+objetivo da função;
+parâmetros de entrada (tipos, validações, exemplos);
+saída (tipo, formato, exemplos);
+erros possíveis e comportamento esperado;
+efeitos colaterais (DB, chamadas externas, jobs).
+Para cada endpoint/API criada ou alterada, documentar:
+contrato de entrada (body/query/headers);
+contrato de saída (status code + payload);
+regras de autenticação/autorização;
+casos de erro e mensagens.
+Para cada mudança de dados, documentar:
+schema afetado;
+migração aplicada;
+impacto em dados existentes;
+plano de rollback.
+Para cada feature, incluir:
+como testar manualmente (passo a passo);
+testes automatizados executados;
+evidência de sucesso.
+Atualizar obrigatoriamente:
+CHANGELOG.md;
+TEMPORAL_CHECKLIST.md (marcando progresso da semana);
+documentação técnica relacionada.
+
 Quero que executes o Sprint 8 no repo applandlord.
 
 Objetivo:
@@ -241,6 +396,31 @@ Obrigatório documentar tudo:
 ## Sprint 9 (Dias 41–45) — Tickets operacionais
 
 ```txt
+Para cada função criada ou alterada, documentar:
+objetivo da função;
+parâmetros de entrada (tipos, validações, exemplos);
+saída (tipo, formato, exemplos);
+erros possíveis e comportamento esperado;
+efeitos colaterais (DB, chamadas externas, jobs).
+Para cada endpoint/API criada ou alterada, documentar:
+contrato de entrada (body/query/headers);
+contrato de saída (status code + payload);
+regras de autenticação/autorização;
+casos de erro e mensagens.
+Para cada mudança de dados, documentar:
+schema afetado;
+migração aplicada;
+impacto em dados existentes;
+plano de rollback.
+Para cada feature, incluir:
+como testar manualmente (passo a passo);
+testes automatizados executados;
+evidência de sucesso.
+Atualizar obrigatoriamente:
+CHANGELOG.md;
+TEMPORAL_CHECKLIST.md (marcando progresso da semana);
+documentação técnica relacionada.
+
 Quero que executes o Sprint 9 no repo applandlord.
 
 Objetivo:
@@ -266,6 +446,31 @@ Obrigatório documentar tudo:
 ## Sprint 10 (Dias 46–50) — WhatsApp outbound
 
 ```txt
+Para cada função criada ou alterada, documentar:
+objetivo da função;
+parâmetros de entrada (tipos, validações, exemplos);
+saída (tipo, formato, exemplos);
+erros possíveis e comportamento esperado;
+efeitos colaterais (DB, chamadas externas, jobs).
+Para cada endpoint/API criada ou alterada, documentar:
+contrato de entrada (body/query/headers);
+contrato de saída (status code + payload);
+regras de autenticação/autorização;
+casos de erro e mensagens.
+Para cada mudança de dados, documentar:
+schema afetado;
+migração aplicada;
+impacto em dados existentes;
+plano de rollback.
+Para cada feature, incluir:
+como testar manualmente (passo a passo);
+testes automatizados executados;
+evidência de sucesso.
+Atualizar obrigatoriamente:
+CHANGELOG.md;
+TEMPORAL_CHECKLIST.md (marcando progresso da semana);
+documentação técnica relacionada.
+
 Quero que executes o Sprint 10 no repo applandlord.
 
 Objetivo:
@@ -291,6 +496,31 @@ Obrigatório documentar tudo:
 ## Sprint 11 (Dias 51–55) — WhatsApp inbound (inquilino)
 
 ```txt
+Para cada função criada ou alterada, documentar:
+objetivo da função;
+parâmetros de entrada (tipos, validações, exemplos);
+saída (tipo, formato, exemplos);
+erros possíveis e comportamento esperado;
+efeitos colaterais (DB, chamadas externas, jobs).
+Para cada endpoint/API criada ou alterada, documentar:
+contrato de entrada (body/query/headers);
+contrato de saída (status code + payload);
+regras de autenticação/autorização;
+casos de erro e mensagens.
+Para cada mudança de dados, documentar:
+schema afetado;
+migração aplicada;
+impacto em dados existentes;
+plano de rollback.
+Para cada feature, incluir:
+como testar manualmente (passo a passo);
+testes automatizados executados;
+evidência de sucesso.
+Atualizar obrigatoriamente:
+CHANGELOG.md;
+TEMPORAL_CHECKLIST.md (marcando progresso da semana);
+documentação técnica relacionada.
+
 Quero que executes o Sprint 11 no repo applandlord.
 
 Objetivo:
@@ -316,6 +546,31 @@ Obrigatório documentar tudo:
 ## Sprint 12 (Dias 56–60) — Segurança e estabilidade
 
 ```txt
+
+Para cada função criada ou alterada, documentar:
+objetivo da função;
+parâmetros de entrada (tipos, validações, exemplos);
+saída (tipo, formato, exemplos);
+erros possíveis e comportamento esperado;
+efeitos colaterais (DB, chamadas externas, jobs).
+Para cada endpoint/API criada ou alterada, documentar:
+contrato de entrada (body/query/headers);
+contrato de saída (status code + payload);
+regras de autenticação/autorização;
+casos de erro e mensagens.
+Para cada mudança de dados, documentar:
+schema afetado;
+migração aplicada;
+impacto em dados existentes;
+plano de rollback.
+Para cada feature, incluir:
+como testar manualmente (passo a passo);
+testes automatizados executados;
+evidência de sucesso.
+Atualizar obrigatoriamente:
+CHANGELOG.md;
+TEMPORAL_CHECKLIST.md (marcando progresso da semana);
+documentação técnica relacionada.
 Quero que executes o Sprint 12 no repo applandlord.
 
 Objetivo:
@@ -341,6 +596,9 @@ Obrigatório documentar tudo:
 ## Sprint 13 (Dias 61–65) — QA final + UAT
 
 ```txt
+
+
+
 Quero que executes o Sprint 13 no repo applandlord.
 
 Objetivo:

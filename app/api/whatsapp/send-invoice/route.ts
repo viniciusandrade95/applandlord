@@ -23,11 +23,15 @@ export async function POST(request: Request) {
     console.info('Sending invoice via WhatsApp', {
       invoiceId: result.invoice.id,
       renterId: result.invoice.lease.renter.id,
+      reminderId: result.reminderId,
+      providerMessageId: result.providerMessageId,
     })
 
     return NextResponse.json({
       success: true,
       detail: 'Mensagem enviada.',
+      reminderId: result.reminderId,
+      providerMessageId: result.providerMessageId,
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to send invoice via WhatsApp'

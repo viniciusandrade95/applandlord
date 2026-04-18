@@ -68,11 +68,11 @@
 - [x] Prioridades e filtros úteis
 
 ## Semana 10 (Dias 46–50) — WhatsApp outbound real
-- [ ] Templates WhatsApp para lembrete/atraso/confirmação
-- [ ] Job diário de reminders
-- [ ] Retry básico em falhas de envio
-- [ ] Persistência de mensagens enviadas/estado
-- [ ] Botão “Cobrar agora” no painel ligado ao fluxo
+- [x] Templates WhatsApp para lembrete/atraso/confirmação
+- [x] Job diário de reminders
+- [x] Retry básico em falhas de envio
+- [x] Persistência de mensagens enviadas/estado
+- [x] Botão “Cobrar agora” no painel ligado ao fluxo
 
 ## Semana 11 (Dias 51–55) — WhatsApp inbound (inquilino)
 - [x] Parser simples de intenção (“já paguei”, “problema”, “pago amanhã”)

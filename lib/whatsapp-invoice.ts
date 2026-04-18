@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { sendTextMessage } from '@/lib/whatsapp'
+import { createReminderForInvoice, dispatchReminder } from '@/lib/whatsapp-reminders'
 
 export async function getInvoiceForWhatsApp(invoiceId: string, ownerId: string) {
   return prisma.invoice.findFirst({
@@ -16,33 +16,6 @@ export async function getInvoiceForWhatsApp(invoiceId: string, ownerId: string) 
   })
 }
 
-export function normalizePhoneNumber(phone: string) {
-  return phone.replace(/\D/g, '')
-}
-
-export function formatCurrency(amount: number) {
-  return new Intl.NumberFormat('pt-PT', {
-    style: 'currency',
-    currency: 'EUR',
-  }).format(amount)
-}
-
-export function formatDueDate(value: Date) {
-  return new Intl.DateTimeFormat('pt-PT', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(value)
-}
-
-export function buildInvoiceWhatsAppMessage(invoice: NonNullable<Awaited<ReturnType<typeof getInvoiceForWhatsApp>>>) {
-  return (
-    `Ola ${invoice.lease.renter.fullName}, a sua fatura ${invoice.id} ` +
-    `no valor de ${formatCurrency(invoice.amount)} vence em ${formatDueDate(invoice.dueDate)}. ` +
-    `Imovel: ${invoice.lease.property.name}. Unidade: ${invoice.lease.unit.name}.`
-  )
-}
-
 export async function sendInvoiceWhatsApp(invoiceId: string, ownerId: string, renterId?: string) {
   const invoice = await getInvoiceForWhatsApp(invoiceId, ownerId)
 
@@ -54,21 +27,21 @@ export async function sendInvoiceWhatsApp(invoiceId: string, ownerId: string, re
     throw new Error('Invoice does not belong to the provided tenantId')
   }
 
-  if (!invoice.lease.renter.phone) {
-    throw new Error('The renter does not have a phone number configured')
-  }
+  const reminder = await createReminderForInvoice({
+    ownerId,
+    invoiceId,
+    templateName: 'rent_manual_collect_now',
+    trigger: 'manual_collect_now',
+  })
 
-  const phone = normalizePhoneNumber(invoice.lease.renter.phone)
-  if (!phone) {
-    throw new Error('The renter phone number is invalid for WhatsApp delivery')
+  const dispatchResult = await dispatchReminder(reminder.id)
+  if (!dispatchResult.success) {
+    throw new Error(dispatchResult.error || 'Failed to send invoice via WhatsApp')
   }
-
-  const message = buildInvoiceWhatsAppMessage(invoice)
-  const result = await sendTextMessage(phone, message)
 
   return {
     invoice,
-    phone,
-    result,
+    reminderId: reminder.id,
+    providerMessageId: dispatchResult.providerMessageId ?? null,
   }
 }

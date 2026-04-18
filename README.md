@@ -30,6 +30,7 @@ Configure estas variáveis no `.env`:
 - `WHATSAPP_WEBHOOK_SECRET`
 - `WHATSAPP_WEBHOOK_VERIFY_TOKEN`
 - `WHATSAPP_ADMIN_NUMBERS`
+- `REMINDER_JOB_SECRET` (obrigatória para `POST /api/jobs/reminders/daily`)
 
 Variáveis adicionais para autenticação:
 
@@ -41,6 +42,7 @@ Rotas disponíveis:
 - `POST /api/whatsapp/send-invoice`
 - `GET /api/whatsapp/webhook`
 - `POST /api/whatsapp/webhook`
+- `POST /api/jobs/reminders/daily`
 
 Fluxos suportados:
 
@@ -90,3 +92,5 @@ Fluxos suportados:
 - `docs/SPRINT8_UX_MICROCOPY.md`: execução da Sprint 8 com foco UX, CTA primário único por ecrã, empty states acionáveis e testes de usabilidade.
 
 - `docs/SPRINT11_WHATSAPP_INBOUND.md`: execução da Sprint 11 com parser de intenção, deduplicação, throttling, vínculo telefone->contrato e contratos de webhook inbound.
+- `docs/SPRINT10_WHATSAPP_OUTBOUND.md`: execução da Sprint 10 com automação de cobranças WhatsApp, job diário, retry, persistência de mensagens/status e plano de testes com falhas.
+- `docs/WHATSAPP_PAYLOADS_SPRINT10.md`: payloads de envio/retorno (provider + APIs internas) e exemplos de persistência para auditoria operacional.

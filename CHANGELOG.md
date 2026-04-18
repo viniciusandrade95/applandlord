@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-04-18 (Sprint 13 — QA final + UAT)
+- **Autor:** Codex
+- **Tipo:** fix/test/docs
+- **Escopo:** estabilização final para apresentação, execução de fluxos críticos E2E, seed de demo e checklist de release
+- **Descrição:** corrigido bug P0 de JSX inválido na secção de operação do dashboard (`app/page.tsx`), eliminando erro de parser que quebrava o build; criada suíte E2E dos 6 fluxos críticos (`tests/e2e-critical-flows.test.js`); adicionado script de seed de demo consistente (`prisma/seed-demo.js`) e comando `npm run db:seed:demo`; criado relatório formal de QA/UAT com evidência de testes, edge cases, bugs corrigidos e pendências (`docs/SPRINT13_QA_UAT.md`); atualizado checklist temporal da Semana 13 com itens concluídos.
+- **Impacto no roadmap:** fecha entregáveis obrigatórios da Sprint 13 e prepara Sprint 14 (demo final + go-live controlado).
+- **Risco/rollback:** risco baixo/moderado (ajuste de UI e novos artefactos de teste/documentação); rollback por reversão dos arquivos alterados nesta sprint.
 ## 2026-04-18 (Sprint 12 — segurança e estabilidade)
 - **Autor:** Codex
 - **Tipo:** feat

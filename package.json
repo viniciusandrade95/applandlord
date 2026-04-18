@@ -11,7 +11,8 @@
     "start": "prisma db push && next start",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "db:seed:demo": "node prisma/seed-demo.js"
   },
   "dependencies": {
     "@prisma/client": "^6.6.0",

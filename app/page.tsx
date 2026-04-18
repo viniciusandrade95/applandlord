@@ -23,6 +23,28 @@ type Dashboard = {
     awaitingConfirmation: number
     collectionRate: number
   }
+  attention?: {
+    daySummary: {
+      title: string
+      detail: string
+      highlights: string[]
+    }
+    quickActions: { id: string; label: string; href: string; detail: string; tone: 'critical' | 'warning' | 'healthy' | 'info' }[]
+    attentionByPriority: {
+      high: { id: string; title: string; detail: string; href: string; cta: string }[]
+      medium: { id: string; title: string; detail: string; href: string; cta: string }[]
+      low: { id: string; title: string; detail: string; href: string; cta: string }[]
+    }
+    kpis: {
+      id: string
+      label: string
+      value: number
+      format: 'count' | 'currency' | 'percent'
+      status: 'critical' | 'warning' | 'healthy' | 'info'
+      href: string
+      actionLabel: string
+    }[]
+  }
 }
 
 type Row = Record<string, any>
@@ -85,6 +107,20 @@ function chipClass(value?: string) {
   if (['pending', 'partial', 'awaitingconfirmation', 'vacant', 'open', 'normal'].includes(normalized)) return 'chip chip-warning'
   if (['overdue', 'ended', 'urgent', 'cancelled'].includes(normalized)) return 'chip chip-danger'
   return 'chip chip-accent'
+}
+
+
+function kpiValue(value: number, format: 'count' | 'currency' | 'percent') {
+  if (format === 'currency') return money(value)
+  if (format === 'percent') return `${Math.round(value)}%`
+  return `${Math.round(value)}`
+}
+
+function toneClass(tone: 'critical' | 'warning' | 'healthy' | 'info') {
+  if (tone === 'critical') return 'state-critical'
+  if (tone === 'warning') return 'state-warning'
+  if (tone === 'healthy') return 'state-healthy'
+  return 'state-info'
 }
 
 function payload(form: HTMLFormElement) {
@@ -192,6 +228,7 @@ export default function Home() {
   const dashboard = state.dashboard
   const counts = dashboard?.counts
   const finances = dashboard?.finances
+  const attention = dashboard?.attention
   const propertyOptions = useMemo(() => state.properties.map((property) => ({ id: property.id as string, label: property.name as string })), [state.properties])
   const unitOptions = useMemo(
     () => state.units.map((unit) => ({ id: unit.id as string, propertyId: unit.propertyId as string, label: `${unit.name as string} · ${(unit.property?.name as string) ?? 'Imóvel'}` })),
@@ -262,6 +299,74 @@ export default function Home() {
               <div className="pill pill-soft">Lucro líquido mensal: {finances ? money(finances.monthlyNetProfit) : '€0'}</div>
             </div>
           </aside>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="attention-shell">
+          <article className="attention-summary card">
+            <div className="card-header">
+              <h3>Resumo humano do dia</h3>
+              <span>{loading ? 'Atualizando...' : 'Atualizado agora'}</span>
+            </div>
+            <div className="card-body">
+              <p className="attention-title">{attention?.daySummary.title ?? 'Sem dados de atenção no momento.'}</p>
+              <p className="muted">{attention?.daySummary.detail ?? 'Ao carregar dados, o painel mostra um resumo acionável da operação diária.'}</p>
+              <div className="pills">{(attention?.daySummary.highlights ?? ['0 em atraso', '0 aguardando confirmação', '0 tickets urgentes']).map((item) => <span key={item} className="pill pill-soft">{item}</span>)}</div>
+            </div>
+          </article>
+
+          <article className="card">
+            <div className="card-header"><h3>Ações rápidas</h3><span>5 CTAs essenciais</span></div>
+            <div className="card-body">
+              <div className="quick-actions-grid">
+                {(attention?.quickActions ?? []).map((action) => (
+                  <a key={action.id} href={action.href} className={`quick-action-card ${toneClass(action.tone)}`}>
+                    <strong>{action.label}</strong>
+                    <span>{action.detail}</span>
+                  </a>
+                ))}
+                {!attention?.quickActions?.length ? <div className="empty">Sem ações rápidas disponíveis (fallback de UI).</div> : null}
+              </div>
+            </div>
+          </article>
+
+          <article className="card">
+            <div className="card-header"><h3>Atenção necessária por prioridade</h3><span>Ordem de execução</span></div>
+            <div className="card-body">
+              <div className="priority-columns">
+                {(['high', 'medium', 'low'] as const).map((priority) => (
+                  <div key={priority} className="priority-column">
+                    <h4 className={`priority-title ${toneClass(priority === 'high' ? 'critical' : priority === 'medium' ? 'warning' : 'info')}`}>{priority === 'high' ? 'Alta' : priority === 'medium' ? 'Média' : 'Baixa'}</h4>
+                    {(attention?.attentionByPriority?.[priority] ?? []).map((item) => (
+                      <a key={item.id} href={item.href} className="priority-item">
+                        <strong>{item.title}</strong>
+                        <span>{item.detail}</span>
+                        <em>{item.cta}</em>
+                      </a>
+                    ))}
+                    {(attention?.attentionByPriority?.[priority] ?? []).length === 0 ? <div className="empty">Sem itens nesta prioridade.</div> : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </article>
+
+          <article className="card">
+            <div className="card-header"><h3>KPIs acionáveis</h3><span>8 indicadores com próximo passo</span></div>
+            <div className="card-body">
+              <div className="kpi-grid">
+                {(attention?.kpis ?? []).map((kpi) => (
+                  <a key={kpi.id} href={kpi.href} className={`kpi-card ${toneClass(kpi.status)}`}>
+                    <div className="label">{kpi.label}</div>
+                    <div className="value">{kpiValue(kpi.value, kpi.format)}</div>
+                    <div className="hint">{kpi.actionLabel}</div>
+                  </a>
+                ))}
+                {!attention?.kpis?.length ? <div className="empty">Sem KPIs disponíveis (fallback de UI).</div> : null}
+              </div>
+            </div>
+          </article>
         </div>
       </section>
 
@@ -338,7 +443,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="section">
+      <section className="section" id="contratos">
         <div className="section-header">
           <div>
             <h2 className="section-title">Contratos</h2>
@@ -430,7 +535,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="section">
+      <section className="section" id="operacao">
         <div className="section-header">
           <div>
             <h2 className="section-title">Operação</h2>

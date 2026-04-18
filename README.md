@@ -81,3 +81,5 @@ Fluxos suportados:
 
 - `docs/SPRINT6_FINANCIAL_CORE.md`: implementação da Sprint 6 com pagamentos em awaiting confirmation, confirmação manual, CRUD de despesas, lucro líquido e testes de regras.
 - `docs/FINANCIAL_API_CONTRACTS.md`: contratos de entrada/saída e matriz de erros das rotas financeiras.
+- `docs/SPRINT7_ACTIONABLE_DASHBOARD.md`: implementação da Sprint 7 com dashboard acionável (resumo humano, ações rápidas, atenção por prioridade, KPIs e fallback de UI).
+- `docs/KPI_ACTION_MAPPING.md`: mapeamento operacional de KPI -> ação recomendada no painel.

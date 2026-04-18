@@ -1,67 +1,46 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { dueDateForPeriod, isActiveLease, monthKey } from '@/lib/landlord'
 import { requireCurrentUserId } from '@/lib/auth'
+import { generateRentChargesForPeriod } from '@/lib/rent-generation'
+import { logAuditEvent } from '@/lib/audit'
 
+/**
+ * Objetivo: executar geração automática de cobranças de renda para um período.
+ * Entrada: body opcional `{ period?: "YYYY-MM" }`.
+ * Saída: 200 com resumo `{ period, createdCount, skippedCount, created[], skipped[] }`.
+ * Erros: 400 período inválido; 401 sem sessão; 500 falha interna.
+ * Efeitos colaterais: cria registros em `rent_charges` e grava `AuditLog`.
+ */
 export async function POST(request: Request) {
   const { userId, response } = await requireCurrentUserId()
   if (!userId) return response
 
   try {
     const body = await request.json().catch(() => ({}))
-    const period = typeof body?.period === 'string' && body.period.trim() ? body.period.trim() : monthKey()
 
-    const leases = await prisma.lease.findMany({
-      where: { ownerId: userId },
-      include: {
-        unit: true,
-      },
-      orderBy: {
-        createdAt: 'asc',
-      },
+    const result = await generateRentChargesForPeriod({
+      ownerId: userId,
+      period: typeof body?.period === 'string' ? body.period : undefined,
+      referenceDate: new Date(),
     })
 
-    const eligibleLeases = leases.filter((lease) => isActiveLease(lease, new Date()))
-    const created: Array<{ leaseId: string; period: string; amount: number }> = []
-
-    for (const lease of eligibleLeases) {
-      const existing = await prisma.invoice.findUnique({
-        where: {
-          leaseId_period: {
-            leaseId: lease.id,
-            period,
-          },
-        },
-      })
-
-      if (existing) {
-        continue
-      }
-
-      const invoice = await prisma.invoice.create({
-        data: {
-          ownerId: userId,
-          leaseId: lease.id,
-          period,
-          dueDate: dueDateForPeriod(period, lease.dueDay),
-          amount: lease.monthlyRent,
-          status: 'Pending',
-        },
-      })
-
-      created.push({
-        leaseId: invoice.leaseId,
-        period: invoice.period,
-        amount: invoice.amount,
-      })
-    }
-
-    return NextResponse.json({
-      period,
-      createdCount: created.length,
-      created,
+    await logAuditEvent({
+      ownerId: userId,
+      actorId: userId,
+      action: 'RENT_CHARGE_BATCH_GENERATED',
+      entityType: 'Invoice',
+      metadata: {
+        period: result.period,
+        createdCount: result.createdCount,
+        skippedCount: result.skippedCount,
+      },
+      ipAddress: request.headers.get('x-forwarded-for'),
+      userAgent: request.headers.get('user-agent'),
     })
-  } catch {
-    return NextResponse.json({ error: 'Failed to generate invoices' }, { status: 500 })
+
+    return NextResponse.json(result)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to generate invoices'
+    const status = message.includes('YYYY-MM') ? 400 : 500
+    return NextResponse.json({ error: message }, { status })
   }
 }

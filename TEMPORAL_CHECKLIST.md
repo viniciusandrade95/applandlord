@@ -33,11 +33,11 @@
 - [x] Mensagens de erro legíveis
 
 ## Semana 5 (Dias 21–25) — Geração automática de rendas + estados
-- [ ] Geração automática de rendas por período
-- [ ] Máquina de estados de renda
-- [ ] Endpoint para transições seguras
-- [ ] Logs de transição de estado
-- [ ] Testes de transição inválida
+- [x] Geração automática de rendas por período
+- [x] Máquina de estados de renda
+- [x] Endpoint para transições seguras
+- [x] Logs de transição de estado
+- [x] Testes de transição inválida
 
 ## Semana 6 (Dias 26–30) — Pagamento e despesas (núcleo financeiro)
 - [ ] Registo de pagamento com comprovativo opcional

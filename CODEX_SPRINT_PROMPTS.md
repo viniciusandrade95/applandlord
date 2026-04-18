@@ -1,97 +1,101 @@
 # Prompts Individuais por Sprint para o Codex
 
-> Objetivo: cada sprint abaixo já está convertido em um prompt pronto para colar no Codex.
-> Regra global: toda implementação deve vir acompanhada de explicação técnica completa, entradas/saídas de dados, testes e documentação.
+Este documento contém **14 prompts individuais**, um por sprint (70 dias úteis), prontos para colar no Codex.
 
-## Regras Globais (aplicam-se a todos os prompts)
-Inclui sempre estas regras dentro de cada execução:
+## Contrato obrigatório de execução (aplica-se a todos os sprints)
+Copiar este bloco no início de cada prompt:
 
-1. Para **cada função criada ou alterada**, documentar:
-   - objetivo da função;
-   - parâmetros de entrada (tipos, validações, exemplos);
-   - saída (tipo, formato, exemplos);
-   - erros possíveis e comportamento esperado;
-   - efeitos colaterais (DB, chamadas externas, jobs).
-2. Para **cada endpoint/API criada ou alterada**, documentar:
-   - contrato de entrada (body/query/headers);
+```txt
+Regras obrigatórias desta execução:
+1) Para cada função criada/alterada, documentar:
+   - objetivo;
+   - entradas (tipos, validações, exemplos);
+   - saídas (tipo, formato, exemplos);
+   - erros possíveis;
+   - efeitos colaterais (DB, APIs, jobs, fila, storage).
+2) Para cada endpoint/API criado/alterado, documentar:
+   - contrato de entrada (body/query/params/headers);
    - contrato de saída (status code + payload);
    - regras de autenticação/autorização;
-   - casos de erro e mensagens.
-3. Para **cada mudança de dados**, documentar:
-   - schema afetado;
-   - migração aplicada;
+   - erros e mensagens.
+3) Para cada mudança de dados, documentar:
+   - schema/tabelas afetadas;
+   - migração;
    - impacto em dados existentes;
    - plano de rollback.
-4. Para **cada feature**, incluir:
+4) Para cada feature, incluir:
    - como testar manualmente (passo a passo);
    - testes automatizados executados;
-   - evidência de sucesso.
-5. Atualizar obrigatoriamente:
-   - `CHANGELOG.md`;
-   - `TEMPORAL_CHECKLIST.md` (marcando progresso da semana);
+   - evidência do resultado.
+5) Atualizações obrigatórias no repo:
+   - CHANGELOG.md;
+   - TEMPORAL_CHECKLIST.md (marcar progresso da semana);
    - documentação técnica relacionada.
+
+Formato obrigatório da resposta final:
+A) Resumo executivo
+B) Arquivos alterados
+C) Função por função (objetivo, entrada, saída, erros, efeitos)
+D) APIs alteradas (contratos de entrada/saída)
+E) Banco de dados/migrações
+F) Como testar (manual + automatizado)
+G) Limitações e próximos passos
+```
 
 ---
 
 ## Sprint 1 (Dias 1–5) — Arquitetura e planeamento técnico
-
 ```txt
 Quero que executes o Sprint 1 no repo applandlord.
 
 Objetivo:
-- Fechar arquitetura técnica, contratos de API e convenções de estado para evitar retrabalho.
+Fechar arquitetura técnica, contratos de API e convenções de estado para evitar retrabalho.
 
 Tarefas:
 1) Definir backlog final MVP vs Fase 2.
-2) Definir contrato base de APIs (inputs, outputs, erros).
+2) Definir contrato base de APIs (inputs/outputs/erros).
 3) Definir convenção de estados para lease/rent/payment/ticket/reminder.
 4) Definir estratégia de migrations sem downtime.
 5) Criar documento de arquitetura v1.
 
-Entregáveis obrigatórios:
+Entregáveis:
 - Documento técnico com decisões e trade-offs.
-- Tabela de entradas e saídas para APIs principais.
+- Tabela de entradas e saídas das APIs principais.
 - Critérios de aceite por módulo.
-- Atualização do CHANGELOG e checklist temporal.
+- Atualização de CHANGELOG.md e TEMPORAL_CHECKLIST.md.
 
-Obrigatório documentar tudo:
-- Cada função/arquivo criado: objetivo, entrada, saída, erros, teste.
-- Como testar cada decisão implementada.
+Aplicar integralmente o “Contrato obrigatório de execução”.
 ```
 
 ## Sprint 2 (Dias 6–10) — Auth + tenancy base
-
 ```txt
 Quero que executes o Sprint 2 no repo applandlord.
 
 Objetivo:
-- Implementar autenticação e base de isolamento por conta (owner).
+Implementar autenticação e base de isolamento por conta (owner).
 
 Tarefas:
 1) Adicionar auth (Supabase Auth ou NextAuth).
 2) Adicionar owner_id nas entidades core.
 3) Proteger rotas com sessão.
 4) Filtrar queries por owner.
-5) Criar migração de dados existentes.
+5) Migrar dados existentes.
 
-Entregáveis obrigatórios:
-- Fluxo login/logout funcional.
+Entregáveis:
+- Login/logout funcional.
 - Rotas protegidas.
 - Documento de autorização por endpoint.
-- Atualização do CHANGELOG e checklist temporal.
+- Atualização de CHANGELOG.md e TEMPORAL_CHECKLIST.md.
 
-Obrigatório documentar tudo:
-- Para cada função alterada: entrada, saída, validações, erros e como testar.
-- Para cada endpoint: request/response e exemplos reais.
+Aplicar integralmente o “Contrato obrigatório de execução”.
 ```
 
 ## Sprint 3 (Dias 11–15) — Modelo de dados robusto
-
 ```txt
 Quero que executes o Sprint 3 no repo applandlord.
 
 Objetivo:
-- Evoluir schema para operação SaaS robusta.
+Evoluir schema para operação SaaS robusta.
 
 Tarefas:
 1) Criar tabelas: expenses, reminders, whatsapp_messages, audit_logs.
@@ -100,27 +104,24 @@ Tarefas:
 4) Criar índices essenciais.
 5) Registrar eventos críticos em auditoria.
 
-Entregáveis obrigatórios:
+Entregáveis:
 - Migrações completas com rollback.
 - Documento de modelo de dados (ER simplificado).
 - Matriz de entradas/saídas por tabela.
-- Atualização do CHANGELOG e checklist temporal.
+- Atualização de CHANGELOG.md e TEMPORAL_CHECKLIST.md.
 
-Obrigatório documentar tudo:
-- Cada função de acesso a dados.
-- Como testar consistência de constraints e índices.
+Aplicar integralmente o “Contrato obrigatório de execução”.
 ```
 
 ## Sprint 4 (Dias 16–20) — Fluxo contrato (wizard)
-
 ```txt
 Quero que executes o Sprint 4 no repo applandlord.
 
 Objetivo:
-- Criar wizard de contrato com criação/seleção de inquilino no fluxo.
+Criar wizard de contrato com criação/seleção de inquilino no fluxo.
 
 Tarefas:
-1) Implementar wizard em 4-5 passos.
+1) Implementar wizard em 4–5 passos.
 2) Implementar passo de criação/seleção de inquilino.
 3) Validar consistência de imóvel, unidade, datas e due_day.
 4) Criar tela de confirmação.

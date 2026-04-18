@@ -16,3 +16,11 @@
 - **Impacto no roadmap:** melhora execução e rastreabilidade de todas as semanas (1–14).
 - **Risco/rollback:** sem risco técnico; rollback removendo/ajustando os documentos.
 
+## 2026-04-18 (atualização 3)
+- **Autor:** Codex
+- **Tipo:** docs
+- **Escopo:** prompts por sprint (qualidade e contrato de output)
+- **Descrição:** reestruturado `CODEX_SPRINT_PROMPTS.md` para incluir contrato obrigatório de execução e formato obrigatório da resposta final (função por função, entradas/saídas, APIs, migrações e testes) aplicável a todos os 14 sprints.
+- **Impacto no roadmap:** melhora consistência de execução e qualidade de documentação em todas as semanas (1–14).
+- **Risco/rollback:** sem risco técnico; rollback ao conteúdo anterior do arquivo de prompts.
+

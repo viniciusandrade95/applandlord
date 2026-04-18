@@ -135,6 +135,7 @@ button {
   flex-wrap: wrap;
   gap: 12px;
   margin-top: 24px;
+  align-items: center;
 }
 
 .button {
@@ -164,6 +165,13 @@ button {
   color: var(--ink);
   background: rgba(255, 255, 255, 0.8);
   border-color: var(--border);
+}
+
+.inline-link {
+  color: var(--accent-strong);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .status-panel {
@@ -449,6 +457,10 @@ button {
   border: 1px dashed rgba(23, 32, 51, 0.18);
   color: var(--muted);
   background: rgba(255, 255, 255, 0.46);
+}
+
+.empty p {
+  margin: 8px 0 10px;
 }
 
 .chips {

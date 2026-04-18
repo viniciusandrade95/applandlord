@@ -83,3 +83,5 @@ Fluxos suportados:
 - `docs/FINANCIAL_API_CONTRACTS.md`: contratos de entrada/saída e matriz de erros das rotas financeiras.
 - `docs/SPRINT7_ACTIONABLE_DASHBOARD.md`: implementação da Sprint 7 com dashboard acionável (resumo humano, ações rápidas, atenção por prioridade, KPIs e fallback de UI).
 - `docs/KPI_ACTION_MAPPING.md`: mapeamento operacional de KPI -> ação recomendada no painel.
+- `docs/MICROCOPY_GUIDE_V1.md`: guia de linguagem e padrões de microcopy para o contexto de senhorio (Sprint 8).
+- `docs/SPRINT8_UX_MICROCOPY.md`: execução da Sprint 8 com foco UX, CTA primário único por ecrã, empty states acionáveis e testes de usabilidade.

@@ -54,11 +54,11 @@
 - [x] Estados visuais e cores consistentes
 
 ## Semana 8 (Dias 36–40) — UX de foco e microcopy
-- [ ] 1 CTA primário por ecrã
-- [ ] Microcopy em linguagem de senhorio
-- [ ] Empty states orientados à ação
-- [ ] Erros e confirmações com texto claro
-- [ ] Revisão visual para demo (consistência e acabamento)
+- [x] 1 CTA primário por ecrã
+- [x] Microcopy em linguagem de senhorio
+- [x] Empty states orientados à ação
+- [x] Erros e confirmações com texto claro
+- [x] Revisão visual para demo (consistência e acabamento)
 
 ## Semana 9 (Dias 41–45) — Tickets operacionais
 - [ ] Criar ticket manual no painel

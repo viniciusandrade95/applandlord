@@ -40,3 +40,11 @@
 - **Descrição:** adicionadas tabelas `Expense`, `Reminder`, `WhatsAppMessage` e `AuditLog`; tabela física de cobranças renomeada de `Invoice` para `rent_charges` com compatibilidade mantida via Prisma `@@map`; criada constraint de 1 contrato ativo por unidade+owner (`Lease_one_active_per_unit_owner_key`); criados índices essenciais de desempenho por owner/status/datas; atualizado backend para registrar eventos críticos em auditoria (`LEASE_CREATED`, `LEASE_UPDATED`, `RENT_CHARGE_CREATED`, `PAYMENT_REGISTERED`); criada documentação técnica `docs/SPRINT3_SAAS_SCHEMA.md` com ER simplificado, matriz de entradas/saídas por tabela, contratos de API alteradas, plano de testes e rollback.
 - **Impacto no roadmap:** conclui integralmente a Semana 3, preparando base de dados para fluxos de reminders, WhatsApp outbound/inbound e controles de compliance.
 - **Risco/rollback:** risco moderado por DDL estrutural (rename de tabela + novos FKs/índices); rollback estruturado disponível em `prisma/migrations/20260418190000_sprint3_saas_schema/rollback.sql`.
+
+## 2026-04-18 (Sprint 4 — wizard de contratos)
+- **Autor:** Codex
+- **Tipo:** feat
+- **Escopo:** fluxo guiado de contrato, validações de consistência, criação/seleção de inquilino e documentação técnica
+- **Descrição:** implementado wizard em 5 passos no frontend (`app/components/lease-wizard.tsx`) com estados/transições, validações por etapa, tela de confirmação e tela de sucesso; endpoint `POST /api/leases` evoluído para suportar `renterMode` (`existing`/`new`) com criação de inquilino em linha; adicionadas validações de domínio em `lib/lease-wizard.ts` para datas, `dueDay`, consistência imóvel/unidade e unidade ocupada/com contrato ativo; criada suíte automatizada `tests/lease-wizard-validation.test.js`; criada documentação técnica e UX em `docs/SPRINT4_CONTRACT_WIZARD.md`; atualizado checklist temporal da Semana 4 com todos os itens concluídos.
+- **Impacto no roadmap:** conclui integralmente a Semana 4 (Dias 16–20) e prepara base para geração automática de rendas na Semana 5.
+- **Risco/rollback:** risco baixo (sem migração de schema); rollback por reversão dos arquivos de frontend/backend/documentação adicionados/alterados nesta sprint.

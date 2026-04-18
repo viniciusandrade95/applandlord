@@ -1,6 +1,7 @@
 ﻿'use client'
 
 import { FormEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
+import { LeaseWizard } from '@/app/components/lease-wizard'
 
 type Dashboard = {
   counts: {
@@ -190,7 +191,7 @@ export default function Home() {
   const finances = dashboard?.finances
   const propertyOptions = useMemo(() => state.properties.map((property) => ({ id: property.id as string, label: property.name as string })), [state.properties])
   const unitOptions = useMemo(
-    () => state.units.map((unit) => ({ id: unit.id as string, label: `${unit.name as string} · ${(unit.property?.name as string) ?? 'Imóvel'}` })),
+    () => state.units.map((unit) => ({ id: unit.id as string, propertyId: unit.propertyId as string, label: `${unit.name as string} · ${(unit.property?.name as string) ?? 'Imóvel'}` })),
     [state.units]
   )
   const renterOptions = useMemo(() => state.renters.map((renter) => ({ id: renter.id as string, label: renter.fullName as string })), [state.renters])
@@ -341,21 +342,15 @@ export default function Home() {
           <span className="pill pill-soft">Ativos: {activeLeaseCount}</span>
         </div>
         <div className="grid-2">
-          <Panel title="Criar contrato" subtitle="Vincular unidade e renda">
-            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/leases', payload(form), 'Contrato criado.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Falha ao criar contrato' }) } }}>
-              <div className="form-grid">
-                <div className="field"><label htmlFor="lease-property">Imóvel</label><select id="lease-property" name="propertyId" required defaultValue=""><option value="" disabled>Selecionar</option>{propertyOptions.map((property) => <option key={property.id} value={property.id}>{property.label}</option>)}</select></div>
-                <div className="field"><label htmlFor="lease-unit">Unidade</label><select id="lease-unit" name="unitId" required defaultValue=""><option value="" disabled>Selecionar</option>{unitOptions.map((unit) => <option key={unit.id} value={unit.id}>{unit.label}</option>)}</select></div>
-                <div className="field"><label htmlFor="lease-renter">Inquilino</label><select id="lease-renter" name="renterId" required defaultValue=""><option value="" disabled>Selecionar</option>{renterOptions.map((renter) => <option key={renter.id} value={renter.id}>{renter.label}</option>)}</select></div>
-                <div className="field"><label htmlFor="lease-start">Início</label><input id="lease-start" name="startDate" type="date" required /></div>
-                <div className="field"><label htmlFor="lease-rent">Renda</label><input id="lease-rent" name="monthlyRent" type="number" step="0.01" required /></div>
-                <div className="field"><label htmlFor="lease-due">Dia de vencimento</label><input id="lease-due" name="dueDay" type="number" min="1" max="28" defaultValue={1} /></div>
-                <div className="field"><label htmlFor="lease-deposit">Caução</label><input id="lease-deposit" name="depositAmount" type="number" step="0.01" /></div>
-                <div className="field"><label htmlFor="lease-status">Estado</label><select id="lease-status" name="status" defaultValue="Active"><option value="Active">Active</option><option value="Planned">Planned</option><option value="Ended">Ended</option></select></div>
-                <div className="field field-full"><label htmlFor="lease-notes">Notas</label><textarea id="lease-notes" name="notes" /></div>
-              </div>
-              <div className="form-actions"><button className="button button-primary" type="submit" disabled={propertyOptions.length === 0 || unitOptions.length === 0 || renterOptions.length === 0 || submitting === '/api/leases'}>{submitting === '/api/leases' ? 'A criar...' : 'Criar contrato'}</button></div>
-            </form>
+          <Panel title="Criar contrato" subtitle="Wizard guiado em 5 passos">
+            <LeaseWizard
+              propertyOptions={propertyOptions}
+              unitOptions={unitOptions}
+              renterOptions={renterOptions}
+              submitting={submitting}
+              setNotice={setNotice}
+              onSubmit={postJson}
+            />
           </Panel>
 
           <Panel title="Contratos ativos" subtitle="Visão rápida do portfólio">

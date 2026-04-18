@@ -127,21 +127,23 @@ Tarefas:
 4) Criar tela de confirmação.
 5) Tratar erros com mensagens claras.
 
-Entregáveis:
-- Fluxo completo funcional (frontend + backend).
-- Documento UX do wizard (estados e transições).
+Entregáveis obrigatórios:
+- Fluxo completo funcional no frontend e backend.
+- Documento de UX do wizard (estados e transições).
 - Testes de validação de entrada/saída.
-- Atualização de CHANGELOG.md e TEMPORAL_CHECKLIST.md.
+- Atualização do CHANGELOG e checklist temporal.
 
-Aplicar integralmente o “Contrato obrigatório de execução”.
+Obrigatório documentar tudo:
+- Cada função do wizard, validações, entradas, saídas e testes.
 ```
 
 ## Sprint 5 (Dias 21–25) — Geração automática de rendas + estados
+
 ```txt
 Quero que executes o Sprint 5 no repo applandlord.
 
 Objetivo:
-Automatizar geração de rendas e máquina de estados.
+- Automatizar geração de rendas e máquina de estados.
 
 Tarefas:
 1) Gerar rendas por período a partir do contrato.
@@ -150,67 +152,75 @@ Tarefas:
 4) Registrar logs de transição.
 5) Implementar testes de transição inválida.
 
-Entregáveis:
+Entregáveis obrigatórios:
 - Serviço de geração automática.
 - Documento de estados e regras de transição.
 - Casos de teste manuais e automatizados.
-- Atualização de CHANGELOG.md e TEMPORAL_CHECKLIST.md.
+- Atualização do CHANGELOG e checklist temporal.
 
-Aplicar integralmente o “Contrato obrigatório de execução”.
+Obrigatório documentar tudo:
+- Entradas/saídas de cada função de estado.
+- Como testar cada transição.
 ```
 
 ## Sprint 6 (Dias 26–30) — Pagamento e despesas
+
 ```txt
 Quero que executes o Sprint 6 no repo applandlord.
 
 Objetivo:
-Fechar núcleo financeiro: pagamentos com confirmação e despesas.
+- Fechar núcleo financeiro: pagamentos com confirmação e despesas.
 
 Tarefas:
-1) Registar pagamento com comprovativo opcional.
-2) Implementar estado awaiting_confirmation e confirmação manual final.
+1) Registrar pagamento com comprovativo opcional.
+2) Implementar estado awaiting_confirmation e confirmação final manual.
 3) Implementar CRUD de despesas por imóvel/contrato.
 4) Atualizar cálculo de lucro líquido.
 5) Ajustar dashboard financeiro.
 
-Entregáveis:
+Entregáveis obrigatórios:
 - Fluxo ponta-a-ponta de pagamento confirmado.
-- Documento dos contratos de entrada/saída das rotas financeiras.
+- Documento de contratos de entrada/saída das rotas financeiras.
 - Testes das regras de confirmação.
-- Atualização de CHANGELOG.md e TEMPORAL_CHECKLIST.md.
+- Atualização do CHANGELOG e checklist temporal.
 
-Aplicar integralmente o “Contrato obrigatório de execução”.
+Obrigatório documentar tudo:
+- Funções financeiras, parâmetros e retornos.
+- Como testar cenários de erro e borda.
 ```
 
 ## Sprint 7 (Dias 31–35) — Dashboard de atenção
+
 ```txt
 Quero que executes o Sprint 7 no repo applandlord.
 
 Objetivo:
-Transformar dashboard em painel acionável de atenção diária.
+- Transformar dashboard em painel acionável de atenção diária.
 
 Tarefas:
 1) Criar resumo humano do dia.
 2) Criar bloco de ações rápidas.
-3) Criar bloco “Atenção necessária” por prioridade.
+3) Criar bloco atenção necessária por prioridade.
 4) Exibir 6–8 KPIs acionáveis.
 5) Aplicar cores e estados consistentes.
 
-Entregáveis:
+Entregáveis obrigatórios:
 - Dashboard revisada com foco em ação.
 - Documento de mapeamento KPI -> ação.
 - Testes de rendering e dados.
-- Atualização de CHANGELOG.md e TEMPORAL_CHECKLIST.md.
+- Atualização do CHANGELOG e checklist temporal.
 
-Aplicar integralmente o “Contrato obrigatório de execução”.
+Obrigatório documentar tudo:
+- Fontes de dados, entradas, saídas e fallback de UI.
 ```
 
 ## Sprint 8 (Dias 36–40) — UX de foco e microcopy
+
 ```txt
 Quero que executes o Sprint 8 no repo applandlord.
 
 Objetivo:
-Melhorar clareza, linguagem e redução de carga cognitiva.
+- Melhorar clareza, linguagem e redução de carga cognitiva.
 
 Tarefas:
 1) Garantir 1 CTA principal por ecrã.
@@ -219,21 +229,23 @@ Tarefas:
 4) Melhorar mensagens de erro/sucesso.
 5) Uniformizar consistência visual para demo.
 
-Entregáveis:
+Entregáveis obrigatórios:
 - Guia de microcopy v1.
 - Lista de alterações UX com racional.
 - Testes manuais guiados de usabilidade.
-- Atualização de CHANGELOG.md e TEMPORAL_CHECKLIST.md.
+- Atualização do CHANGELOG e checklist temporal.
 
-Aplicar integralmente o “Contrato obrigatório de execução”.
+Obrigatório documentar tudo:
+- Cada componente alterado: entradas, saídas, estados visuais.
 ```
 
 ## Sprint 9 (Dias 41–45) — Tickets operacionais
+
 ```txt
 Quero que executes o Sprint 9 no repo applandlord.
 
 Objetivo:
-Consolidar fluxo de tickets com rastreabilidade.
+- Consolidar fluxo de tickets com rastreabilidade.
 
 Tarefas:
 1) Implementar criação e gestão de ticket no painel.
@@ -242,44 +254,48 @@ Tarefas:
 4) Ligar ticket a imóvel/contrato/inquilino.
 5) Implementar filtros por prioridade e status.
 
-Entregáveis:
+Entregáveis obrigatórios:
 - Módulo de tickets operacional.
-- Documento da máquina de estados do ticket.
+- Documento de máquina de estados do ticket.
 - Testes de fluxo completo.
-- Atualização de CHANGELOG.md e TEMPORAL_CHECKLIST.md.
+- Atualização do CHANGELOG e checklist temporal.
 
-Aplicar integralmente o “Contrato obrigatório de execução”.
+Obrigatório documentar tudo:
+- Entradas/saídas das rotas de ticket e eventos.
 ```
 
 ## Sprint 10 (Dias 46–50) — WhatsApp outbound
+
 ```txt
 Quero que executes o Sprint 10 no repo applandlord.
 
 Objetivo:
-Automatizar cobranças e lembretes por WhatsApp.
+- Automatizar cobranças e lembretes por WhatsApp.
 
 Tarefas:
 1) Configurar templates de cobrança/lembrete.
 2) Implementar job diário de reminders.
 3) Implementar retry básico em falhas.
 4) Persistir mensagens e status de entrega.
-5) Integrar botão “Cobrar agora” com envio.
+5) Integrar botão cobrar agora com envio.
 
-Entregáveis:
+Entregáveis obrigatórios:
 - Fluxo outbound operacional com logs.
 - Documento de payloads de envio e retorno.
 - Plano de teste com simulação de falhas.
-- Atualização de CHANGELOG.md e TEMPORAL_CHECKLIST.md.
+- Atualização do CHANGELOG e checklist temporal.
 
-Aplicar integralmente o “Contrato obrigatório de execução”.
+Obrigatório documentar tudo:
+- Funções de integração WhatsApp e contratos IO.
 ```
 
 ## Sprint 11 (Dias 51–55) — WhatsApp inbound (inquilino)
+
 ```txt
 Quero que executes o Sprint 11 no repo applandlord.
 
 Objetivo:
-Processar respostas do inquilino com segurança.
+- Processar respostas do inquilino com segurança.
 
 Tarefas:
 1) Implementar parser de intenção (já paguei/problema/pago amanhã).
@@ -288,21 +304,23 @@ Tarefas:
 4) Resolver relação número -> inquilino -> contrato ativo.
 5) Implementar proteção anti-duplicação e throttling.
 
-Entregáveis:
+Entregáveis obrigatórios:
 - Fluxo inbound funcional e rastreável.
 - Documento de regras de interpretação de mensagens.
 - Testes de idempotência e concorrência.
-- Atualização de CHANGELOG.md e TEMPORAL_CHECKLIST.md.
+- Atualização do CHANGELOG e checklist temporal.
 
-Aplicar integralmente o “Contrato obrigatório de execução”.
+Obrigatório documentar tudo:
+- Entradas/saídas por webhook e efeitos em DB.
 ```
 
 ## Sprint 12 (Dias 56–60) — Segurança e estabilidade
+
 ```txt
 Quero que executes o Sprint 12 no repo applandlord.
 
 Objetivo:
-Endurecer segurança e estabilidade operacional.
+- Endurecer segurança e estabilidade operacional.
 
 Tarefas:
 1) Reforçar validações backend.
@@ -311,21 +329,23 @@ Tarefas:
 4) Testar backup e restore.
 5) Revisar permissões e segredos.
 
-Entregáveis:
+Entregáveis obrigatórios:
 - Relatório de hardening.
 - Checklist de segurança preenchida.
 - Evidência de testes de restore.
-- Atualização de CHANGELOG.md e TEMPORAL_CHECKLIST.md.
+- Atualização do CHANGELOG e checklist temporal.
 
-Aplicar integralmente o “Contrato obrigatório de execução”.
+Obrigatório documentar tudo:
+- Funções de segurança e observabilidade com IO e testes.
 ```
 
 ## Sprint 13 (Dias 61–65) — QA final + UAT
+
 ```txt
 Quero que executes o Sprint 13 no repo applandlord.
 
 Objetivo:
-Fechar qualidade para apresentação e uso real inicial.
+- Fechar qualidade para apresentação e uso real inicial.
 
 Tarefas:
 1) Executar E2E dos 6 fluxos críticos.
@@ -334,21 +354,23 @@ Tarefas:
 4) Criar script de seed para demo.
 5) Fechar checklist de release.
 
-Entregáveis:
+Entregáveis obrigatórios:
 - Relatório de QA/UAT.
 - Lista de bugs corrigidos e pendências.
 - Evidência de execução dos testes.
-- Atualização de CHANGELOG.md e TEMPORAL_CHECKLIST.md.
+- Atualização do CHANGELOG e checklist temporal.
 
-Aplicar integralmente o “Contrato obrigatório de execução”.
+Obrigatório documentar tudo:
+- O que foi testado, entrada, saída esperada e resultado real.
 ```
 
 ## Sprint 14 (Dias 66–70) — Demo final + go-live controlado
+
 ```txt
 Quero que executes o Sprint 14 no repo applandlord.
 
 Objetivo:
-Preparar demo comercial e operação inicial controlada.
+- Preparar demo comercial e operação inicial controlada.
 
 Tarefas:
 1) Criar script de demo de 10 minutos.
@@ -357,11 +379,12 @@ Tarefas:
 4) Criar materiais de apresentação (dor -> solução -> valor).
 5) Definir plano pós-demo (30 dias).
 
-Entregáveis:
+Entregáveis obrigatórios:
 - Pacote de demo completo.
 - Documento operacional pós-demo.
 - Check final de riscos.
-- Atualização de CHANGELOG.md e TEMPORAL_CHECKLIST.md.
+- Atualização do CHANGELOG e checklist temporal.
 
-Aplicar integralmente o “Contrato obrigatório de execução”.
+Obrigatório documentar tudo:
+- Toda função e fluxo apresentado, com entrada, saída e como testar.
 ```

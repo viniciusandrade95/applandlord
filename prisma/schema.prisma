@@ -169,21 +169,26 @@ model RentChargeTransitionLog {
 }
 
 model Payment {
-  id        String   @id @default(cuid())
-  ownerId   String
-  invoiceId String
-  amount    Float
-  paidAt    DateTime @default(now())
-  method    String
-  reference String?
-  notes     String?
-  createdAt DateTime @default(now())
-  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  id                  String    @id @default(cuid())
+  ownerId             String
+  invoiceId           String
+  amount              Float
+  paidAt              DateTime  @default(now())
+  method              String
+  reference           String?
+  notes               String?
+  receiptUrl          String?
+  confirmationStatus  String    @default("AwaitingConfirmation")
+  confirmedAt         DateTime?
+  confirmedByUserId   String?
+  createdAt           DateTime  @default(now())
+  owner               User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  invoice             Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@index([ownerId])
   @@index([invoiceId])
   @@index([ownerId, paidAt])
+  @@index([ownerId, confirmationStatus])
 }
 
 model MaintenanceTicket {

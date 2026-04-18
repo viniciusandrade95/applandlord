@@ -4,6 +4,7 @@ const { normalizeRentChargeState, assertRentChargeTransitionAllowed } = require(
 
 test('normalizeRentChargeState aceita estados válidos', () => {
   assert.equal(normalizeRentChargeState('Pending'), 'Pending')
+  assert.equal(normalizeRentChargeState('AwaitingConfirmation'), 'AwaitingConfirmation')
   assert.equal(normalizeRentChargeState('Paid'), 'Paid')
 })
 
@@ -11,9 +12,14 @@ test('normalizeRentChargeState rejeita estado inválido', () => {
   assert.throws(() => normalizeRentChargeState('Unknown'), /Invalid rent charge status/)
 })
 
-test('assertRentChargeTransitionAllowed permite Pending -> Partial', () => {
-  const transition = assertRentChargeTransitionAllowed({ fromStatus: 'Pending', toStatus: 'Partial' })
-  assert.deepEqual(transition, { normalizedFrom: 'Pending', normalizedTo: 'Partial' })
+test('assertRentChargeTransitionAllowed permite Partial -> AwaitingConfirmation', () => {
+  const transition = assertRentChargeTransitionAllowed({ fromStatus: 'Partial', toStatus: 'AwaitingConfirmation' })
+  assert.deepEqual(transition, { normalizedFrom: 'Partial', normalizedTo: 'AwaitingConfirmation' })
+})
+
+test('assertRentChargeTransitionAllowed permite AwaitingConfirmation -> Paid', () => {
+  const transition = assertRentChargeTransitionAllowed({ fromStatus: 'AwaitingConfirmation', toStatus: 'Paid' })
+  assert.deepEqual(transition, { normalizedFrom: 'AwaitingConfirmation', normalizedTo: 'Paid' })
 })
 
 test('assertRentChargeTransitionAllowed rejeita transição inválida Paid -> Pending', () => {

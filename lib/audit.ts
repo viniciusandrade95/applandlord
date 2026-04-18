@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 
 type AuditSeverity = 'INFO' | 'WARN' | 'ERROR'
@@ -38,7 +39,7 @@ export async function logAuditEvent(input: AuditEventInput): Promise<void> {
         entityType: input.entityType,
         entityId: input.entityId ?? null,
         severity: input.severity ?? 'INFO',
-        metadata: input.metadata,
+        metadata: (input.metadata as Prisma.InputJsonValue | undefined) ?? undefined,
         ipAddress: input.ipAddress ?? null,
         userAgent: input.userAgent ?? null,
       },

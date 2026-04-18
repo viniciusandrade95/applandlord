@@ -47,11 +47,11 @@
 - [x] Ajustes nos agregados do dashboard
 
 ## Semana 7 (Dias 31–35) — Dashboard “Atenção necessária”
-- [ ] Header com resumo humano do dia
-- [ ] Bloco “Ações rápidas” (5 CTAs principais)
-- [ ] Bloco “Atenção necessária” com prioridade
-- [ ] KPIs MVP (6–8) com links acionáveis
-- [ ] Estados visuais e cores consistentes
+- [x] Header com resumo humano do dia
+- [x] Bloco “Ações rápidas” (5 CTAs principais)
+- [x] Bloco “Atenção necessária” com prioridade
+- [x] KPIs MVP (6–8) com links acionáveis
+- [x] Estados visuais e cores consistentes
 
 ## Semana 8 (Dias 36–40) — UX de foco e microcopy
 - [ ] 1 CTA primário por ecrã

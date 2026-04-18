@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireCurrentUserId } from '@/lib/auth'
+import { buildDashboardAttentionModel } from '@/lib/dashboard-attention'
 
 export async function GET() {
   const { userId, response } = await requireCurrentUserId()
@@ -25,6 +26,9 @@ export async function GET() {
       recentPayments,
       recentInvoices,
       occupiedUnits,
+      dueTodayInvoices,
+      urgentMaintenance,
+      expiringLeasesIn7Days,
     ] = await Promise.all([
       prisma.property.count({ where: { ownerId: userId } }),
       prisma.unit.count({ where: { ownerId: userId } }),
@@ -101,6 +105,34 @@ export async function GET() {
         take: 8,
       }),
       prisma.unit.count({ where: { ownerId: userId, status: 'Occupied' } }),
+
+      prisma.invoice.count({
+        where: {
+          ownerId: userId,
+          status: { not: 'Paid' },
+          dueDate: {
+            gte: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0)),
+            lt: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0)),
+          },
+        },
+      }),
+      prisma.maintenanceTicket.count({
+        where: {
+          ownerId: userId,
+          status: { not: 'Resolved' },
+          priority: { in: ['Urgent', 'High'] },
+        },
+      }),
+      prisma.lease.count({
+        where: {
+          ownerId: userId,
+          status: 'Active',
+          endDate: {
+            gte: now,
+            lt: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 7, 23, 59, 59)),
+          },
+        },
+      }),
     ])
 
     const confirmedAmount = Number(monthlyConfirmedPayments._sum.amount ?? 0)
@@ -108,26 +140,39 @@ export async function GET() {
     const openInvoicesAmount = Number(openInvoices._sum.amount ?? 0)
     const vacantUnits = Math.max(0, units - occupiedUnits)
 
+    const counts = {
+      properties,
+      units,
+      occupiedUnits,
+      vacantUnits,
+      renters,
+      leases,
+      activeLeases,
+      overdueInvoices,
+      openMaintenance,
+    }
+
+    const finances = {
+      monthlyConfirmedPayments: confirmedAmount,
+      monthlyExpenses: expensesAmount,
+      monthlyNetProfit: confirmedAmount - expensesAmount,
+      openInvoices: openInvoicesAmount,
+      awaitingConfirmation,
+      collectionRate: openInvoicesAmount > 0 ? Math.round((confirmedAmount / openInvoicesAmount) * 100) : 0,
+    }
+
+    const attention = buildDashboardAttentionModel({
+      counts,
+      finances,
+      dueTodayInvoices,
+      urgentMaintenance,
+      expiringLeasesIn7Days,
+    })
+
     return NextResponse.json({
-      counts: {
-        properties,
-        units,
-        occupiedUnits,
-        vacantUnits,
-        renters,
-        leases,
-        activeLeases,
-        overdueInvoices,
-        openMaintenance,
-      },
-      finances: {
-        monthlyConfirmedPayments: confirmedAmount,
-        monthlyExpenses: expensesAmount,
-        monthlyNetProfit: confirmedAmount - expensesAmount,
-        openInvoices: openInvoicesAmount,
-        awaitingConfirmation,
-        collectionRate: openInvoicesAmount > 0 ? Math.round((confirmedAmount / openInvoicesAmount) * 100) : 0,
-      },
+      counts,
+      finances,
+      attention,
       recentPayments,
       recentInvoices,
     })

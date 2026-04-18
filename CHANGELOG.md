@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-04-18 (Sprint 14 — Demo final + go-live controlado)
+- **Autor:** Codex
+- **Tipo:** feat/docs/test
+- **Escopo:** pacote de demo comercial, dados fictícios de impacto, validação de estabilidade demo mode, materiais de apresentação e plano operacional de 30 dias
+- **Descrição:** criado pacote de demo com roteiro de 10 minutos (`docs/demo/DEMO_SCRIPT_10_MIN.md`), base de impacto fictícia reutilizável (`docs/demo/DEMO_IMPACT_DATA.json`) e materiais comerciais de narrativa dor->solução->valor (`docs/demo/DEMO_PRESENTATION_MATERIALS.md`); implementada validação automatizada de estabilidade do modo demo em `tests/demo-mode-stability.test.js` cobrindo modelo de dashboard, fluxo de contrato, transições de cobrança e idempotência inbound; criado documento de operação pós-demo para 30 dias (`docs/SPRINT14_POST_DEMO_OPERATION.md`) e check final de riscos (`docs/SPRINT14_RISK_CHECK_FINAL.md`); consolidada documentação técnica da sprint em `docs/SPRINT14_DEMO_GO_LIVE.md`; adicionado comando `npm run demo:validate`; atualizado checklist temporal da Semana 14 com todos os itens concluídos.
+- **Impacto no roadmap:** conclui integralmente a Semana 14 (Dias 66–70), fechando o ciclo de 70 dias com prontidão para demo comercial e go-live controlado.
+- **Risco/rollback:** risco baixo/moderado (mudanças focadas em documentação e testes de validação); rollback por reversão dos arquivos da sprint.
+
 ## 2026-04-18 (Sprint 13 — QA final + UAT)
 - **Autor:** Codex
 - **Tipo:** fix/test/docs

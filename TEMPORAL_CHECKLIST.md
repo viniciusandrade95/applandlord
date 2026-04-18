@@ -5,11 +5,11 @@
 > Regra adicional: toda implementação deve documentar função por função (objetivo, entradas, saídas, erros, efeitos colaterais e testes).
 
 ## Semana 1 (Dias 1–5) — Arquitetura e planeamento técnico
-- [ ] Definir backlog fechado MVP vs Fase 2
-- [ ] Definir contratos de API (input/output/status)
-- [ ] Definir convenção de estados (lease/rent/ticket/payment/reminder)
-- [ ] Definir estratégia de migrations (sem downtime)
-- [ ] Criar documento de arquitetura v1
+- [x] Definir backlog fechado MVP vs Fase 2
+- [x] Definir contratos de API (input/output/status)
+- [x] Definir convenção de estados (lease/rent/ticket/payment/reminder)
+- [x] Definir estratégia de migrations (sem downtime)
+- [x] Criar documento de arquitetura v1
 
 ## Semana 2 (Dias 6–10) — Auth + tenancy base
 - [ ] Implementar autenticação (Supabase Auth ou NextAuth)

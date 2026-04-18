@@ -82,11 +82,11 @@
 - [x] Proteções anti-duplicação e throttling
 
 ## Semana 12 (Dias 56–60) — Segurança e estabilidade
-- [ ] Endurecer validações backend
-- [ ] Rate limits em endpoints críticos
-- [ ] Logs estruturados de erro
-- [ ] Backups e restore testado
-- [ ] Revisão de permissões e segredos
+- [x] Endurecer validações backend
+- [x] Rate limits em endpoints críticos
+- [x] Logs estruturados de erro
+- [x] Backups e restore testado
+- [x] Revisão de permissões e segredos
 
 ## Semana 13 (Dias 61–65) — QA final + UAT
 - [x] Testes E2E de 6 fluxos críticos

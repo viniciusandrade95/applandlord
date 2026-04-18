@@ -1,5 +1,8 @@
 import { createHmac, timingSafeEqual } from 'crypto'
 import { NextResponse } from 'next/server'
+import { logStructured, toErrorMessage } from '@/lib/observability'
+import { enforceRateLimit } from '@/lib/rate-limit'
+import { assertRequiredSecrets } from '@/lib/security'
 import { sendTextMessage } from '@/lib/whatsapp'
 import { handleWhatsappMenuMessage, shouldThrottleWhatsapp } from '@/lib/whatsapp-menu'
 import { processTenantInboundMessage } from '@/lib/tenant-inbound'
@@ -135,14 +138,18 @@ export async function GET(request: Request) {
  */
 export async function POST(request: Request) {
   try {
-    const secret = process.env.WHATSAPP_WEBHOOK_SECRET
-    if (!secret) {
+    assertRequiredSecrets(['WHATSAPP_WEBHOOK_SECRET'])
+
+    const rateLimit = enforceRateLimit(request, 'whatsapp-webhook', 120, 60_000)
+
+    if (!rateLimit.allowed) {
       return NextResponse.json(
-        { success: false, error: 'Missing WHATSAPP_WEBHOOK_SECRET' },
-        { status: 500 }
+        { success: false, error: 'Webhook rate limit exceeded' },
+        { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) } }
       )
     }
 
+    const secret = process.env.WHATSAPP_WEBHOOK_SECRET as string
     const rawBody = await request.text()
     const signature =
       request.headers.get('x-hub-signature-256') ?? request.headers.get('x-hub-signature')
@@ -187,8 +194,14 @@ export async function POST(request: Request) {
       handled: tenantResult.handled,
     })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to handle WhatsApp webhook'
-    console.error('WhatsApp webhook error', { error: message })
+    const message = toErrorMessage(error, 'Failed to handle WhatsApp webhook')
+
+    logStructured({
+      level: 'error',
+      event: 'WHATSAPP_WEBHOOK_ERROR',
+      message,
+    })
+
     return NextResponse.json({ success: false, error: message }, { status: 500 })
   }
 }

@@ -1,39 +1,45 @@
 import { NextResponse } from 'next/server'
+import { logStructured, toErrorMessage } from '@/lib/observability'
+import { enforceRateLimit } from '@/lib/rate-limit'
+import { assertBearerSecret, assertRequiredSecrets, validateIsoDate, ValidationError } from '@/lib/security'
 import { runDailyReminderJob } from '@/lib/whatsapp-reminders'
 
 export const runtime = 'nodejs'
 
-function isAuthorized(request: Request) {
-  const secret = process.env.REMINDER_JOB_SECRET
-  if (!secret) {
-    throw new Error('Missing REMINDER_JOB_SECRET')
-  }
-
-  const provided = request.headers.get('x-reminder-job-secret')
-  return provided === secret
-}
-
 export async function POST(request: Request) {
   try {
-    if (!isAuthorized(request)) {
-      return NextResponse.json({ success: false, error: 'Unauthorized reminder job call' }, { status: 401 })
+    assertRequiredSecrets(['REMINDER_JOB_SECRET'])
+    assertBearerSecret(request, 'x-reminder-job-secret', process.env.REMINDER_JOB_SECRET as string)
+
+    const rateLimit = enforceRateLimit(request, 'reminder-job', 12, 60_000)
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: 'Reminder job rate limit exceeded' },
+        { status: 429, headers: { 'Retry-After': String(rateLimit.retryAfterSeconds) } }
+      )
     }
 
     const body = await request.json().catch(() => ({}))
-    const referenceDate =
-      typeof body?.referenceDate === 'string' && body.referenceDate.trim().length
-        ? new Date(body.referenceDate)
-        : new Date()
-
-    if (Number.isNaN(referenceDate.getTime())) {
-      return NextResponse.json({ success: false, error: 'Invalid referenceDate' }, { status: 400 })
-    }
+    const referenceDate = body?.referenceDate
+      ? validateIsoDate(body.referenceDate, 'referenceDate')
+      : new Date()
 
     const summary = await runDailyReminderJob(referenceDate)
     return NextResponse.json({ success: true, summary })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to execute reminder daily job'
-    console.error('Reminder daily job error', { error: message })
+    if (error instanceof ValidationError) {
+      return NextResponse.json({ success: false, error: error.message, details: error.details }, { status: error.status })
+    }
+
+    const message = toErrorMessage(error, 'Failed to execute reminder daily job')
+
+    logStructured({
+      level: 'error',
+      event: 'REMINDER_DAILY_JOB_ERROR',
+      message,
+    })
+
     return NextResponse.json({ success: false, error: message }, { status: 500 })
   }
 }

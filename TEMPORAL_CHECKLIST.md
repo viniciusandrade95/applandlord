@@ -26,11 +26,11 @@
 - [x] Eventos de auditoria para ações críticas
 
 ## Semana 4 (Dias 16–20) — Fluxo contrato (wizard)
-- [ ] Criar wizard em 4–5 passos
-- [ ] Passo inquilino: criar ou selecionar existente
-- [ ] Validações de consistência (imóvel disponível, due_day, datas)
-- [ ] Confirm screen com resumo
-- [ ] Mensagens de erro legíveis
+- [x] Criar wizard em 4–5 passos
+- [x] Passo inquilino: criar ou selecionar existente
+- [x] Validações de consistência (imóvel disponível, due_day, datas)
+- [x] Confirm screen com resumo
+- [x] Mensagens de erro legíveis
 
 ## Semana 5 (Dias 21–25) — Geração automática de rendas + estados
 - [ ] Geração automática de rendas por período

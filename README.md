@@ -74,3 +74,5 @@ Fluxos suportados:
 - `docs/ARQUITETURA_V1_SPRINT1.md`: arquitetura técnica v1 (Sprint 1), contratos de API, estados e estratégia de migração sem downtime.
 - `docs/SPRINT2_AUTH_TENANCY.md`: implementação da Sprint 2 com auth, isolamento por owner, contratos de endpoint, migração e plano de testes.
 - `docs/SPRINT3_SAAS_SCHEMA.md`: implementação da Sprint 3 com evolução de schema SaaS, constraint de contrato ativo, índices essenciais, auditoria e plano de rollback.
+
+- `docs/SPRINT4_CONTRACT_WIZARD.md`: implementação da Sprint 4 com wizard de contrato (UX por estados/transições), validações de domínio, contratos de API, testes de entrada/saída e plano de rollback.

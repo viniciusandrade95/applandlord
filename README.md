@@ -94,3 +94,6 @@ Fluxos suportados:
 - `docs/SPRINT11_WHATSAPP_INBOUND.md`: execução da Sprint 11 com parser de intenção, deduplicação, throttling, vínculo telefone->contrato e contratos de webhook inbound.
 - `docs/SPRINT10_WHATSAPP_OUTBOUND.md`: execução da Sprint 10 com automação de cobranças WhatsApp, job diário, retry, persistência de mensagens/status e plano de testes com falhas.
 - `docs/WHATSAPP_PAYLOADS_SPRINT10.md`: payloads de envio/retorno (provider + APIs internas) e exemplos de persistência para auditoria operacional.
+- `docs/SPRINT12_HARDENING_REPORT.md`: execução da Sprint 12 com hardening de validações, rate limits, observabilidade, revisão de segredos e plano operacional de backup/restore.
+- `docs/SPRINT12_SECURITY_CHECKLIST.md`: checklist de segurança preenchida da Sprint 12.
+- `docs/evidence/SPRINT12_RESTORE_EVIDENCE.md`: evidência do teste de restore com checksum de integridade.

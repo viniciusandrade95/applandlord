@@ -66,4 +66,5 @@ Fluxos suportados:
 - `CHANGE_GOVERNANCE.md`: regra obrigatória de log + atualização do checklist em toda alteração.
 - `CHANGELOG.md`: histórico das alterações do projeto.
 - `CODEX_SPRINT_PROMPTS.md`: prompts individuais por sprint para execução no Codex.
+- `docs/ARQUITETURA_V1_SPRINT1.md`: arquitetura técnica v1 (Sprint 1), contratos de API, estados e estratégia de migração sem downtime.
 

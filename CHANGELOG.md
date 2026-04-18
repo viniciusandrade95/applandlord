@@ -74,6 +74,14 @@
 - **Impacto no roadmap:** conclui integralmente a Semana 7 (Dias 31–35), preparando Semana 8 para refinamento de foco UX e microcopy.
 - **Risco/rollback:** risco baixo/moderado (alteração de payload de dashboard e renderização); rollback por reversão dos arquivos da sprint, sem rollback de schema.
 
+
+## 2026-04-18 (Sprint 9 — tickets operacionais com rastreabilidade)
+- **Autor:** Codex
+- **Tipo:** feat
+- **Escopo:** módulo de tickets no painel, máquina formal de estados, timeline de eventos, vínculos ticket->imóvel/unidade/contrato/inquilino, filtros por prioridade/estado e documentação técnica
+- **Descrição:** implementadas rotas `GET/POST /api/tickets`, `PATCH /api/tickets/:ticketId`, `GET/POST /api/tickets/:ticketId/events`; endpoint legado `/api/maintenance` atualizado para estados formais e criação de timeline; criada máquina de estados em `lib/ticket-state-machine.ts`; painel (`app/page.tsx`) evoluído com criação e gestão de tickets, filtros e timeline visual; schema evoluído com novos campos em `MaintenanceTicket` e nova tabela `TicketEvent` via migração `prisma/migrations/20260418235000_sprint9_ticket_workflow/migration.sql`; adicionados testes `tests/ticket-flow.test.js`; criada documentação `docs/TICKET_STATE_MACHINE.md` e `docs/SPRINT9_TICKETS_OPERATIONS.md`.
+- **Impacto no roadmap:** conclui integralmente a Semana 9 (Dias 41–45), preparando automações de comunicação das Semanas 10 e 11 com base em tickets rastreáveis.
+- **Risco/rollback:** risco moderado por mudança de schema + novas rotas; rollback estruturado em `prisma/migrations/20260418235000_sprint9_ticket_workflow/rollback.sql`.
 ## 2026-04-18 (Sprint 8 — UX de foco e microcopy)
 - **Autor:** Codex
 - **Tipo:** feat

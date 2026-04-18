@@ -45,7 +45,7 @@ export async function GET() {
       prisma.maintenanceTicket.count({
         where: {
           ownerId: userId,
-          status: { not: 'Resolved' },
+          status: { in: ['New', 'Triaged', 'Waiting'] },
         },
       }),
       prisma.payment.aggregate({
@@ -119,7 +119,7 @@ export async function GET() {
       prisma.maintenanceTicket.count({
         where: {
           ownerId: userId,
-          status: { not: 'Resolved' },
+          status: { in: ['New', 'Triaged', 'Waiting'] },
           priority: { in: ['Urgent', 'High'] },
         },
       }),

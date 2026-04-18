@@ -61,11 +61,11 @@
 - [x] Revisão visual para demo (consistência e acabamento)
 
 ## Semana 9 (Dias 41–45) — Tickets operacionais
-- [ ] Criar ticket manual no painel
-- [ ] Estados: new/triaged/waiting/resolved/closed
-- [ ] Timeline de eventos do ticket
-- [ ] Link ticket <-> imóvel <-> contrato <-> inquilino
-- [ ] Prioridades e filtros úteis
+- [x] Criar ticket manual no painel
+- [x] Estados: new/triaged/waiting/resolved/closed
+- [x] Timeline de eventos do ticket
+- [x] Link ticket <-> imóvel <-> contrato <-> inquilino
+- [x] Prioridades e filtros úteis
 
 ## Semana 10 (Dias 46–50) — WhatsApp outbound real
 - [ ] Templates WhatsApp para lembrete/atraso/confirmação

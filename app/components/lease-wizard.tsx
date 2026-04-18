@@ -65,19 +65,19 @@ export function LeaseWizard({ propertyOptions, unitOptions, renterOptions, submi
   function validateStep(currentStep: Step) {
     if (currentStep === 1) {
       if (!form.propertyId || !form.unitId) {
-        setNotice({ kind: 'error', text: 'Selecione imóvel e unidade para avançar.' })
+        setNotice({ kind: 'error', text: 'Selecione o imóvel e a unidade para continuar com segurança.' })
         return false
       }
     }
 
     if (currentStep === 2) {
       if (form.renterMode === 'existing' && !form.renterId) {
-        setNotice({ kind: 'error', text: 'Selecione um inquilino existente.' })
+        setNotice({ kind: 'error', text: 'Escolha um inquilino já registado para continuar.' })
         return false
       }
 
       if (form.renterMode === 'new' && !form.newRenterFullName.trim()) {
-        setNotice({ kind: 'error', text: 'Informe o nome do novo inquilino.' })
+        setNotice({ kind: 'error', text: 'Preencha o nome do novo inquilino para criar o contrato.' })
         return false
       }
     }
@@ -87,17 +87,17 @@ export function LeaseWizard({ propertyOptions, unitOptions, renterOptions, submi
       const monthlyRent = Number(form.monthlyRent)
 
       if (!form.startDate || !Number.isFinite(monthlyRent) || monthlyRent <= 0) {
-        setNotice({ kind: 'error', text: 'Data de início e renda mensal válida são obrigatórias.' })
+        setNotice({ kind: 'error', text: 'Defina data de início e renda mensal válida para emitir cobranças corretamente.' })
         return false
       }
 
       if (!Number.isInteger(dueDay) || dueDay < 1 || dueDay > 28) {
-        setNotice({ kind: 'error', text: 'Dia de vencimento deve estar entre 1 e 28.' })
+        setNotice({ kind: 'error', text: 'Use dia de vencimento entre 1 e 28 para evitar falhas no calendário.' })
         return false
       }
 
       if (form.endDate && new Date(form.endDate).getTime() < new Date(form.startDate).getTime()) {
-        setNotice({ kind: 'error', text: 'Data fim não pode ser anterior ao início.' })
+        setNotice({ kind: 'error', text: 'A data de fim não pode ser anterior ao início do contrato.' })
         return false
       }
     }
@@ -140,11 +140,11 @@ export function LeaseWizard({ propertyOptions, unitOptions, renterOptions, submi
           status: form.status,
           notes: form.notes,
         },
-        'Contrato criado com sucesso pelo wizard.'
+        'Contrato criado com sucesso. A próxima cobrança já pode ser gerada.'
       )
       setStep(5)
     } catch (error) {
-      setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Falha ao criar contrato.' })
+      setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível criar o contrato.' })
     }
   }
 
@@ -156,7 +156,7 @@ export function LeaseWizard({ propertyOptions, unitOptions, renterOptions, submi
 
   return (
     <div className="stack">
-      <div className="pill pill-soft">Passo {step} de 5</div>
+      <div className="pill pill-soft">Passo {step} de 5 · Um foco por vez</div>
 
       {step === 1 && (
         <div className="form-grid">
@@ -166,7 +166,7 @@ export function LeaseWizard({ propertyOptions, unitOptions, renterOptions, submi
               updateField('propertyId', event.target.value)
               updateField('unitId', '')
             }}>
-              <option value="">Selecionar</option>
+              <option value="">Selecionar imóvel</option>
               {propertyOptions.map((property) => (
                 <option key={property.id} value={property.id}>{property.label}</option>
               ))}
@@ -175,7 +175,7 @@ export function LeaseWizard({ propertyOptions, unitOptions, renterOptions, submi
           <div className="field">
             <label>Unidade</label>
             <select value={form.unitId} onChange={(event) => updateField('unitId', event.target.value)}>
-              <option value="">Selecionar</option>
+              <option value="">Selecionar unidade</option>
               {filteredUnits.map((unit) => (
                 <option key={unit.id} value={unit.id}>{unit.label}</option>
               ))}
@@ -189,15 +189,15 @@ export function LeaseWizard({ propertyOptions, unitOptions, renterOptions, submi
           <div className="field field-full">
             <label>Modo do inquilino</label>
             <select value={form.renterMode} onChange={(event) => updateField('renterMode', event.target.value as 'existing' | 'new')}>
-              <option value="existing">Selecionar existente</option>
-              <option value="new">Criar novo</option>
+              <option value="existing">Usar inquilino já registado</option>
+              <option value="new">Registar novo inquilino</option>
             </select>
           </div>
           {form.renterMode === 'existing' ? (
             <div className="field field-full">
               <label>Inquilino existente</label>
               <select value={form.renterId} onChange={(event) => updateField('renterId', event.target.value)}>
-                <option value="">Selecionar</option>
+                <option value="">Selecionar inquilino</option>
                 {renterOptions.map((renter) => (
                   <option key={renter.id} value={renter.id}>{renter.label}</option>
                 ))}
@@ -229,7 +229,7 @@ export function LeaseWizard({ propertyOptions, unitOptions, renterOptions, submi
 
       {step === 4 && (
         <div className="empty">
-          <strong>Confirmação do contrato</strong><br />
+          <strong>Confirmação final do contrato</strong><br />
           <span className="muted">Imóvel: {selectedProperty?.label ?? '—'}</span><br />
           <span className="muted">Unidade: {selectedUnit?.label ?? '—'}</span><br />
           <span className="muted">Inquilino: {form.renterMode === 'existing' ? (selectedRenter?.label ?? '—') : form.newRenterFullName}</span><br />
@@ -242,7 +242,7 @@ export function LeaseWizard({ propertyOptions, unitOptions, renterOptions, submi
       {step === 5 && (
         <div className="empty">
           <strong>Contrato criado com sucesso.</strong><br />
-          <span className="muted">O fluxo do wizard foi concluído e os dados foram persistidos.</span>
+          <span className="muted">Dados guardados. Próximo passo recomendado: gerar cobrança do período atual.</span>
         </div>
       )}
 
@@ -260,7 +260,7 @@ export function LeaseWizard({ propertyOptions, unitOptions, renterOptions, submi
         )}
 
         {step === 5 && (
-          <button className="button button-primary" type="button" onClick={resetWizard}>Criar novo contrato</button>
+          <button className="button button-primary" type="button" onClick={resetWizard}>Criar outro contrato</button>
         )}
       </div>
     </div>

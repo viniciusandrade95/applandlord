@@ -73,3 +73,11 @@
 - **Descrição:** endpoint `GET /api/dashboard` evoluído com modelo `attention` (resumo humano, ações rápidas, atenção por prioridade e 8 KPIs); criado service puro `buildDashboardAttentionModel` em `lib/dashboard-attention.ts`; frontend (`app/page.tsx`) revisado com blocos acionáveis e fallbacks explícitos de UI; aplicada camada visual semântica (`state-critical`, `state-warning`, `state-healthy`, `state-info`) em `app/globals.css`; criado documento de mapeamento KPI->ação (`docs/KPI_ACTION_MAPPING.md`) e documentação técnica completa da sprint (`docs/SPRINT7_ACTIONABLE_DASHBOARD.md`); adicionados testes automatizados do modelo de dados/rendering (`tests/dashboard-attention-model.test.js`).
 - **Impacto no roadmap:** conclui integralmente a Semana 7 (Dias 31–35), preparando Semana 8 para refinamento de foco UX e microcopy.
 - **Risco/rollback:** risco baixo/moderado (alteração de payload de dashboard e renderização); rollback por reversão dos arquivos da sprint, sem rollback de schema.
+
+## 2026-04-18 (Sprint 8 — UX de foco e microcopy)
+- **Autor:** Codex
+- **Tipo:** feat
+- **Escopo:** clareza de linguagem, hierarquia de CTA, empty states acionáveis, mensagens de feedback e consistência visual de demo
+- **Descrição:** frontend principal (`app/page.tsx`) ajustado para reforçar 1 CTA primário por ecrã (hero com ação principal + link secundário), revisão de microcopy para contexto de senhorio, novos empty states orientados à ação em todas as listas, padronização de mensagens de erro/sucesso com fallback legível (`apiErrorMessage`) e melhoria de feedback no fluxo de WhatsApp; wizard de contratos (`app/components/lease-wizard.tsx`) recebeu mensagens de validação/sucesso mais claras; CSS (`app/globals.css`) ganhou classe `.inline-link` e refinamento visual de blocos vazios; criada documentação técnica da sprint (`docs/SPRINT8_UX_MICROCOPY.md`) e guia dedicado (`docs/MICROCOPY_GUIDE_V1.md`); checklist temporal atualizado com Semana 8 concluída.
+- **Impacto no roadmap:** conclui integralmente a Semana 8 (Dias 36–40), preparando as próximas sprints com base de UX mais clara para demo e operações.
+- **Risco/rollback:** risco baixo (sem mudança de schema nem contratos backend); rollback via reversão dos arquivos de UI/documentação da sprint.

@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { asString } from '@/lib/landlord'
+import { requireCurrentUserId } from '@/lib/auth'
 
 export async function GET() {
+  const { userId, response } = await requireCurrentUserId()
+  if (!userId) return response
+
   try {
     const tickets = await prisma.maintenanceTicket.findMany({
+      where: { ownerId: userId },
       include: {
         property: true,
         unit: true,
@@ -21,6 +26,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const { userId, response } = await requireCurrentUserId()
+  if (!userId) return response
+
   try {
     const body = await request.json()
     const title = asString(body.title)
@@ -31,6 +39,7 @@ export async function POST(request: Request) {
 
     const ticket = await prisma.maintenanceTicket.create({
       data: {
+        ownerId: userId,
         title,
         description: asString(body.description) || null,
         priority: asString(body.priority, 'Normal'),

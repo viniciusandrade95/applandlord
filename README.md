@@ -30,6 +30,11 @@ Configure estas variáveis no `.env`:
 - `WHATSAPP_WEBHOOK_VERIFY_TOKEN`
 - `WHATSAPP_ADMIN_NUMBERS`
 
+Variáveis adicionais para autenticação:
+
+- `AUTH_SECRET` (obrigatória para assinar sessão)
+- `WHATSAPP_OWNER_EMAIL` (opcional; owner usado pelo menu webhook)
+
 Rotas disponíveis:
 
 - `POST /api/whatsapp/send-invoice`
@@ -67,4 +72,5 @@ Fluxos suportados:
 - `CHANGELOG.md`: histórico das alterações do projeto.
 - `CODEX_SPRINT_PROMPTS.md`: prompts individuais por sprint para execução no Codex.
 - `docs/ARQUITETURA_V1_SPRINT1.md`: arquitetura técnica v1 (Sprint 1), contratos de API, estados e estratégia de migração sem downtime.
+- `docs/SPRINT2_AUTH_TENANCY.md`: implementação da Sprint 2 com auth, isolamento por owner, contratos de endpoint, migração e plano de testes.
 

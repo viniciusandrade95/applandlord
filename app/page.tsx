@@ -205,6 +205,24 @@ export default function Home() {
 
   return (
     <main className="app-shell">
+      <section className="section" style={{ paddingBottom: 0 }}>
+        <div className="section-header">
+          <div>
+            <h2 className="section-title">Sessão</h2>
+            <p>Conta autenticada ativa.</p>
+          </div>
+          <button
+            className="button button-secondary"
+            type="button"
+            onClick={async () => {
+              await fetch('/api/auth/logout', { method: 'POST' })
+              window.location.href = '/login'
+            }}
+          >
+            Logout
+          </button>
+        </div>
+      </section>
       <section className="hero">
         <div className="hero-grid">
           <div>

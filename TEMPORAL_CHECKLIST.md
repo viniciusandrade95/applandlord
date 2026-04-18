@@ -12,11 +12,11 @@
 - [x] Criar documento de arquitetura v1
 
 ## Semana 2 (Dias 6–10) — Auth + tenancy base
-- [ ] Implementar autenticação (Supabase Auth ou NextAuth)
-- [ ] Introduzir `owner_id` nas entidades core
-- [ ] Middleware de sessão nas rotas
-- [ ] Filtro por owner em APIs de leitura/escrita
-- [ ] Migração dos dados existentes
+- [x] Implementar autenticação (Supabase Auth ou NextAuth)
+- [x] Introduzir `owner_id` nas entidades core
+- [x] Middleware de sessão nas rotas
+- [x] Filtro por owner em APIs de leitura/escrita
+- [x] Migração dos dados existentes
 
 ## Semana 3 (Dias 11–15) — Modelo de dados robusto
 - [ ] Criar tabelas: `expenses`, `reminders`, `whatsapp_messages`, `audit_logs`

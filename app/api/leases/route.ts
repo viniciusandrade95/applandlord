@@ -1,15 +1,21 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { asDate, asNumber, asString } from '@/lib/landlord'
+import { requireCurrentUserId } from '@/lib/auth'
 
 export async function GET() {
+  const { userId, response } = await requireCurrentUserId()
+  if (!userId) return response
+
   try {
     const leases = await prisma.lease.findMany({
+      where: { ownerId: userId },
       include: {
         property: true,
         unit: true,
         renter: true,
         invoices: {
+          where: { ownerId: userId },
           orderBy: {
             dueDate: 'desc',
           },
@@ -28,6 +34,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const { userId, response } = await requireCurrentUserId()
+  if (!userId) return response
+
   try {
     const body = await request.json()
     const propertyId = asString(body.propertyId)
@@ -44,9 +53,9 @@ export async function POST(request: Request) {
     }
 
     const [property, unit, renter] = await Promise.all([
-      prisma.property.findUnique({ where: { id: propertyId } }),
-      prisma.unit.findUnique({ where: { id: unitId } }),
-      prisma.renter.findUnique({ where: { id: renterId } }),
+      prisma.property.findFirst({ where: { id: propertyId, ownerId: userId } }),
+      prisma.unit.findFirst({ where: { id: unitId, ownerId: userId } }),
+      prisma.renter.findFirst({ where: { id: renterId, ownerId: userId } }),
     ])
 
     if (!property) {
@@ -67,6 +76,7 @@ export async function POST(request: Request) {
 
     const lease = await prisma.lease.create({
       data: {
+        ownerId: userId,
         propertyId,
         unitId,
         renterId,
@@ -85,12 +95,12 @@ export async function POST(request: Request) {
       },
     })
 
-    const isActiveLease = lease.status === 'Active'
+    const isCurrentLeaseActive = lease.status === 'Active'
 
     await prisma.unit.update({
       where: { id: unitId },
       data: {
-        status: isActiveLease ? 'Occupied' : 'Vacant',
+        status: isCurrentLeaseActive ? 'Occupied' : 'Vacant',
       },
     })
 
@@ -101,6 +111,9 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  const { userId, response } = await requireCurrentUserId()
+  if (!userId) return response
+
   try {
     const body = await request.json()
     const leaseId = asString(body.leaseId)
@@ -109,8 +122,8 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'leaseId is required' }, { status: 400 })
     }
 
-    const lease = await prisma.lease.findUnique({
-      where: { id: leaseId },
+    const lease = await prisma.lease.findFirst({
+      where: { id: leaseId, ownerId: userId },
       include: { unit: true },
     })
 
@@ -134,6 +147,7 @@ export async function PATCH(request: Request) {
 
     const activeLeaseCount = await prisma.lease.count({
       where: {
+        ownerId: userId,
         unitId: lease.unitId,
         status: 'Active',
       },

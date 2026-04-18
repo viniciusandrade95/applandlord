@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { asDate, asNumber, asString } from '@/lib/landlord'
+import { requireCurrentUserId } from '@/lib/auth'
 
 export async function GET() {
+  const { userId, response } = await requireCurrentUserId()
+  if (!userId) return response
+
   try {
     const payments = await prisma.payment.findMany({
+      where: { ownerId: userId },
       include: {
         invoice: {
           include: {
@@ -24,12 +29,15 @@ export async function GET() {
     })
 
     return NextResponse.json(payments)
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Failed to fetch payments' }, { status: 500 })
   }
 }
 
 export async function POST(request: Request) {
+  const { userId, response } = await requireCurrentUserId()
+  if (!userId) return response
+
   try {
     const body = await request.json()
     const invoiceId = asString(body.invoiceId)
@@ -39,8 +47,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'invoiceId is required' }, { status: 400 })
     }
 
-    const invoice = await prisma.invoice.findUnique({
-      where: { id: invoiceId },
+    const invoice = await prisma.invoice.findFirst({
+      where: { id: invoiceId, ownerId: userId },
       include: {
         lease: {
           include: {
@@ -58,6 +66,7 @@ export async function POST(request: Request) {
 
     const payment = await prisma.payment.create({
       data: {
+        ownerId: userId,
         invoiceId,
         amount: asNumber(body.amount, invoice.amount),
         paidAt: body.paidAt ? asDate(body.paidAt) : new Date(),

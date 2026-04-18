@@ -1,13 +1,19 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { asNumber, asString } from '@/lib/landlord'
+import { requireCurrentUserId } from '@/lib/auth'
 
 export async function GET() {
+  const { userId, response } = await requireCurrentUserId()
+  if (!userId) return response
+
   try {
     const units = await prisma.unit.findMany({
+      where: { ownerId: userId },
       include: {
         property: true,
         leases: {
+          where: { ownerId: userId },
           include: {
             renter: true,
           },
@@ -26,6 +32,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const { userId, response } = await requireCurrentUserId()
+  if (!userId) return response
+
   try {
     const body = await request.json()
     const propertyId = asString(body.propertyId)
@@ -39,13 +48,14 @@ export async function POST(request: Request) {
       )
     }
 
-    const property = await prisma.property.findUnique({ where: { id: propertyId } })
+    const property = await prisma.property.findFirst({ where: { id: propertyId, ownerId: userId } })
     if (!property) {
       return NextResponse.json({ error: 'Property not found' }, { status: 404 })
     }
 
     const unit = await prisma.unit.create({
       data: {
+        ownerId: userId,
         propertyId,
         name,
         bedrooms: Number.isFinite(Number(body.bedrooms)) ? Number(body.bedrooms) : 0,

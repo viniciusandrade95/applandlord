@@ -136,8 +136,21 @@ function invoicesMenuText() {
   ].join('\n')
 }
 
-async function listRenters() {
+
+
+async function getWhatsappOwnerId() {
+  const email = (process.env.WHATSAPP_OWNER_EMAIL || 'owner@applandlord.local').trim().toLowerCase()
+  const owner = await prisma.user.findUnique({ where: { email }, select: { id: true } })
+
+  if (!owner) {
+    throw new Error('WhatsApp owner account is not configured')
+  }
+
+  return owner.id
+}
+async function listRenters(ownerId: string) {
   const renters = await prisma.renter.findMany({
+    where: { ownerId },
     orderBy: { createdAt: 'desc' },
     take: 5,
   })
@@ -149,8 +162,9 @@ async function listRenters() {
   return ['Ultimos inquilinos:', ...renters.map((renter, index) => `${index + 1}. ${renter.fullName}`)].join('\n')
 }
 
-async function listProperties() {
+async function listProperties(ownerId: string) {
   const properties = await prisma.property.findMany({
+    where: { ownerId },
     orderBy: { createdAt: 'desc' },
     take: 5,
   })
@@ -162,8 +176,9 @@ async function listProperties() {
   return ['Ultimos imoveis:', ...properties.map((property, index) => `${index + 1}. ${property.name} - ${property.city}`)].join('\n')
 }
 
-async function listContracts() {
+async function listContracts(ownerId: string) {
   const leases = await prisma.lease.findMany({
+    where: { ownerId },
     include: {
       renter: true,
       unit: true,
@@ -183,9 +198,10 @@ async function listContracts() {
   ].join('\n')
 }
 
-async function listOpenInvoices() {
+async function listOpenInvoices(ownerId: string) {
   const invoices = await prisma.invoice.findMany({
     where: {
+      ownerId,
       status: { not: 'Paid' },
     },
     include: {
@@ -213,6 +229,7 @@ async function listOpenInvoices() {
 }
 
 export async function handleWhatsappMenuMessage(senderId: string, text: string) {
+  const ownerId = await getWhatsappOwnerId()
   if (isMenuResetCommand(text)) {
     setSession(senderId, 'MAIN_MENU')
     return mainMenuText()
@@ -235,7 +252,7 @@ export async function handleWhatsappMenuMessage(senderId: string, text: string) 
 
       if (normalized === '3') {
         setSession(senderId, 'MAIN_MENU')
-        return `${await listContracts()}\n\n${mainMenuText()}`
+        return `${await listContracts(ownerId)}\n\n${mainMenuText()}`
       }
 
       if (normalized === '4') {
@@ -254,7 +271,7 @@ export async function handleWhatsappMenuMessage(senderId: string, text: string) 
     case 'RENTERS_MENU':
       if (normalized === '1') {
         setSession(senderId, 'RENTERS_MENU')
-        return `${await listRenters()}\n\n${rentersMenuText()}`
+        return `${await listRenters(ownerId)}\n\n${rentersMenuText()}`
       }
 
       if (normalized === '2') {
@@ -277,6 +294,7 @@ export async function handleWhatsappMenuMessage(senderId: string, text: string) 
       const phone = normalized === 'sem' ? null : text.trim()
       const renter = await prisma.renter.create({
         data: {
+          ownerId,
           fullName: session.draft.fullName ?? 'Novo inquilino',
           phone,
         },
@@ -289,7 +307,7 @@ export async function handleWhatsappMenuMessage(senderId: string, text: string) 
     case 'PROPERTIES_MENU':
       if (normalized === '1') {
         setSession(senderId, 'PROPERTIES_MENU')
-        return `${await listProperties()}\n\n${propertiesMenuText()}`
+        return `${await listProperties(ownerId)}\n\n${propertiesMenuText()}`
       }
 
       if (normalized === '2') {
@@ -332,6 +350,7 @@ export async function handleWhatsappMenuMessage(senderId: string, text: string) 
     case 'CREATE_PROPERTY_POSTAL': {
       const property = await prisma.property.create({
         data: {
+          ownerId,
           name: session.draft.name ?? 'Novo imovel',
           addressLine1: session.draft.addressLine1 ?? 'Morada por definir',
           city: session.draft.city ?? 'Cidade por definir',
@@ -348,7 +367,7 @@ export async function handleWhatsappMenuMessage(senderId: string, text: string) 
     case 'INVOICES_MENU':
       if (normalized === '1') {
         setSession(senderId, 'INVOICES_MENU')
-        return `${await listOpenInvoices()}\n\n${invoicesMenuText()}`
+        return `${await listOpenInvoices(ownerId)}\n\n${invoicesMenuText()}`
       }
 
       if (normalized === '2') {
@@ -364,7 +383,7 @@ export async function handleWhatsappMenuMessage(senderId: string, text: string) 
       return `Opcao invalida.\n\n${invoicesMenuText()}`
 
     case 'SEND_INVOICE_ID':
-      await sendInvoiceWhatsApp(text.trim())
+      await sendInvoiceWhatsApp(text.trim(), ownerId)
       setSession(senderId, 'INVOICES_MENU')
       return `Fatura enviada com sucesso.\n\n${invoicesMenuText()}`
 

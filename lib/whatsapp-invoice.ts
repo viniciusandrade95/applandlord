@@ -1,9 +1,9 @@
-﻿import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/prisma'
 import { sendTextMessage } from '@/lib/whatsapp'
 
-export async function getInvoiceForWhatsApp(invoiceId: string) {
-  return prisma.invoice.findUnique({
-    where: { id: invoiceId },
+export async function getInvoiceForWhatsApp(invoiceId: string, ownerId: string) {
+  return prisma.invoice.findFirst({
+    where: { id: invoiceId, ownerId },
     include: {
       lease: {
         include: {
@@ -43,8 +43,8 @@ export function buildInvoiceWhatsAppMessage(invoice: NonNullable<Awaited<ReturnT
   )
 }
 
-export async function sendInvoiceWhatsApp(invoiceId: string, renterId?: string) {
-  const invoice = await getInvoiceForWhatsApp(invoiceId)
+export async function sendInvoiceWhatsApp(invoiceId: string, ownerId: string, renterId?: string) {
+  const invoice = await getInvoiceForWhatsApp(invoiceId, ownerId)
 
   if (!invoice) {
     throw new Error('Invoice not found')

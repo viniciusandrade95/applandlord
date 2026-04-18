@@ -19,11 +19,11 @@
 - [x] Migração dos dados existentes
 
 ## Semana 3 (Dias 11–15) — Modelo de dados robusto
-- [ ] Criar tabelas: `expenses`, `reminders`, `whatsapp_messages`, `audit_logs`
-- [ ] Ajustar `invoices -> rent_charges` (ou manter naming e evoluir estados)
-- [ ] Constraint: 1 contrato ativo por imóvel/unidade
-- [ ] Índices para overdue, due_date, status, owner
-- [ ] Eventos de auditoria para ações críticas
+- [x] Criar tabelas: `expenses`, `reminders`, `whatsapp_messages`, `audit_logs`
+- [x] Ajustar `invoices -> rent_charges` (ou manter naming e evoluir estados)
+- [x] Constraint: 1 contrato ativo por imóvel/unidade
+- [x] Índices para overdue, due_date, status, owner
+- [x] Eventos de auditoria para ações críticas
 
 ## Semana 4 (Dias 16–20) — Fluxo contrato (wizard)
 - [ ] Criar wizard em 4–5 passos

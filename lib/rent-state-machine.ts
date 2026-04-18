@@ -1,11 +1,12 @@
-export const RENT_CHARGE_STATES = ['Pending', 'Overdue', 'Partial', 'Paid', 'Canceled'] as const
+export const RENT_CHARGE_STATES = ['Pending', 'Overdue', 'Partial', 'AwaitingConfirmation', 'Paid', 'Canceled'] as const
 
 export type RentChargeState = (typeof RENT_CHARGE_STATES)[number]
 
 const TRANSITIONS: Record<RentChargeState, RentChargeState[]> = {
-  Pending: ['Overdue', 'Partial', 'Paid', 'Canceled'],
-  Overdue: ['Partial', 'Paid', 'Canceled'],
-  Partial: ['Paid', 'Overdue', 'Canceled'],
+  Pending: ['Overdue', 'Partial', 'AwaitingConfirmation', 'Paid', 'Canceled'],
+  Overdue: ['Partial', 'AwaitingConfirmation', 'Paid', 'Canceled'],
+  Partial: ['AwaitingConfirmation', 'Paid', 'Overdue', 'Canceled'],
+  AwaitingConfirmation: ['Paid', 'Partial', 'Overdue', 'Canceled'],
   Paid: [],
   Canceled: [],
 }
@@ -29,7 +30,7 @@ export type RentChargeTransitionValidationResult = {
  *
  * Validações:
  * - trim obrigatório.
- * - case sensitive por convenção de domínio (`Pending`, `Overdue`, `Partial`, `Paid`, `Canceled`).
+ * - case sensitive por convenção de domínio (`Pending`, `Overdue`, `Partial`, `AwaitingConfirmation`, `Paid`, `Canceled`).
  *
  * Saída:
  * - RentChargeState normalizado.
@@ -101,6 +102,7 @@ export function getRentChargeTransitionMatrix() {
     Pending: [...TRANSITIONS.Pending],
     Overdue: [...TRANSITIONS.Overdue],
     Partial: [...TRANSITIONS.Partial],
+    AwaitingConfirmation: [...TRANSITIONS.AwaitingConfirmation],
     Paid: [...TRANSITIONS.Paid],
     Canceled: [...TRANSITIONS.Canceled],
   }

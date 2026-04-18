@@ -18,8 +18,10 @@ export async function GET() {
       activeLeases,
       overdueInvoices,
       openMaintenance,
-      monthlyPayments,
+      monthlyConfirmedPayments,
+      monthlyExpenses,
       openInvoices,
+      awaitingConfirmation,
       recentPayments,
       recentInvoices,
       occupiedUnits,
@@ -47,6 +49,14 @@ export async function GET() {
         where: {
           ownerId: userId,
           paidAt: { gte: monthStart },
+          confirmationStatus: 'Confirmed',
+        },
+      }),
+      prisma.expense.aggregate({
+        _sum: { amount: true },
+        where: {
+          ownerId: userId,
+          incurredAt: { gte: monthStart },
         },
       }),
       prisma.invoice.aggregate({
@@ -56,6 +66,7 @@ export async function GET() {
           status: { not: 'Paid' },
         },
       }),
+      prisma.payment.count({ where: { ownerId: userId, confirmationStatus: 'AwaitingConfirmation' } }),
       prisma.payment.findMany({
         where: { ownerId: userId },
         include: {
@@ -92,6 +103,9 @@ export async function GET() {
       prisma.unit.count({ where: { ownerId: userId, status: 'Occupied' } }),
     ])
 
+    const confirmedAmount = Number(monthlyConfirmedPayments._sum.amount ?? 0)
+    const expensesAmount = Number(monthlyExpenses._sum.amount ?? 0)
+    const openInvoicesAmount = Number(openInvoices._sum.amount ?? 0)
     const vacantUnits = Math.max(0, units - occupiedUnits)
 
     return NextResponse.json({
@@ -107,12 +121,12 @@ export async function GET() {
         openMaintenance,
       },
       finances: {
-        monthlyPayments: monthlyPayments._sum.amount ?? 0,
-        openInvoices: openInvoices._sum.amount ?? 0,
-        collectionRate:
-          openInvoices._sum.amount && openInvoices._sum.amount > 0
-            ? Math.round((Number(monthlyPayments._sum.amount ?? 0) / Number(openInvoices._sum.amount)) * 100)
-            : 0,
+        monthlyConfirmedPayments: confirmedAmount,
+        monthlyExpenses: expensesAmount,
+        monthlyNetProfit: confirmedAmount - expensesAmount,
+        openInvoices: openInvoicesAmount,
+        awaitingConfirmation,
+        collectionRate: openInvoicesAmount > 0 ? Math.round((confirmedAmount / openInvoicesAmount) * 100) : 0,
       },
       recentPayments,
       recentInvoices,

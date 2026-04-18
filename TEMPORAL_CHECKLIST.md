@@ -40,11 +40,11 @@
 - [x] Testes de transição inválida
 
 ## Semana 6 (Dias 26–30) — Pagamento e despesas (núcleo financeiro)
-- [ ] Registo de pagamento com comprovativo opcional
-- [ ] Confirmação manual final pelo senhorio
-- [ ] CRUD de despesas (imóvel e/ou contrato)
-- [ ] Cálculo de lucro líquido mensal
-- [ ] Ajustes nos agregados do dashboard
+- [x] Registo de pagamento com comprovativo opcional
+- [x] Confirmação manual final pelo senhorio
+- [x] CRUD de despesas (imóvel e/ou contrato)
+- [x] Cálculo de lucro líquido mensal
+- [x] Ajustes nos agregados do dashboard
 
 ## Semana 7 (Dias 31–35) — Dashboard “Atenção necessária”
 - [ ] Header com resumo humano do dia

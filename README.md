@@ -7,11 +7,12 @@ MVP de gestao imobiliaria com Next.js, Prisma e PostgreSQL.
 - Cadastro de propriedades, unidades e inquilinos
 - Criação de contratos de locação
 - Geração mensal de faturas
-- Registro manual de pagamentos
+- Registro de pagamentos com comprovativo opcional e confirmação manual
 - Tickets simples de manutenção
 - Envio de faturas por WhatsApp
 - Webhook com menu interativo de WhatsApp para listar e criar registos simples
-- Painel com métricas básicas de operação
+- CRUD de despesas por imóvel/contrato
+- Painel com métricas financeiras (receita confirmada, despesas, lucro líquido)
 
 ## Como rodar
 
@@ -77,3 +78,6 @@ Fluxos suportados:
 
 - `docs/SPRINT4_CONTRACT_WIZARD.md`: implementação da Sprint 4 com wizard de contrato (UX por estados/transições), validações de domínio, contratos de API, testes de entrada/saída e plano de rollback.
 - `docs/SPRINT5_RENT_AUTOMATION_STATE_MACHINE.md`: implementação da Sprint 5 com geração automática de rendas, máquina de estados de cobrança, endpoint seguro de transição, logs de transição e plano de testes/rollback.
+
+- `docs/SPRINT6_FINANCIAL_CORE.md`: implementação da Sprint 6 com pagamentos em awaiting confirmation, confirmação manual, CRUD de despesas, lucro líquido e testes de regras.
+- `docs/FINANCIAL_API_CONTRACTS.md`: contratos de entrada/saída e matriz de erros das rotas financeiras.

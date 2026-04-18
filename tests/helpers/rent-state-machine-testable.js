@@ -1,9 +1,10 @@
-const RENT_CHARGE_STATES = ['Pending', 'Overdue', 'Partial', 'Paid', 'Canceled']
+const RENT_CHARGE_STATES = ['Pending', 'Overdue', 'Partial', 'AwaitingConfirmation', 'Paid', 'Canceled']
 
 const TRANSITIONS = {
-  Pending: ['Overdue', 'Partial', 'Paid', 'Canceled'],
-  Overdue: ['Partial', 'Paid', 'Canceled'],
-  Partial: ['Paid', 'Overdue', 'Canceled'],
+  Pending: ['Overdue', 'Partial', 'AwaitingConfirmation', 'Paid', 'Canceled'],
+  Overdue: ['Partial', 'AwaitingConfirmation', 'Paid', 'Canceled'],
+  Partial: ['AwaitingConfirmation', 'Paid', 'Overdue', 'Canceled'],
+  AwaitingConfirmation: ['Paid', 'Partial', 'Overdue', 'Canceled'],
   Paid: [],
   Canceled: [],
 }

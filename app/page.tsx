@@ -16,8 +16,11 @@ type Dashboard = {
     openMaintenance: number
   }
   finances: {
-    monthlyPayments: number
+    monthlyConfirmedPayments: number
+    monthlyExpenses: number
+    monthlyNetProfit: number
     openInvoices: number
+    awaitingConfirmation: number
     collectionRate: number
   }
 }
@@ -79,7 +82,7 @@ function periodLabel(period?: string) {
 function chipClass(value?: string) {
   const normalized = (value || '').toLowerCase()
   if (['paid', 'occupied', 'active', 'resolved'].includes(normalized)) return 'chip chip-positive'
-  if (['pending', 'partial', 'vacant', 'open', 'normal'].includes(normalized)) return 'chip chip-warning'
+  if (['pending', 'partial', 'awaitingconfirmation', 'vacant', 'open', 'normal'].includes(normalized)) return 'chip chip-warning'
   if (['overdue', 'ended', 'urgent', 'cancelled'].includes(normalized)) return 'chip chip-danger'
   return 'chip chip-accent'
 }
@@ -240,7 +243,7 @@ export default function Home() {
               <article className="summary-card"><div className="label">Imóveis</div><div className="value">{counts?.properties ?? 0}</div><div className="hint">Portfólio ativo</div></article>
               <article className="summary-card"><div className="label">Unidades</div><div className="value">{counts?.units ?? 0}</div><div className="hint">{counts ? `${counts.occupiedUnits} ocupadas` : 'Estrutura operacional'}</div></article>
               <article className="summary-card"><div className="label">A receber</div><div className="value">{finances ? money(finances.openInvoices) : '€0'}</div><div className="hint">Saldo aberto</div></article>
-              <article className="summary-card"><div className="label">Receita do mês</div><div className="value">{finances ? money(finances.monthlyPayments) : '€0'}</div><div className="hint">Pagamentos liquidados</div></article>
+              <article className="summary-card"><div className="label">Receita confirmada</div><div className="value">{finances ? money(finances.monthlyConfirmedPayments) : '€0'}</div><div className="hint">Pagamentos confirmados</div></article>
             </div>
           </div>
           <aside className="status-panel">
@@ -255,6 +258,8 @@ export default function Home() {
               <div className="pill pill-soft">Contratos ativos: {counts?.activeLeases ?? 0}</div>
               <div className="pill pill-soft">Cobranças em atraso: {counts?.overdueInvoices ?? 0}</div>
               <div className="pill pill-soft">Taxa de recebimento: {finances?.collectionRate ?? 0}%</div>
+              <div className="pill pill-soft">Aguardando confirmação: {finances?.awaitingConfirmation ?? 0}</div>
+              <div className="pill pill-soft">Lucro líquido mensal: {finances ? money(finances.monthlyNetProfit) : '€0'}</div>
             </div>
           </aside>
         </div>

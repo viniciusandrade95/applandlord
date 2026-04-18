@@ -90,6 +90,13 @@
 - **Impacto no roadmap:** conclui integralmente a Semana 8 (Dias 36–40), preparando as próximas sprints com base de UX mais clara para demo e operações.
 - **Risco/rollback:** risco baixo (sem mudança de schema nem contratos backend); rollback via reversão dos arquivos de UI/documentação da sprint.
 
+## 2026-04-18 (Sprint 11 — WhatsApp inbound inquilino)
+- **Autor:** Codex
+- **Tipo:** feat
+- **Escopo:** fluxo inbound de inquilino, parser de intenção, deduplicação/throttling, vínculo telefone->contrato e rastreabilidade operacional
+- **Descrição:** webhook `POST /api/whatsapp/webhook` atualizado para separar fluxo admin e fluxo de inquilino; criado service `lib/tenant-inbound.ts` com parser de intenção (`tenant_claimed_paid`, `tenant_problem_reported`, `tenant_promised_tomorrow`), resolução de contexto por telefone, anti-duplicação por `dedupeKey` e throttling por janela; aplicada atualização de estado de cobrança para `AwaitingConfirmation` quando inquilino declara pagamento; criada abertura automática de tickets por palavras-chave; adicionada tabela `WhatsAppInboundEvent` via migração `prisma/migrations/20260418235900_sprint11_whatsapp_inbound/migration.sql`; incluídos testes automatizados de idempotência e concorrência (`tests/tenant-inbound-idempotency.test.js`) e documentação técnica completa em `docs/SPRINT11_WHATSAPP_INBOUND.md`.
+- **Impacto no roadmap:** conclui integralmente a Semana 11 (Dias 51–55) com fluxo inbound funcional e rastreável.
+- **Risco/rollback:** risco moderado (nova tabela e novo caminho transacional no webhook); rollback estruturado em `prisma/migrations/20260418235900_sprint11_whatsapp_inbound/rollback.sql`.
 ## 2026-04-18 (Sprint 10 — WhatsApp outbound real)
 - **Autor:** Codex
 - **Tipo:** feat

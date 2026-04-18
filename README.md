@@ -76,3 +76,4 @@ Fluxos suportados:
 - `docs/SPRINT3_SAAS_SCHEMA.md`: implementação da Sprint 3 com evolução de schema SaaS, constraint de contrato ativo, índices essenciais, auditoria e plano de rollback.
 
 - `docs/SPRINT4_CONTRACT_WIZARD.md`: implementação da Sprint 4 com wizard de contrato (UX por estados/transições), validações de domínio, contratos de API, testes de entrada/saída e plano de rollback.
+- `docs/SPRINT5_RENT_AUTOMATION_STATE_MACHINE.md`: implementação da Sprint 5 com geração automática de rendas, máquina de estados de cobrança, endpoint seguro de transição, logs de transição e plano de testes/rollback.

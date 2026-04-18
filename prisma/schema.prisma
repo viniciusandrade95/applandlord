@@ -8,23 +8,24 @@ datasource db {
 }
 
 model User {
-  id           String              @id @default(cuid())
-  email        String              @unique
-  passwordHash String
-  name         String?
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
-  properties   Property[]
-  units        Unit[]
-  renters      Renter[]
-  leases       Lease[]
-  invoices     Invoice[]
-  payments     Payment[]
-  maintenance  MaintenanceTicket[]
-  expenses     Expense[]
-  reminders    Reminder[]
-  auditLogs    AuditLog[]
-  whatsappMsgs WhatsAppMessage[]
+  id             String                    @id @default(cuid())
+  email          String                    @unique
+  passwordHash   String
+  name           String?
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+  properties     Property[]
+  units          Unit[]
+  renters        Renter[]
+  leases         Lease[]
+  invoices       Invoice[]
+  payments       Payment[]
+  maintenance    MaintenanceTicket[]
+  expenses       Expense[]
+  reminders      Reminder[]
+  auditLogs      AuditLog[]
+  whatsappMsgs   WhatsAppMessage[]
+  transitionLogs RentChargeTransitionLog[]
 }
 
 model Property {
@@ -122,24 +123,25 @@ model Lease {
 }
 
 model Invoice {
-  id            String            @id @default(cuid())
-  ownerId       String
-  leaseId       String
-  period        String
-  dueDate       DateTime
-  amount        Float
-  status        String            @default("Pending")
-  paidAt        DateTime?
-  paymentMethod String?
-  notes         String?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-  owner         User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  lease         Lease             @relation(fields: [leaseId], references: [id], onDelete: Cascade)
-  payments      Payment[]
-  expenses      Expense[]
-  reminders     Reminder[]
-  whatsappMsgs  WhatsAppMessage[]
+  id             String                    @id @default(cuid())
+  ownerId        String
+  leaseId        String
+  period         String
+  dueDate        DateTime
+  amount         Float
+  status         String                    @default("Pending")
+  paidAt         DateTime?
+  paymentMethod  String?
+  notes          String?
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+  owner          User                      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  lease          Lease                     @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  payments       Payment[]
+  expenses       Expense[]
+  reminders      Reminder[]
+  whatsappMsgs   WhatsAppMessage[]
+  transitionLogs RentChargeTransitionLog[]
 
   @@unique([leaseId, period])
   @@index([ownerId])
@@ -147,6 +149,23 @@ model Invoice {
   @@index([status])
   @@index([ownerId, status, dueDate])
   @@map("rent_charges")
+}
+
+model RentChargeTransitionLog {
+  id                String   @id @default(cuid())
+  ownerId           String
+  invoiceId         String
+  previousStatus    String
+  newStatus         String
+  note              String?
+  triggeredByUserId String?
+  createdAt         DateTime @default(now())
+  owner             User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  invoice           Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([invoiceId])
+  @@index([ownerId, invoiceId, createdAt])
 }
 
 model Payment {

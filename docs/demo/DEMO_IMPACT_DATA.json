@@ -1,0 +1,89 @@
+{
+  "metadata": {
+    "version": "sprint14",
+    "generatedAt": "2026-04-18",
+    "owner": "demo@applandlord.local",
+    "notes": "Dados 100% fictícios para demo comercial controlada."
+  },
+  "storyKpis": {
+    "portfolio": {
+      "unitsTotal": 12,
+      "unitsOccupied": 10,
+      "vacancyRatePercent": 16.7
+    },
+    "collections": {
+      "monthlyExpectedEur": 9720,
+      "monthlyCollectedEur": 8820,
+      "monthlyCollectionRatePercent": 90.7,
+      "overdueInvoices": 2,
+      "dueTodayInvoices": 1,
+      "awaitingConfirmation": 1
+    },
+    "operations": {
+      "openTickets": 3,
+      "urgentTickets": 1,
+      "averageFirstResponseHours": 3.8,
+      "expiringLeasesIn7Days": 1
+    },
+    "communication": {
+      "whatsappRemindersSentLast30Days": 18,
+      "tenantReplyRatePercent": 72,
+      "resolvedWithoutCallPercent": 61
+    }
+  },
+  "dashboardInput": {
+    "counts": {
+      "overdueInvoices": 2,
+      "openMaintenance": 3,
+      "vacantUnits": 2
+    },
+    "dueTodayInvoices": 1,
+    "urgentMaintenance": 1,
+    "expiringLeasesIn7Days": 1,
+    "finances": {
+      "awaitingConfirmation": 1,
+      "monthlyNetProfit": 6410,
+      "collectionRate": 90.7
+    }
+  },
+  "contractWizardInput": {
+    "renterMode": "new",
+    "newRenterFullName": "Carla Mendes",
+    "newRenterEmail": "carla.mendes@example.com",
+    "newRenterPhone": "+351912345678",
+    "propertyId": "prop_aurora",
+    "unitId": "unit_a1",
+    "startDate": "2026-05-01",
+    "endDate": "2027-04-30",
+    "monthlyRent": 950,
+    "depositAmount": 1900,
+    "dueDay": 8,
+    "status": "Active",
+    "notes": "Contrato usado no roteiro de demonstração."
+  },
+  "relationsValidation": {
+    "unitPropertyId": "prop_aurora",
+    "unitStatus": "Vacant",
+    "activeLeaseCountForUnit": 0
+  },
+  "inboundScenario": {
+    "ownerId": "owner_demo",
+    "senderPhone": "+351 912 345 678",
+    "providerMessageId": "wamid.demo.inbound.001",
+    "messageBody": "Olá, já paguei hoje por transferência e envio comprovativo."
+  },
+  "demoNarrative": {
+    "pain": [
+      "Cobranças vencidas exigem ações manuais e pouco rastreáveis.",
+      "Pedidos urgentes de manutenção perdem prioridade em canais dispersos."
+    ],
+    "solution": [
+      "Dashboard prioriza atenção diária com CTA de cobrança e confirmação.",
+      "Fluxo WhatsApp outbound/inbound centraliza comunicação e trilha de auditoria."
+    ],
+    "value": [
+      "Maior previsibilidade de caixa com alertas e confirmações em tempo real.",
+      "Operação enxuta com menos follow-up manual e melhor experiência do inquilino."
+    ]
+  }
+}

@@ -96,8 +96,8 @@
 - [x] Checklist de release
 
 ## Semana 14 (Dias 66–70) — Demo final + go-live controlado
-- [ ] Script de demo de 10 minutos
-- [ ] Dados fictícios de impacto (atrasos, ticket urgente, contrato a expirar)
-- [ ] Versão “demo mode” estável
-- [ ] Materiais de apresentação (dor -> solução -> valor)
-- [ ] Plano pós-demo (próximos 30 dias)
+- [x] Script de demo de 10 minutos
+- [x] Dados fictícios de impacto (atrasos, ticket urgente, contrato a expirar)
+- [x] Versão “demo mode” estável
+- [x] Materiais de apresentação (dor -> solução -> valor)
+- [x] Plano pós-demo (próximos 30 dias)

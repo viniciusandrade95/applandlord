@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server'
 import { sendInvoiceWhatsApp } from '@/lib/whatsapp-invoice'
+import { requireCurrentUserId } from '@/lib/auth'
 
 export async function POST(request: Request) {
+  const { userId, response } = await requireCurrentUserId()
+  if (!userId) return response
+
   try {
     const body = await request.json()
     const tenantId = typeof body?.tenantId === 'string' ? body.tenantId.trim() : ''
@@ -14,7 +18,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const result = await sendInvoiceWhatsApp(invoiceId, tenantId)
+    const result = await sendInvoiceWhatsApp(invoiceId, userId, tenantId)
 
     console.info('Sending invoice via WhatsApp', {
       invoiceId: result.invoice.id,

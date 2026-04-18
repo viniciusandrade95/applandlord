@@ -1,15 +1,22 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { asString } from '@/lib/landlord'
+import { requireCurrentUserId } from '@/lib/auth'
 
 export async function GET() {
+  const { userId, response } = await requireCurrentUserId()
+  if (!userId) return response
+
   try {
     const properties = await prisma.property.findMany({
+      where: { ownerId: userId },
       include: {
         units: {
+          where: { ownerId: userId },
           orderBy: { createdAt: 'desc' },
         },
         leases: {
+          where: { ownerId: userId },
           include: {
             renter: true,
             unit: true,
@@ -29,6 +36,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const { userId, response } = await requireCurrentUserId()
+  if (!userId) return response
+
   try {
     const body = await request.json()
     const name = asString(body.name)
@@ -46,6 +56,7 @@ export async function POST(request: Request) {
 
     const property = await prisma.property.create({
       data: {
+        ownerId: userId,
         name,
         addressLine1,
         addressLine2: asString(body.addressLine2) || null,

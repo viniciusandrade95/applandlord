@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { asDate, asNumber, asString, dueDateForPeriod, monthKey } from '@/lib/landlord'
+import { requireCurrentUserId } from '@/lib/auth'
 
 export async function GET() {
+  const { userId, response } = await requireCurrentUserId()
+  if (!userId) return response
+
   try {
     const invoices = await prisma.invoice.findMany({
+      where: { ownerId: userId },
       include: {
         lease: {
           include: {
@@ -27,12 +32,15 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const { userId, response } = await requireCurrentUserId()
+  if (!userId) return response
+
   try {
     const body = await request.json()
     const leaseId = asString(body.leaseId)
     const lease = leaseId
-      ? await prisma.lease.findUnique({
-          where: { id: leaseId },
+      ? await prisma.lease.findFirst({
+          where: { id: leaseId, ownerId: userId },
           include: { unit: true, property: true, renter: true },
         })
       : null
@@ -47,6 +55,7 @@ export async function POST(request: Request) {
 
     const invoice = await prisma.invoice.create({
       data: {
+        ownerId: userId,
         leaseId,
         period,
         dueDate,

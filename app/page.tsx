@@ -61,6 +61,7 @@ type State = {
 }
 
 type Notice = { kind: 'success' | 'error'; text: string } | null
+type EmptyState = { title: string; hint: string; actionLabel: string; actionHref: string }
 
 const initialState: State = {
   dashboard: null,
@@ -128,6 +129,18 @@ function payload(form: HTMLFormElement) {
   return Object.fromEntries(new FormData(form).entries())
 }
 
+function apiErrorMessage(data: unknown, fallback: string) {
+  if (data && typeof data === 'object' && 'error' in data && typeof (data as { error?: unknown }).error === 'string') {
+    return (data as { error: string }).error
+  }
+
+  if (data && typeof data === 'object' && 'message' in data && typeof (data as { message?: unknown }).message === 'string') {
+    return (data as { message: string }).message
+  }
+
+  return fallback
+}
+
 function Panel({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
   return (
     <article className="card">
@@ -140,8 +153,18 @@ function Panel({ title, subtitle, children }: { title: string; subtitle: string;
   )
 }
 
-function RecordList({ items, empty, render }: { items: Row[]; empty: string; render: (row: Row) => ReactNode }) {
-  if (!items.length) return <div className="empty">{empty}</div>
+function RecordList({ items, empty, render }: { items: Row[]; empty: EmptyState; render: (row: Row) => ReactNode }) {
+  if (!items.length) {
+    return (
+      <div className="empty">
+        <strong>{empty.title}</strong>
+        <p className="muted">{empty.hint}</p>
+        <a className="inline-link" href={empty.actionHref}>
+          {empty.actionLabel}
+        </a>
+      </div>
+    )
+  }
 
   return <div className="stack">{items.map(render)}</div>
 }
@@ -163,14 +186,14 @@ export default function Home() {
       const data = await Promise.all(
         responses.map(async (response) => {
           const body = await response.json().catch(() => null)
-          if (!response.ok) throw new Error(body?.error || 'Falha ao carregar dados')
+          if (!response.ok) throw new Error(apiErrorMessage(body, 'Não foi possível carregar os dados do painel.'))
           return body
         })
       )
 
       setState({ dashboard: data[0], properties: data[1], units: data[2], renters: data[3], leases: data[4], invoices: data[5], payments: data[6], maintenance: data[7] })
     } catch (error) {
-      setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Falha ao carregar painel' })
+      setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Falha ao carregar painel do senhorio.' })
     } finally {
       setLoading(false)
     }
@@ -187,7 +210,7 @@ export default function Home() {
     try {
       const response = await fetch(endpoint, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const data = await response.json().catch(() => null)
-      if (!response.ok) throw new Error(data?.error || 'Falha na operação')
+      if (!response.ok) throw new Error(apiErrorMessage(data, 'Não foi possível concluir o pedido.'))
       setNotice({ kind: 'success', text: message })
       await load()
     } finally {
@@ -201,7 +224,7 @@ export default function Home() {
       typeof invoice.lease?.renter?.id === 'string' ? (invoice.lease.renter.id as string) : ''
 
     if (!invoiceId || !tenantId) {
-      setNotice({ kind: 'error', text: 'Nao foi possivel identificar a fatura ou o inquilino.' })
+      setNotice({ kind: 'error', text: 'Não foi possível identificar a fatura ou o inquilino para envio.' })
       return
     }
 
@@ -215,7 +238,7 @@ export default function Home() {
       })
 
       const data = await response.json().catch(() => null)
-      if (!response.ok) throw new Error(data?.error || 'Falha ao enviar mensagem')
+      if (!response.ok) throw new Error(apiErrorMessage(data, 'Não foi possível enviar a mensagem de cobrança.'))
 
       setNotice({ kind: 'success', text: data?.detail || 'Mensagem enviada por WhatsApp.' })
     } catch (error) {
@@ -277,11 +300,11 @@ export default function Home() {
             <span className="eyebrow">Applandlord MVP</span>
             <h1>Imóveis, contratos e cobranças num só painel.</h1>
             <p className="hero-copy">
-              Este painel cobre o fluxo principal de gestão imobiliária: criar propriedades, ligar unidades, cadastrar inquilinos, assinar contratos, gerar cobranças e dar baixa em pagamentos.
+              Organize o dia da sua operação de arrendamento num único fluxo: cadastrar imóveis, ocupar unidades, emitir cobranças e confirmar pagamentos.
             </p>
             <div className="hero-actions">
-              <a className="button button-primary" href="#cadastros">Começar pelos cadastros</a>
-              <a className="button button-secondary" href="#financeiro">Ir para o financeiro</a>
+              <a className="button button-primary" href="#cadastros">Começar cadastro base</a>
+              <a className="inline-link" href="#financeiro">Já tenho base pronta, quero ir ao financeiro</a>
             </div>
             <div className="summary-grid">
               <article className="summary-card"><div className="label">Imóveis</div><div className="value">{counts?.properties ?? 0}</div><div className="hint">Portfólio ativo</div></article>
@@ -291,12 +314,12 @@ export default function Home() {
             </div>
           </div>
           <aside className="status-panel">
-            <h2>Centro de comando</h2>
-            <p>O ciclo MVP já está operacional e sem dependências externas. Os dados são gravados via Prisma/PostgreSQL e aparecem em tempo real no painel.</p>
+            <h2>Resumo do senhorio</h2>
+            <p>Veja rapidamente o que precisa de decisão hoje: contratos ativos, cobranças em atraso e lucro líquido do mês.</p>
             <div className="pills">
-              <span className="pill pill-soft">CRUD principal</span>
-              <span className="pill pill-positive">Cobrança manual</span>
-              <span className="pill pill-warning">Manutenção opcional</span>
+              <span className="pill pill-soft">Base operacional</span>
+              <span className="pill pill-positive">Cobranças ativas</span>
+              <span className="pill pill-warning">Manutenção em curso</span>
             </div>
             <div className="stack-sm">
               <div className="pill pill-soft">Contratos ativos: {counts?.activeLeases ?? 0}</div>
@@ -380,15 +403,15 @@ export default function Home() {
       <section className="section" id="cadastros">
         <div className="section-header">
           <div>
-            <h2 className="section-title">Cadastros</h2>
-            <p>Primeiro passo do fluxo: propriedade, unidade e inquilino.</p>
+            <h2 className="section-title">Base do portfólio</h2>
+            <p>Registe imóveis, unidades e inquilinos para começar a cobrar com contexto completo.</p>
           </div>
           {loading ? <span className="pill pill-soft">Sincronizando...</span> : <span className="pill pill-positive">Online</span>}
         </div>
         {notice ? <div className={`notice ${notice.kind === 'success' ? 'notice-success' : 'notice-error'}`}>{notice.text}</div> : null}
         <div className="grid-3">
-          <Panel title="Propriedades" subtitle={`${propertyOptions.length} registadas`}>
-            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/properties', payload(form), 'Imóvel criado.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Falha ao criar imóvel' }) } }}>
+          <Panel title="Imóveis" subtitle={`${propertyOptions.length} registados`}>
+            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/properties', payload(form), 'Imóvel registado com sucesso.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível registar o imóvel.' }) } }}>
               <div className="form-grid">
                 <div className="field"><label htmlFor="property-name">Nome</label><input id="property-name" name="name" required /></div>
                 <div className="field"><label htmlFor="property-address1">Endereço</label><input id="property-address1" name="addressLine1" required /></div>
@@ -400,7 +423,7 @@ export default function Home() {
               </div>
               <div className="form-actions"><button className="button button-primary" type="submit" disabled={submitting === '/api/properties'}>{submitting === '/api/properties' ? 'A criar...' : 'Criar imóvel'}</button></div>
             </form>
-            <RecordList items={state.properties} empty="Ainda não há propriedades." render={(property) => (
+            <RecordList items={state.properties} empty={{ title: 'Ainda não existem imóveis registados.', hint: 'Registe o primeiro imóvel para desbloquear unidades, contratos e cobranças.', actionLabel: 'Registar primeiro imóvel', actionHref: '#property-name' }} render={(property) => (
               <div key={property.id} className="empty">
                 <strong>{property.name as string}</strong><br />
                 <span className="muted">{property.addressLine1 as string}, {(property.city as string) ?? ''}</span>
@@ -408,7 +431,7 @@ export default function Home() {
             )} />
           </Panel>
           <Panel title="Unidades" subtitle={`${unitOptions.length} registadas`}>
-            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/units', payload(form), 'Unidade criada.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Falha ao criar unidade' }) } }}>
+            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/units', payload(form), 'Unidade registada com sucesso.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível registar a unidade.' }) } }}>
               <div className="form-grid">
                 <div className="field"><label htmlFor="unit-property">Imóvel</label><select id="unit-property" name="propertyId" required defaultValue=""><option value="" disabled>Selecionar</option>{propertyOptions.map((property) => <option key={property.id} value={property.id}>{property.label}</option>)}</select></div>
                 <div className="field"><label htmlFor="unit-name">Nome</label><input id="unit-name" name="name" required /></div>
@@ -420,7 +443,7 @@ export default function Home() {
               </div>
               <div className="form-actions"><button className="button button-primary" type="submit" disabled={propertyOptions.length === 0 || submitting === '/api/units'}>{submitting === '/api/units' ? 'A criar...' : 'Criar unidade'}</button></div>
             </form>
-            <RecordList items={state.units} empty="Ainda não há unidades." render={(unit) => (
+            <RecordList items={state.units} empty={{ title: 'Ainda não existem unidades registadas.', hint: 'Depois de criar o imóvel, registe cada unidade para permitir contratos e cobrança mensal.', actionLabel: 'Registar unidade', actionHref: '#unit-property' }} render={(unit) => (
               <div key={unit.id} className="empty">
                 <strong>{unit.name as string}</strong><br />
                 <span className="muted">{unit.property?.name ?? '—'} · {money(Number(unit.monthlyRent ?? 0))}</span><br />
@@ -430,7 +453,7 @@ export default function Home() {
           </Panel>
 
           <Panel title="Inquilinos" subtitle={`${renterOptions.length} registados`}>
-            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/renters', payload(form), 'Inquilino criado.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Falha ao criar inquilino' }) } }}>
+            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/renters', payload(form), 'Inquilino registado com sucesso.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível registar o inquilino.' }) } }}>
               <div className="form-grid">
                 <div className="field field-full"><label htmlFor="renter-name">Nome completo</label><input id="renter-name" name="fullName" required /></div>
                 <div className="field"><label htmlFor="renter-email">Email</label><input id="renter-email" name="email" type="email" /></div>
@@ -440,7 +463,7 @@ export default function Home() {
               </div>
               <div className="form-actions"><button className="button button-primary" type="submit" disabled={submitting === '/api/renters'}>{submitting === '/api/renters' ? 'A criar...' : 'Criar inquilino'}</button></div>
             </form>
-            <RecordList items={state.renters} empty="Ainda não há inquilinos." render={(renter) => (
+            <RecordList items={state.renters} empty={{ title: 'Ainda não existem inquilinos registados.', hint: 'Adicione um inquilino agora para acelerar a criação do próximo contrato.', actionLabel: 'Registar inquilino', actionHref: '#renter-name' }} render={(renter) => (
               <div key={renter.id} className="empty">
                 <strong>{renter.fullName as string}</strong><br />
                 <span className="muted">{renter.email ? (renter.email as string) : 'Sem email'} · {renter.phone ? (renter.phone as string) : 'Sem telefone'}</span>
@@ -453,8 +476,8 @@ export default function Home() {
       <section className="section" id="contratos">
         <div className="section-header">
           <div>
-            <h2 className="section-title">Contratos</h2>
-            <p>Conecte imóvel, unidade e inquilino e o sistema passa a controlar o aluguel.</p>
+            <h2 className="section-title">Contratos de arrendamento</h2>
+            <p>Ligue imóvel, unidade e inquilino com validações guiadas para reduzir erros de operação.</p>
           </div>
           <span className="pill pill-soft">Ativos: {activeLeaseCount}</span>
         </div>
@@ -471,7 +494,7 @@ export default function Home() {
           </Panel>
 
           <Panel title="Contratos ativos" subtitle="Visão rápida do portfólio">
-            <RecordList items={state.leases} empty="Ainda não há contratos." render={(lease) => (
+            <RecordList items={state.leases} empty={{ title: 'Ainda não existem contratos ativos.', hint: 'Use o wizard ao lado para fechar o primeiro contrato e iniciar a cobrança mensal.', actionLabel: 'Abrir wizard de contrato', actionHref: '#contratos' }} render={(lease) => (
               <div key={lease.id} className="empty">
                 <strong>{lease.renter?.fullName ?? '—'}</strong><br />
                 <span className="muted">{lease.property?.name ?? '—'} · {lease.unit?.name ?? '—'} · {money(Number(lease.monthlyRent ?? 0))}</span><br />
@@ -485,20 +508,20 @@ export default function Home() {
         <div className="section-header">
           <div>
             <h2 className="section-title">Cobrança e pagamentos</h2>
-            <p>Gerar faturas mensais e dar baixa manual em pagamentos, sem sair do painel.</p>
+            <p>Emita cobranças mensais e confirme pagamentos com uma linguagem clara para o dia a dia do senhorio.</p>
           </div>
           <span className="pill pill-soft">A receber: {finances ? money(finances.openInvoices) : '€0'}</span>
         </div>
         <div className="grid-2">
-          <Panel title="Gerar faturas" subtitle="Cobrança mensal automática">
-            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/invoices/generate', payload(form), 'Faturas geradas.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Falha ao gerar faturas' }) } }}>
+          <Panel title="Gerar cobranças" subtitle="Cobrança mensal automática">
+            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/invoices/generate', payload(form), 'Cobranças geradas com sucesso.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível gerar as cobranças.' }) } }}>
               <div className="form-grid">
                 <div className="field"><label htmlFor="invoice-period">Período</label><input id="invoice-period" name="period" type="month" defaultValue={new Date().toISOString().slice(0, 7)} /></div>
                 <div className="field"><label>Contratos ativos</label><input value={`${activeLeaseCount}`} readOnly /></div>
               </div>
-              <div className="form-actions"><button className="button button-primary" type="submit" disabled={activeLeaseCount === 0 || submitting === '/api/invoices/generate'}>{submitting === '/api/invoices/generate' ? 'A gerar...' : 'Gerar faturas'}</button></div>
+              <div className="form-actions"><button className="button button-primary" type="submit" disabled={activeLeaseCount === 0 || submitting === '/api/invoices/generate'}>{submitting === '/api/invoices/generate' ? 'A gerar...' : 'Gerar cobranças do período'}</button></div>
             </form>
-            <RecordList items={state.invoices} empty="Ainda não há faturas." render={(invoice) => (
+            <RecordList items={state.invoices} empty={{ title: 'Ainda não há cobranças emitidas.', hint: 'Escolha o período e gere cobranças para os contratos ativos.', actionLabel: 'Gerar cobranças agora', actionHref: '#invoice-period' }} render={(invoice) => (
               <div key={invoice.id} className="empty">
                 <strong>{invoice.lease?.renter?.fullName ?? '—'}</strong><br />
                 <span className="muted">{periodLabel(invoice.period as string)} · {money(Number(invoice.amount ?? 0))}</span><br />
@@ -522,7 +545,7 @@ export default function Home() {
           </Panel>
 
           <Panel title="Registar pagamento" subtitle="Baixa e reconciliação manual">
-            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/payments', payload(form), 'Pagamento registado.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Falha ao registar pagamento' }) } }}>
+            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/payments', payload(form), 'Pagamento registado e enviado para confirmação.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível registar o pagamento.' }) } }}>
               <div className="form-grid">
                 <div className="field field-full"><label htmlFor="payment-invoice">Fatura</label><select id="payment-invoice" name="invoiceId" required defaultValue=""><option value="" disabled>Selecionar</option>{invoiceOptions.map((invoice) => <option key={invoice.id} value={invoice.id}>{invoice.label}</option>)}</select></div>
                 <div className="field"><label htmlFor="payment-amount">Valor</label><input id="payment-amount" name="amount" type="number" step="0.01" /></div>
@@ -532,7 +555,7 @@ export default function Home() {
               </div>
               <div className="form-actions"><button className="button button-primary" type="submit" disabled={invoiceOptions.length === 0 || submitting === '/api/payments'}>{submitting === '/api/payments' ? 'A registar...' : 'Registar pagamento'}</button></div>
             </form>
-            <RecordList items={state.payments} empty="Ainda não há pagamentos." render={(payment) => (
+            <RecordList items={state.payments} empty={{ title: 'Ainda não há pagamentos registados.', hint: 'Selecione uma cobrança em aberto para registar o primeiro pagamento.', actionLabel: 'Registar pagamento', actionHref: '#payment-invoice' }} render={(payment) => (
               <div key={payment.id} className="empty">
                 <strong>{payment.invoice?.lease?.renter?.fullName ?? '—'}</strong><br />
                 <span className="muted">{dateTime(payment.paidAt)} · {money(Number(payment.amount ?? 0))} · {payment.method as string}</span>
@@ -547,12 +570,16 @@ export default function Home() {
           <div>
             <h2 className="section-title">Operação</h2>
             <p>Fluxo de tickets com rastreabilidade completa e filtros por prioridade/estado.</p>
+            <h2 className="section-title">Operação e manutenção</h2>
+            <p>Abra pedidos de manutenção com prioridade e acompanhe o estado sem perder contexto.</p>
           </div>
           <span className="pill pill-soft">Tickets: {filteredTickets.length}/{state.maintenance.length}</span>
         </div>
         <div className="grid-2">
           <Panel title="Novo ticket" subtitle="Abertura formal">
             <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/tickets', payload(form), 'Ticket criado.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Falha ao criar ticket' }) } }}>
+          <Panel title="Nova manutenção" subtitle="Abrir chamado">
+            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/maintenance', payload(form), 'Pedido de manutenção criado com sucesso.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível criar o pedido de manutenção.' }) } }}>
               <div className="form-grid">
                 <div className="field field-full"><label htmlFor="ticket-title">Título</label><input id="ticket-title" name="title" required /></div>
                 <div className="field"><label htmlFor="ticket-property">Imóvel</label><select id="ticket-property" name="propertyId" defaultValue=""><option value="">Opcional</option>{propertyOptions.map((property) => <option key={property.id} value={property.id}>{property.label}</option>)}</select></div>
@@ -573,6 +600,8 @@ export default function Home() {
               <div className="field"><label htmlFor="ticket-filter-priority">Filtrar prioridade</label><select id="ticket-filter-priority" value={ticketPriorityFilter} onChange={(event) => setTicketPriorityFilter(event.target.value)}><option value="">Todas</option><option>Low</option><option>Normal</option><option>High</option><option>Urgent</option></select></div>
             </div>
             <RecordList items={filteredTickets} empty="Ainda não há tickets para o filtro selecionado." render={(ticket) => (
+          <Panel title="Tickets recentes" subtitle="Operação diária">
+            <RecordList items={state.maintenance} empty={{ title: 'Ainda não há pedidos de manutenção.', hint: 'Registe o primeiro pedido para manter histórico e prioridade da operação.', actionLabel: 'Abrir pedido de manutenção', actionHref: '#ticket-title' }} render={(ticket) => (
               <div key={ticket.id} className="empty">
                 <strong>{ticket.title as string}</strong><br />
                 <span className="muted">{ticket.property?.name ?? '—'} {ticket.unit?.name ? `· ${ticket.unit?.name}` : ''} {ticket.lease ? `· contrato ${ticket.lease?.id?.slice(0, 6)}` : ''} {ticket.renter?.fullName ? `· ${ticket.renter?.fullName}` : ''}</span><br />
@@ -595,7 +624,7 @@ export default function Home() {
       </section>
 
       <footer className="footer-note">
-        {loading ? 'Carregando dados...' : 'Painel pronto. O fluxo principal já está operacional.'}
+        {loading ? 'A atualizar dados do senhorio...' : 'Painel pronto para decisão: um próximo passo por bloco.'}
       </footer>
     </main>
   )

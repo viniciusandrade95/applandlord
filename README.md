@@ -86,3 +86,5 @@ Fluxos suportados:
 
 - `docs/SPRINT9_TICKETS_OPERATIONS.md`: implementação da Sprint 9 com módulo de tickets operacional, rotas de ticket/eventos, contratos de entrada/saída, casos de erro e plano de testes/rollback.
 - `docs/TICKET_STATE_MACHINE.md`: máquina formal de estados do ticket (`New/Triaged/Waiting/Resolved/Closed`) com regras e transições permitidas.
+- `docs/MICROCOPY_GUIDE_V1.md`: guia de linguagem e padrões de microcopy para o contexto de senhorio (Sprint 8).
+- `docs/SPRINT8_UX_MICROCOPY.md`: execução da Sprint 8 com foco UX, CTA primário único por ecrã, empty states acionáveis e testes de usabilidade.

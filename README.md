@@ -1,4 +1,4 @@
-﻿# applandlord
+# applandlord
 
 MVP de gestao imobiliaria com Next.js, Prisma e PostgreSQL.
 
@@ -58,3 +58,12 @@ Fluxos suportados:
 - `npm run build` gera o build de produção
 - `npm run db:push` aplica o schema no banco definido em `DATABASE_URL`
 - `npm run prisma:generate` recria o client do Prisma
+
+## Governança de Produto
+
+- `PRODUCT_CONSTITUTION.md`: constituição oficial do produto.
+- `TEMPORAL_CHECKLIST.md`: checklist temporal oficial (14 semanas / 70 dias úteis).
+- `CHANGE_GOVERNANCE.md`: regra obrigatória de log + atualização do checklist em toda alteração.
+- `CHANGELOG.md`: histórico das alterações do projeto.
+- `CODEX_SPRINT_PROMPTS.md`: prompts individuais por sprint para execução no Codex.
+

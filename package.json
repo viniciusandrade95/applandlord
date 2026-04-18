@@ -12,7 +12,8 @@
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
     "prisma:generate": "prisma generate",
-    "db:seed:demo": "node prisma/seed-demo.js"
+    "db:seed:demo": "node prisma/seed-demo.js",
+    "demo:validate": "node --test tests/demo-mode-stability.test.js"
   },
   "dependencies": {
     "@prisma/client": "^6.6.0",

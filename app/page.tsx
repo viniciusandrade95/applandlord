@@ -103,9 +103,10 @@ function periodLabel(period?: string) {
 
 function chipClass(value?: string) {
   const normalized = (value || '').toLowerCase()
-  if (['paid', 'occupied', 'active', 'resolved'].includes(normalized)) return 'chip chip-positive'
-  if (['pending', 'partial', 'awaitingconfirmation', 'vacant', 'open', 'normal'].includes(normalized)) return 'chip chip-warning'
-  if (['overdue', 'ended', 'urgent', 'cancelled'].includes(normalized)) return 'chip chip-danger'
+  if (['paid', 'occupied', 'active', 'resolved', 'closed'].includes(normalized)) return 'chip chip-positive'
+  if (['pending', 'partial', 'awaitingconfirmation', 'vacant', 'open', 'normal', 'new', 'waiting'].includes(normalized)) return 'chip chip-warning'
+  if (['overdue', 'ended', 'urgent', 'cancelled', 'high'].includes(normalized)) return 'chip chip-danger'
+  if (['triaged', 'low'].includes(normalized)) return 'chip chip-accent'
   return 'chip chip-accent'
 }
 
@@ -151,11 +152,13 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState<string | null>(null)
   const [sendingInvoiceId, setSendingInvoiceId] = useState<string | null>(null)
+  const [ticketStatusFilter, setTicketStatusFilter] = useState<string>('')
+  const [ticketPriorityFilter, setTicketPriorityFilter] = useState<string>('')
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const endpoints = ['/api/dashboard', '/api/properties', '/api/units', '/api/renters', '/api/leases', '/api/invoices', '/api/payments', '/api/maintenance']
+      const endpoints = ['/api/dashboard', '/api/properties', '/api/units', '/api/renters', '/api/leases', '/api/invoices', '/api/payments', '/api/tickets']
       const responses = await Promise.all(endpoints.map((endpoint) => fetch(endpoint)))
       const data = await Promise.all(
         responses.map(async (response) => {
@@ -177,12 +180,12 @@ export default function Home() {
     void load()
   }, [load])
 
-  async function postJson(endpoint: string, body: Record<string, unknown>, message: string) {
+  async function postJson(endpoint: string, body: Record<string, unknown>, message: string, method = 'POST') {
     if (submitting) return
 
     setSubmitting(endpoint)
     try {
-      const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      const response = await fetch(endpoint, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const data = await response.json().catch(() => null)
       if (!response.ok) throw new Error(data?.error || 'Falha na operação')
       setNotice({ kind: 'success', text: message })
@@ -242,7 +245,11 @@ export default function Home() {
     })),
     [state.invoices]
   )
-  const activeLeaseCount = useMemo(() => state.leases.filter((lease) => lease.status === 'Active').length, [state.leases])
+  const filteredTickets = useMemo(() => state.maintenance.filter((ticket) => {
+    const byStatus = ticketStatusFilter ? (ticket.status as string) === ticketStatusFilter : true
+    const byPriority = ticketPriorityFilter ? (ticket.priority as string) === ticketPriorityFilter : true
+    return byStatus && byPriority
+  }), [state.maintenance, ticketStatusFilter, ticketPriorityFilter])
 
   return (
     <main className="app-shell">
@@ -539,31 +546,48 @@ export default function Home() {
         <div className="section-header">
           <div>
             <h2 className="section-title">Operação</h2>
-            <p>Tickets rápidos para manutenção de unidades e áreas comuns.</p>
+            <p>Fluxo de tickets com rastreabilidade completa e filtros por prioridade/estado.</p>
           </div>
-          <span className="pill pill-soft">Tickets: {state.maintenance.length}</span>
+          <span className="pill pill-soft">Tickets: {filteredTickets.length}/{state.maintenance.length}</span>
         </div>
         <div className="grid-2">
-          <Panel title="Nova manutenção" subtitle="Abrir chamado">
-            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/maintenance', payload(form), 'Ticket criado.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Falha ao criar ticket' }) } }}>
+          <Panel title="Novo ticket" subtitle="Abertura formal">
+            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/tickets', payload(form), 'Ticket criado.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Falha ao criar ticket' }) } }}>
               <div className="form-grid">
                 <div className="field field-full"><label htmlFor="ticket-title">Título</label><input id="ticket-title" name="title" required /></div>
                 <div className="field"><label htmlFor="ticket-property">Imóvel</label><select id="ticket-property" name="propertyId" defaultValue=""><option value="">Opcional</option>{propertyOptions.map((property) => <option key={property.id} value={property.id}>{property.label}</option>)}</select></div>
                 <div className="field"><label htmlFor="ticket-unit">Unidade</label><select id="ticket-unit" name="unitId" defaultValue=""><option value="">Opcional</option>{unitOptions.map((unit) => <option key={unit.id} value={unit.id}>{unit.label}</option>)}</select></div>
+                <div className="field"><label htmlFor="ticket-lease">Contrato</label><select id="ticket-lease" name="leaseId" defaultValue=""><option value="">Opcional</option>{state.leases.map((lease) => <option key={lease.id} value={lease.id}>{`${lease.unit?.name ?? 'Unidade'} · ${lease.renter?.fullName ?? 'Inquilino'} · ${lease.status as string}`}</option>)}</select></div>
+                <div className="field"><label htmlFor="ticket-renter">Inquilino</label><select id="ticket-renter" name="renterId" defaultValue=""><option value="">Opcional</option>{renterOptions.map((renter) => <option key={renter.id} value={renter.id}>{renter.label}</option>)}</select></div>
                 <div className="field"><label htmlFor="ticket-priority">Prioridade</label><select id="ticket-priority" name="priority" defaultValue="Normal"><option>Low</option><option>Normal</option><option>High</option><option>Urgent</option></select></div>
-                <div className="field"><label htmlFor="ticket-status">Estado</label><select id="ticket-status" name="status" defaultValue="Open"><option>Open</option><option>In progress</option><option>Resolved</option></select></div>
+                <div className="field"><label htmlFor="ticket-status">Estado</label><select id="ticket-status" name="status" defaultValue="New"><option>New</option><option>Triaged</option><option>Waiting</option><option>Resolved</option><option>Closed</option></select></div>
                 <div className="field field-full"><label htmlFor="ticket-description">Descrição</label><textarea id="ticket-description" name="description" /></div>
               </div>
-              <div className="form-actions"><button className="button button-primary" type="submit" disabled={submitting === '/api/maintenance'}>{submitting === '/api/maintenance' ? 'A criar...' : 'Criar ticket'}</button></div>
+              <div className="form-actions"><button className="button button-primary" type="submit" disabled={submitting === '/api/tickets'}>{submitting === '/api/tickets' ? 'A criar...' : 'Criar ticket'}</button></div>
             </form>
           </Panel>
 
-          <Panel title="Tickets recentes" subtitle="Operação diária">
-            <RecordList items={state.maintenance} empty="Ainda não há tickets." render={(ticket) => (
+          <Panel title="Tickets e timeline" subtitle="Gestão diária">
+            <div className="form-grid" style={{ marginBottom: 12 }}>
+              <div className="field"><label htmlFor="ticket-filter-status">Filtrar estado</label><select id="ticket-filter-status" value={ticketStatusFilter} onChange={(event) => setTicketStatusFilter(event.target.value)}><option value="">Todos</option><option>New</option><option>Triaged</option><option>Waiting</option><option>Resolved</option><option>Closed</option></select></div>
+              <div className="field"><label htmlFor="ticket-filter-priority">Filtrar prioridade</label><select id="ticket-filter-priority" value={ticketPriorityFilter} onChange={(event) => setTicketPriorityFilter(event.target.value)}><option value="">Todas</option><option>Low</option><option>Normal</option><option>High</option><option>Urgent</option></select></div>
+            </div>
+            <RecordList items={filteredTickets} empty="Ainda não há tickets para o filtro selecionado." render={(ticket) => (
               <div key={ticket.id} className="empty">
                 <strong>{ticket.title as string}</strong><br />
-                <span className="muted">{ticket.property?.name ?? '—'} {ticket.unit?.name ? `· ${ticket.unit?.name}` : ''}</span><br />
-                <span className={chipClass(ticket.status as string)}>{ticket.status as string}</span>
+                <span className="muted">{ticket.property?.name ?? '—'} {ticket.unit?.name ? `· ${ticket.unit?.name}` : ''} {ticket.lease ? `· contrato ${ticket.lease?.id?.slice(0, 6)}` : ''} {ticket.renter?.fullName ? `· ${ticket.renter?.fullName}` : ''}</span><br />
+                <span className={chipClass(ticket.status as string)}>{ticket.status as string}</span> <span className={chipClass(ticket.priority as string)}>{ticket.priority as string}</span>
+                <div className="stack" style={{ marginTop: 8 }}>
+                  {(ticket.events ?? []).slice(0, 4).map((event: Row) => (
+                    <span key={event.id as string} className="muted">• {dateTime(event.createdAt as string)} · {event.type as string}{event.toStatus ? ` → ${event.toStatus as string}` : ''}{event.note ? ` · ${event.note as string}` : ''}</span>
+                  ))}
+                </div>
+                <div className="form-actions" style={{ marginTop: 8 }}>
+                  {ticket.status !== 'Triaged' ? <button className="small-button" type="button" onClick={() => void postJson(`/api/tickets/${ticket.id as string}`, { status: 'Triaged', note: 'Triagem executada no painel.' }, 'Ticket triado.', 'PATCH')}>Triar</button> : null}
+                  {ticket.status !== 'Waiting' && ticket.status !== 'Closed' ? <button className="small-button" type="button" onClick={() => void postJson(`/api/tickets/${ticket.id as string}`, { status: 'Waiting', note: 'Aguardando fornecedor/peça.' }, 'Ticket em espera.', 'PATCH')}>Aguardar</button> : null}
+                  {ticket.status !== 'Resolved' && ticket.status !== 'Closed' ? <button className="small-button" type="button" onClick={() => void postJson(`/api/tickets/${ticket.id as string}`, { status: 'Resolved', note: 'Incidente resolvido.' }, 'Ticket resolvido.', 'PATCH')}>Resolver</button> : null}
+                  {ticket.status !== 'Closed' ? <button className="small-button" type="button" onClick={() => void postJson(`/api/tickets/${ticket.id as string}`, { status: 'Closed', note: 'Encerramento validado.' }, 'Ticket encerrado.', 'PATCH')}>Fechar</button> : null}
+                </div>
               </div>
             )} />
           </Panel>

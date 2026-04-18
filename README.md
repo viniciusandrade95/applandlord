@@ -83,3 +83,6 @@ Fluxos suportados:
 - `docs/FINANCIAL_API_CONTRACTS.md`: contratos de entrada/saída e matriz de erros das rotas financeiras.
 - `docs/SPRINT7_ACTIONABLE_DASHBOARD.md`: implementação da Sprint 7 com dashboard acionável (resumo humano, ações rápidas, atenção por prioridade, KPIs e fallback de UI).
 - `docs/KPI_ACTION_MAPPING.md`: mapeamento operacional de KPI -> ação recomendada no painel.
+
+- `docs/SPRINT9_TICKETS_OPERATIONS.md`: implementação da Sprint 9 com módulo de tickets operacional, rotas de ticket/eventos, contratos de entrada/saída, casos de erro e plano de testes/rollback.
+- `docs/TICKET_STATE_MACHINE.md`: máquina formal de estados do ticket (`New/Triaged/Waiting/Resolved/Closed`) com regras e transições permitidas.

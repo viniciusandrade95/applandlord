@@ -26,6 +26,7 @@ model User {
   reminders      Reminder[]
   auditLogs      AuditLog[]
   whatsappMsgs   WhatsAppMessage[]
+  inboundEvents  WhatsAppInboundEvent[]
   transitionLogs RentChargeTransitionLog[]
 }
 
@@ -76,25 +77,26 @@ model Unit {
 }
 
 model Renter {
-  id           String            @id @default(cuid())
-  ownerId      String
-  fullName     String
-  email        String?
-  phone        String?
-  governmentId String?
-  notes        String?
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-  owner        User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  leases       Lease[]
-  maintenance  MaintenanceTicket[]
-  whatsappMsgs WhatsAppMessage[]
+  id            String                 @id @default(cuid())
+  ownerId       String
+  fullName      String
+  email         String?
+  phone         String?
+  governmentId  String?
+  notes         String?
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  owner         User                   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  leases        Lease[]
+  maintenance   MaintenanceTicket[]
+  whatsappMsgs  WhatsAppMessage[]
+  inboundEvents WhatsAppInboundEvent[]
 
   @@index([ownerId])
 }
 
 model Lease {
-  id            String     @id @default(cuid())
+  id            String                 @id @default(cuid())
   ownerId       String
   propertyId    String
   unitId        String
@@ -102,20 +104,21 @@ model Lease {
   startDate     DateTime
   endDate       DateTime?
   monthlyRent   Float
-  depositAmount Float      @default(0)
-  dueDay        Int        @default(1)
-  status        String     @default("Active")
+  depositAmount Float                  @default(0)
+  dueDay        Int                    @default(1)
+  status        String                 @default("Active")
   notes         String?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  owner         User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  property      Property   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  unit          Unit       @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  renter        Renter     @relation(fields: [renterId], references: [id], onDelete: Cascade)
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  owner         User                   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  property      Property               @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  unit          Unit                   @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  renter        Renter                 @relation(fields: [renterId], references: [id], onDelete: Cascade)
   invoices      Invoice[]
   reminders     Reminder[]
   expenses      Expense[]
   maintenance   MaintenanceTicket[]
+  inboundEvents WhatsAppInboundEvent[]
 
   @@index([ownerId])
   @@index([propertyId])
@@ -144,6 +147,7 @@ model Invoice {
   expenses       Expense[]
   reminders      Reminder[]
   whatsappMsgs   WhatsAppMessage[]
+  inboundEvents  WhatsAppInboundEvent[]
   transitionLogs RentChargeTransitionLog[]
 
   @@unique([leaseId, period])
@@ -172,21 +176,21 @@ model RentChargeTransitionLog {
 }
 
 model Payment {
-  id                  String    @id @default(cuid())
-  ownerId             String
-  invoiceId           String
-  amount              Float
-  paidAt              DateTime  @default(now())
-  method              String
-  reference           String?
-  notes               String?
-  receiptUrl          String?
-  confirmationStatus  String    @default("AwaitingConfirmation")
-  confirmedAt         DateTime?
-  confirmedByUserId   String?
-  createdAt           DateTime  @default(now())
-  owner               User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  invoice             Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  id                 String    @id @default(cuid())
+  ownerId            String
+  invoiceId          String
+  amount             Float
+  paidAt             DateTime  @default(now())
+  method             String
+  reference          String?
+  notes              String?
+  receiptUrl         String?
+  confirmationStatus String    @default("AwaitingConfirmation")
+  confirmedAt        DateTime?
+  confirmedByUserId  String?
+  createdAt          DateTime  @default(now())
+  owner              User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  invoice            Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@index([ownerId])
   @@index([invoiceId])
@@ -333,6 +337,29 @@ model WhatsAppMessage {
   @@index([reminderId])
   @@index([ownerId, status, createdAt])
   @@index([providerMsgId])
+}
+
+model WhatsAppInboundEvent {
+  id                String   @id @default(cuid())
+  ownerId           String
+  renterId          String?
+  leaseId           String?
+  invoiceId         String?
+  senderPhone       String
+  messageBody       String
+  intent            String
+  dedupeKey         String
+  providerMessageId String?
+  createdAt         DateTime @default(now())
+  owner             User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  renter            Renter?  @relation(fields: [renterId], references: [id], onDelete: SetNull)
+  lease             Lease?   @relation(fields: [leaseId], references: [id], onDelete: SetNull)
+  invoice           Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  @@unique([ownerId, dedupeKey])
+  @@index([ownerId, senderPhone, createdAt])
+  @@index([ownerId, intent, createdAt])
+  @@index([providerMessageId])
 }
 
 model AuditLog {

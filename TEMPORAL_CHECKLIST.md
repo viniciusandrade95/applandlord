@@ -75,11 +75,11 @@
 - [ ] Botão “Cobrar agora” no painel ligado ao fluxo
 
 ## Semana 11 (Dias 51–55) — WhatsApp inbound (inquilino)
-- [ ] Parser simples de intenção (“já paguei”, “problema”, “pago amanhã”)
-- [ ] Estado `tenant_claimed_paid` + `awaiting_confirmation`
-- [ ] Criação de ticket por palavras-chave
-- [ ] Ligação correta número -> inquilino -> contrato ativo
-- [ ] Proteções anti-duplicação e throttling
+- [x] Parser simples de intenção (“já paguei”, “problema”, “pago amanhã”)
+- [x] Estado `tenant_claimed_paid` + `awaiting_confirmation`
+- [x] Criação de ticket por palavras-chave
+- [x] Ligação correta número -> inquilino -> contrato ativo
+- [x] Proteções anti-duplicação e throttling
 
 ## Semana 12 (Dias 56–60) — Segurança e estabilidade
 - [ ] Endurecer validações backend

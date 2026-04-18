@@ -10,7 +10,7 @@ MVP de gestao imobiliaria com Next.js, Prisma e PostgreSQL.
 - Registro de pagamentos com comprovativo opcional e confirmação manual
 - Tickets simples de manutenção
 - Envio de faturas por WhatsApp
-- Webhook com menu interativo de WhatsApp para listar e criar registos simples
+- Webhook WhatsApp com fluxo admin (menu) e fluxo inbound de inquilino com parser de intenção
 - CRUD de despesas por imóvel/contrato
 - Painel com métricas financeiras (receita confirmada, despesas, lucro líquido)
 
@@ -88,3 +88,5 @@ Fluxos suportados:
 - `docs/TICKET_STATE_MACHINE.md`: máquina formal de estados do ticket (`New/Triaged/Waiting/Resolved/Closed`) com regras e transições permitidas.
 - `docs/MICROCOPY_GUIDE_V1.md`: guia de linguagem e padrões de microcopy para o contexto de senhorio (Sprint 8).
 - `docs/SPRINT8_UX_MICROCOPY.md`: execução da Sprint 8 com foco UX, CTA primário único por ecrã, empty states acionáveis e testes de usabilidade.
+
+- `docs/SPRINT11_WHATSAPP_INBOUND.md`: execução da Sprint 11 com parser de intenção, deduplicação, throttling, vínculo telefone->contrato e contratos de webhook inbound.

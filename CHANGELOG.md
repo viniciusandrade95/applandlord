@@ -32,3 +32,11 @@
 - **Descrição:** implementado fluxo funcional de login/logout (`/api/auth/login`, `/api/auth/logout`, `/api/auth/session`, página `/login` e `middleware.ts`); adicionada camada de sessão assinada em `lib/auth.ts`; introduzido `ownerId` em todas as entidades core com novo model `User`; atualizadas APIs core para exigir sessão e filtrar leitura/escrita por `ownerId`; aplicada migração `prisma/migrations/20260418170000_sprint2_auth_tenancy/migration.sql` com backfill de dados existentes para owner bootstrap; atualizado fluxo WhatsApp para respeitar owner em envio/listagens.
 - **Impacto no roadmap:** conclui integralmente a Semana 2 (auth + tenancy base), preparando Sprint 3 para reforço de modelo de dados e constraints.
 - **Risco/rollback:** risco moderado em migração de dados (novas FKs e `NOT NULL`); rollback exige remover FKs/índices/colunas `ownerId` e restaurar snapshot pré-migração.
+
+## 2026-04-18 (Sprint 3 — modelo SaaS robusto)
+- **Autor:** Codex
+- **Tipo:** feat
+- **Escopo:** evolução de schema financeiro/comunicação, constraint de contrato ativo único e trilha de auditoria
+- **Descrição:** adicionadas tabelas `Expense`, `Reminder`, `WhatsAppMessage` e `AuditLog`; tabela física de cobranças renomeada de `Invoice` para `rent_charges` com compatibilidade mantida via Prisma `@@map`; criada constraint de 1 contrato ativo por unidade+owner (`Lease_one_active_per_unit_owner_key`); criados índices essenciais de desempenho por owner/status/datas; atualizado backend para registrar eventos críticos em auditoria (`LEASE_CREATED`, `LEASE_UPDATED`, `RENT_CHARGE_CREATED`, `PAYMENT_REGISTERED`); criada documentação técnica `docs/SPRINT3_SAAS_SCHEMA.md` com ER simplificado, matriz de entradas/saídas por tabela, contratos de API alteradas, plano de testes e rollback.
+- **Impacto no roadmap:** conclui integralmente a Semana 3, preparando base de dados para fluxos de reminders, WhatsApp outbound/inbound e controles de compliance.
+- **Risco/rollback:** risco moderado por DDL estrutural (rename de tabela + novos FKs/índices); rollback estruturado disponível em `prisma/migrations/20260418190000_sprint3_saas_schema/rollback.sql`.

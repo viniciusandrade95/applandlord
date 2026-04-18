@@ -8,12 +8,12 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
+  id           String              @id @default(cuid())
+  email        String              @unique
   passwordHash String
   name         String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
   properties   Property[]
   units        Unit[]
   renters      Renter[]
@@ -21,70 +21,77 @@ model User {
   invoices     Invoice[]
   payments     Payment[]
   maintenance  MaintenanceTicket[]
+  expenses     Expense[]
+  reminders    Reminder[]
+  auditLogs    AuditLog[]
+  whatsappMsgs WhatsAppMessage[]
 }
 
 model Property {
-  id            String   @id @default(cuid())
-  ownerId       String
-  name          String
-  addressLine1  String
-  addressLine2  String?
-  city          String
-  region        String
-  postalCode    String
-  country       String   @default("Portugal")
-  description   String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  owner         User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  units         Unit[]
-  leases        Lease[]
-  maintenance   MaintenanceTicket[]
+  id           String              @id @default(cuid())
+  ownerId      String
+  name         String
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  region       String
+  postalCode   String
+  country      String              @default("Portugal")
+  description  String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  owner        User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  units        Unit[]
+  leases       Lease[]
+  maintenance  MaintenanceTicket[]
+  expenses     Expense[]
 
   @@index([ownerId])
 }
 
 model Unit {
-  id            String   @id @default(cuid())
-  ownerId       String
-  propertyId    String
-  name          String
-  bedrooms      Int      @default(0)
-  bathrooms     Float    @default(0)
-  floor         String?
-  areaSqm       Float?
-  monthlyRent   Float
-  status        String   @default("Vacant")
-  notes         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  owner         User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  property      Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  leases        Lease[]
-  maintenance   MaintenanceTicket[]
+  id          String              @id @default(cuid())
+  ownerId     String
+  propertyId  String
+  name        String
+  bedrooms    Int                 @default(0)
+  bathrooms   Float               @default(0)
+  floor       String?
+  areaSqm     Float?
+  monthlyRent Float
+  status      String              @default("Vacant")
+  notes       String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  owner       User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  property    Property            @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  leases      Lease[]
+  maintenance MaintenanceTicket[]
+  expenses    Expense[]
 
   @@index([ownerId])
   @@index([propertyId])
 }
 
 model Renter {
-  id            String   @id @default(cuid())
-  ownerId       String
-  fullName      String
-  email         String?
-  phone         String?
-  governmentId  String?
-  notes         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  owner         User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  leases        Lease[]
+  id           String            @id @default(cuid())
+  ownerId      String
+  fullName     String
+  email        String?
+  phone        String?
+  governmentId String?
+  notes        String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  owner        User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  leases       Lease[]
+  whatsappMsgs WhatsAppMessage[]
 
   @@index([ownerId])
 }
 
 model Lease {
-  id            String   @id @default(cuid())
+  id            String     @id @default(cuid())
   ownerId       String
   propertyId    String
   unitId        String
@@ -92,62 +99,72 @@ model Lease {
   startDate     DateTime
   endDate       DateTime?
   monthlyRent   Float
-  depositAmount Float    @default(0)
-  dueDay        Int      @default(1)
-  status        String   @default("Active")
+  depositAmount Float      @default(0)
+  dueDay        Int        @default(1)
+  status        String     @default("Active")
   notes         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  owner         User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  property      Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  unit          Unit     @relation(fields: [unitId], references: [id], onDelete: Cascade)
-  renter        Renter   @relation(fields: [renterId], references: [id], onDelete: Cascade)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  owner         User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  property      Property   @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  unit          Unit       @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  renter        Renter     @relation(fields: [renterId], references: [id], onDelete: Cascade)
   invoices      Invoice[]
+  reminders     Reminder[]
+  expenses      Expense[]
 
   @@index([ownerId])
   @@index([propertyId])
   @@index([unitId])
   @@index([renterId])
+  @@index([ownerId, status, startDate])
+  @@index([ownerId, unitId, status])
 }
 
 model Invoice {
-  id            String   @id @default(cuid())
+  id            String            @id @default(cuid())
   ownerId       String
   leaseId       String
   period        String
   dueDate       DateTime
   amount        Float
-  status        String   @default("Pending")
+  status        String            @default("Pending")
   paidAt        DateTime?
   paymentMethod String?
   notes         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  owner         User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  lease         Lease    @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  owner         User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  lease         Lease             @relation(fields: [leaseId], references: [id], onDelete: Cascade)
   payments      Payment[]
+  expenses      Expense[]
+  reminders     Reminder[]
+  whatsappMsgs  WhatsAppMessage[]
 
   @@unique([leaseId, period])
   @@index([ownerId])
   @@index([dueDate])
   @@index([status])
+  @@index([ownerId, status, dueDate])
+  @@map("rent_charges")
 }
 
 model Payment {
-  id          String   @id @default(cuid())
-  ownerId     String
-  invoiceId   String
-  amount      Float
-  paidAt      DateTime @default(now())
-  method      String
-  reference   String?
-  notes       String?
-  createdAt   DateTime @default(now())
-  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  ownerId   String
+  invoiceId String
+  amount    Float
+  paidAt    DateTime @default(now())
+  method    String
+  reference String?
+  notes     String?
+  createdAt DateTime @default(now())
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@index([ownerId])
   @@index([invoiceId])
+  @@index([ownerId, paidAt])
 }
 
 model MaintenanceTicket {
@@ -171,4 +188,111 @@ model MaintenanceTicket {
   @@index([propertyId])
   @@index([unitId])
   @@index([status])
+}
+
+model Expense {
+  id          String    @id @default(cuid())
+  ownerId     String
+  propertyId  String?
+  unitId      String?
+  leaseId     String?
+  invoiceId   String?
+  category    String
+  description String?
+  amount      Float
+  incurredAt  DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  owner       User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  property    Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  unit        Unit?     @relation(fields: [unitId], references: [id], onDelete: SetNull)
+  lease       Lease?    @relation(fields: [leaseId], references: [id], onDelete: SetNull)
+  invoice     Invoice?  @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  @@index([ownerId])
+  @@index([propertyId])
+  @@index([unitId])
+  @@index([leaseId])
+  @@index([invoiceId])
+  @@index([ownerId, incurredAt])
+}
+
+model Reminder {
+  id            String            @id @default(cuid())
+  ownerId       String
+  leaseId       String?
+  invoiceId     String?
+  channel       String            @default("WHATSAPP")
+  status        String            @default("Pending")
+  scheduledFor  DateTime
+  sentAt        DateTime?
+  attempts      Int               @default(0)
+  externalRef   String?
+  failureReason String?
+  payload       Json?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  owner         User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  lease         Lease?            @relation(fields: [leaseId], references: [id], onDelete: SetNull)
+  invoice       Invoice?          @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  whatsappMsgs  WhatsAppMessage[]
+
+  @@index([ownerId])
+  @@index([leaseId])
+  @@index([invoiceId])
+  @@index([ownerId, status, scheduledFor])
+}
+
+model WhatsAppMessage {
+  id              String    @id @default(cuid())
+  ownerId         String
+  renterId        String?
+  invoiceId       String?
+  reminderId      String?
+  direction       String
+  messageType     String
+  templateName    String?
+  providerMsgId   String?
+  toPhone         String?
+  fromPhone       String?
+  body            String?
+  status          String    @default("Queued")
+  failureReason   String?
+  providerPayload Json?
+  sentAt          DateTime?
+  deliveredAt     DateTime?
+  readAt          DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  owner           User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  renter          Renter?   @relation(fields: [renterId], references: [id], onDelete: SetNull)
+  invoice         Invoice?  @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  reminder        Reminder? @relation(fields: [reminderId], references: [id], onDelete: SetNull)
+
+  @@index([ownerId])
+  @@index([renterId])
+  @@index([invoiceId])
+  @@index([reminderId])
+  @@index([ownerId, status, createdAt])
+  @@index([providerMsgId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  ownerId    String
+  actorId    String?
+  entityType String
+  entityId   String?
+  action     String
+  severity   String   @default("INFO")
+  metadata   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  owner      User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId])
+  @@index([ownerId, createdAt])
+  @@index([entityType, entityId])
+  @@index([action, createdAt])
 }

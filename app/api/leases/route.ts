@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { asDate, asNumber, asString } from '@/lib/landlord'
 import { requireCurrentUserId } from '@/lib/auth'
+import { logAuditEvent } from '@/lib/audit'
 
 export async function GET() {
   const { userId, response } = await requireCurrentUserId()
@@ -104,6 +105,23 @@ export async function POST(request: Request) {
       },
     })
 
+    await logAuditEvent({
+      ownerId: userId,
+      actorId: userId,
+      action: 'LEASE_CREATED',
+      entityType: 'Lease',
+      entityId: lease.id,
+      metadata: {
+        propertyId,
+        unitId,
+        renterId,
+        monthlyRent,
+        status: lease.status,
+      },
+      ipAddress: request.headers.get('x-forwarded-for'),
+      userAgent: request.headers.get('user-agent'),
+    })
+
     return NextResponse.json(lease, { status: 201 })
   } catch {
     return NextResponse.json({ error: 'Failed to create lease' }, { status: 500 })
@@ -159,6 +177,21 @@ export async function PATCH(request: Request) {
         data: { status: 'Vacant' },
       })
     }
+
+    await logAuditEvent({
+      ownerId: userId,
+      actorId: userId,
+      action: 'LEASE_UPDATED',
+      entityType: 'Lease',
+      entityId: leaseId,
+      metadata: {
+        oldStatus: lease.status,
+        newStatus: updatedLease.status,
+        endDate: updatedLease.endDate?.toISOString() ?? null,
+      },
+      ipAddress: request.headers.get('x-forwarded-for'),
+      userAgent: request.headers.get('user-agent'),
+    })
 
     return NextResponse.json(updatedLease)
   } catch {

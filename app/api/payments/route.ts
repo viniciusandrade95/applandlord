@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { asDate, asNumber, asString } from '@/lib/landlord'
 import { requireCurrentUserId } from '@/lib/auth'
+import { logAuditEvent } from '@/lib/audit'
 
 export async function GET() {
   const { userId, response } = await requireCurrentUserId()
@@ -96,6 +97,22 @@ export async function POST(request: Request) {
         paidAt: payment.paidAt,
         paymentMethod: payment.method,
       },
+    })
+
+    await logAuditEvent({
+      ownerId: userId,
+      actorId: userId,
+      action: 'PAYMENT_REGISTERED',
+      entityType: 'Payment',
+      entityId: payment.id,
+      metadata: {
+        invoiceId,
+        paymentAmount: payment.amount,
+        invoiceAmount: invoice.amount,
+        paymentMethod: payment.method,
+      },
+      ipAddress: request.headers.get('x-forwarded-for'),
+      userAgent: request.headers.get('user-agent'),
     })
 
     return NextResponse.json(payment, { status: 201 })

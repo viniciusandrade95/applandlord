@@ -578,8 +578,6 @@ export default function Home() {
         <div className="grid-2">
           <Panel title="Novo ticket" subtitle="Abertura formal">
             <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/tickets', payload(form), 'Ticket criado.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Falha ao criar ticket' }) } }}>
-          <Panel title="Nova manutenção" subtitle="Abrir chamado">
-            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/maintenance', payload(form), 'Pedido de manutenção criado com sucesso.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível criar o pedido de manutenção.' }) } }}>
               <div className="form-grid">
                 <div className="field field-full"><label htmlFor="ticket-title">Título</label><input id="ticket-title" name="title" required /></div>
                 <div className="field"><label htmlFor="ticket-property">Imóvel</label><select id="ticket-property" name="propertyId" defaultValue=""><option value="">Opcional</option>{propertyOptions.map((property) => <option key={property.id} value={property.id}>{property.label}</option>)}</select></div>
@@ -600,8 +598,6 @@ export default function Home() {
               <div className="field"><label htmlFor="ticket-filter-priority">Filtrar prioridade</label><select id="ticket-filter-priority" value={ticketPriorityFilter} onChange={(event) => setTicketPriorityFilter(event.target.value)}><option value="">Todas</option><option>Low</option><option>Normal</option><option>High</option><option>Urgent</option></select></div>
             </div>
             <RecordList items={filteredTickets} empty="Ainda não há tickets para o filtro selecionado." render={(ticket) => (
-          <Panel title="Tickets recentes" subtitle="Operação diária">
-            <RecordList items={state.maintenance} empty={{ title: 'Ainda não há pedidos de manutenção.', hint: 'Registe o primeiro pedido para manter histórico e prioridade da operação.', actionLabel: 'Abrir pedido de manutenção', actionHref: '#ticket-title' }} render={(ticket) => (
               <div key={ticket.id} className="empty">
                 <strong>{ticket.title as string}</strong><br />
                 <span className="muted">{ticket.property?.name ?? '—'} {ticket.unit?.name ? `· ${ticket.unit?.name}` : ''} {ticket.lease ? `· contrato ${ticket.lease?.id?.slice(0, 6)}` : ''} {ticket.renter?.fullName ? `· ${ticket.renter?.fullName}` : ''}</span><br />

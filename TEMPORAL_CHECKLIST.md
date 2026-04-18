@@ -89,11 +89,11 @@
 - [ ] Revisão de permissões e segredos
 
 ## Semana 13 (Dias 61–65) — QA final + UAT
-- [ ] Testes E2E de 6 fluxos críticos
-- [ ] Testes manuais de edge cases
-- [ ] Correção de bugs P0/P1
-- [ ] Script de seed para demo consistente
-- [ ] Checklist de release
+- [x] Testes E2E de 6 fluxos críticos
+- [x] Testes manuais de edge cases
+- [x] Correção de bugs P0/P1
+- [x] Script de seed para demo consistente
+- [x] Checklist de release
 
 ## Semana 14 (Dias 66–70) — Demo final + go-live controlado
 - [ ] Script de demo de 10 minutos

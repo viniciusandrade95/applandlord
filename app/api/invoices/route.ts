@@ -6,7 +6,7 @@ import { logAuditEvent } from '@/lib/audit'
 
 export async function GET() {
   const { userId, response } = await requireCurrentUserId()
-  if (!userId) return response
+  if (!userId) return response ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
     const invoices = await prisma.invoice.findMany({
@@ -34,7 +34,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const { userId, response } = await requireCurrentUserId()
-  if (!userId) return response
+  if (!userId) return response ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
     const body = await request.json()

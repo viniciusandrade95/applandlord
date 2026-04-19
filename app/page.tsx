@@ -255,6 +255,7 @@ export default function Home() {
   const counts = dashboard?.counts
   const finances = dashboard?.finances
   const attention = dashboard?.attention
+  const activeLeaseCount = counts?.activeLeases ?? state.leases.filter((lease) => lease.status === 'Active').length
   const propertyOptions = useMemo(() => state.properties.map((property) => ({ id: property.id as string, label: property.name as string })), [state.properties])
   const unitOptions = useMemo(
     () => state.units.map((unit) => ({ id: unit.id as string, propertyId: unit.propertyId as string, label: `${unit.name as string} · ${(unit.property?.name as string) ?? 'Imóvel'}` })),
@@ -597,7 +598,15 @@ export default function Home() {
               <div className="field"><label htmlFor="ticket-filter-status">Filtrar estado</label><select id="ticket-filter-status" value={ticketStatusFilter} onChange={(event) => setTicketStatusFilter(event.target.value)}><option value="">Todos</option><option>New</option><option>Triaged</option><option>Waiting</option><option>Resolved</option><option>Closed</option></select></div>
               <div className="field"><label htmlFor="ticket-filter-priority">Filtrar prioridade</label><select id="ticket-filter-priority" value={ticketPriorityFilter} onChange={(event) => setTicketPriorityFilter(event.target.value)}><option value="">Todas</option><option>Low</option><option>Normal</option><option>High</option><option>Urgent</option></select></div>
             </div>
-            <RecordList items={filteredTickets} empty="Ainda não há tickets para o filtro selecionado." render={(ticket) => (
+            <RecordList
+              items={filteredTickets}
+              empty={{
+                title: 'Ainda não há tickets para o filtro selecionado.',
+                hint: 'Ajuste os filtros ou abra um novo ticket para iniciar o acompanhamento operacional.',
+                actionLabel: 'Criar ticket',
+                actionHref: '#ticket-title',
+              }}
+              render={(ticket) => (
               <div key={ticket.id} className="empty">
                 <strong>{ticket.title as string}</strong><br />
                 <span className="muted">{ticket.property?.name ?? '—'} {ticket.unit?.name ? `· ${ticket.unit?.name}` : ''} {ticket.lease ? `· contrato ${ticket.lease?.id?.slice(0, 6)}` : ''} {ticket.renter?.fullName ? `· ${ticket.renter?.fullName}` : ''}</span><br />
@@ -614,7 +623,8 @@ export default function Home() {
                   {ticket.status !== 'Closed' ? <button className="small-button" type="button" onClick={() => void postJson(`/api/tickets/${ticket.id as string}`, { status: 'Closed', note: 'Encerramento validado.' }, 'Ticket encerrado.', 'PATCH')}>Fechar</button> : null}
                 </div>
               </div>
-            )} />
+              )}
+            />
           </Panel>
         </div>
       </section>

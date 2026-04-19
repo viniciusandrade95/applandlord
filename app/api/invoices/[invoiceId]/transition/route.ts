@@ -36,7 +36,7 @@ type RouteContext = {
  */
 export async function POST(request: Request, context: RouteContext) {
   const { userId, response } = await requireCurrentUserId()
-  if (!userId) return response
+  if (!userId) return response ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
     const { invoiceId } = await context.params

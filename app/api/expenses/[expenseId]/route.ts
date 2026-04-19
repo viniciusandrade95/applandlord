@@ -12,7 +12,7 @@ type RouteContext = {
 
 export async function PATCH(request: Request, context: RouteContext) {
   const { userId, response } = await requireCurrentUserId()
-  if (!userId) return response
+  if (!userId) return response ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
     const { expenseId } = await context.params
@@ -83,7 +83,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
 export async function DELETE(request: Request, context: RouteContext) {
   const { userId, response } = await requireCurrentUserId()
-  if (!userId) return response
+  if (!userId) return response ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
     const { expenseId } = await context.params

@@ -12,7 +12,7 @@ import { requireCurrentUserId } from '@/lib/auth'
  */
 export async function GET(_request: Request, { params }: { params: Promise<{ ticketId: string }> }) {
   const { userId, response } = await requireCurrentUserId()
-  if (!userId) return response
+  if (!userId) return response ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { ticketId } = await params
 
@@ -41,7 +41,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tic
  */
 export async function POST(request: Request, { params }: { params: Promise<{ ticketId: string }> }) {
   const { userId, response } = await requireCurrentUserId()
-  if (!userId) return response
+  if (!userId) return response ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { ticketId } = await params
 

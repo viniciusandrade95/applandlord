@@ -1,7 +1,177 @@
-import { redirect } from 'next/navigation'
+﻿'use client'
 
-export default function Home() {
-  redirect('/dashboard')
+import { FormEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
+import { LeaseWizard } from '@/app/components/lease-wizard'
+
+type Dashboard = {
+  counts: {
+    properties: number
+    units: number
+    occupiedUnits: number
+    vacantUnits: number
+    renters: number
+    leases: number
+    activeLeases: number
+    overdueInvoices: number
+    openMaintenance: number
+  }
+  finances: {
+    monthlyConfirmedPayments: number
+    monthlyExpenses: number
+    monthlyNetProfit: number
+    openInvoices: number
+    awaitingConfirmation: number
+    collectionRate: number
+  }
+  attention?: {
+    daySummary: {
+      title: string
+      detail: string
+      highlights: string[]
+    }
+    quickActions: { id: string; label: string; href: string; detail: string; tone: 'critical' | 'warning' | 'healthy' | 'info' }[]
+    attentionByPriority: {
+      high: { id: string; title: string; detail: string; href: string; cta: string }[]
+      medium: { id: string; title: string; detail: string; href: string; cta: string }[]
+      low: { id: string; title: string; detail: string; href: string; cta: string }[]
+    }
+    kpis: {
+      id: string
+      label: string
+      value: number
+      format: 'count' | 'currency' | 'percent'
+      status: 'critical' | 'warning' | 'healthy' | 'info'
+      href: string
+      actionLabel: string
+    }[]
+  }
+}
+
+type Row = Record<string, any>
+
+type State = {
+  dashboard: Dashboard | null
+  properties: Row[]
+  units: Row[]
+  renters: Row[]
+  leases: Row[]
+  invoices: Row[]
+  payments: Row[]
+  maintenance: Row[]
+}
+
+type Notice = { kind: 'success' | 'error'; text: string } | null
+type EmptyState = { title: string; hint: string; actionLabel: string; actionHref: string }
+
+const initialState: State = {
+  dashboard: null,
+  properties: [],
+  units: [],
+  renters: [],
+  leases: [],
+  invoices: [],
+  payments: [],
+  maintenance: [],
+}
+
+function money(value: number) {
+  return new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(
+    Number.isFinite(value) ? value : 0
+  )
+}
+
+function date(value?: string | Date | null) {
+  if (!value) return '—'
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return '—'
+  return new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: 'short', year: 'numeric' }).format(parsed)
+}
+
+function dateTime(value?: string | Date | null) {
+  if (!value) return '—'
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return '—'
+  return new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(parsed)
+}
+
+function periodLabel(period?: string) {
+  if (!period) return '—'
+  const [year, month] = period.split('-')
+  const parsed = new Date(Number(year), Number(month) - 1, 1)
+  if (Number.isNaN(parsed.getTime())) return period
+  return new Intl.DateTimeFormat('pt-PT', { month: 'long', year: 'numeric' }).format(parsed)
+}
+
+function chipClass(value?: string) {
+  const normalized = (value || '').toLowerCase()
+  if (['paid', 'occupied', 'active', 'resolved', 'closed'].includes(normalized)) return 'chip chip-positive'
+  if (['pending', 'partial', 'awaitingconfirmation', 'vacant', 'open', 'normal', 'new', 'waiting'].includes(normalized)) return 'chip chip-warning'
+  if (['overdue', 'ended', 'urgent', 'cancelled', 'high'].includes(normalized)) return 'chip chip-danger'
+  if (['triaged', 'low'].includes(normalized)) return 'chip chip-accent'
+  return 'chip chip-accent'
+}
+
+
+function kpiValue(value: number, format: 'count' | 'currency' | 'percent') {
+  if (format === 'currency') return money(value)
+  if (format === 'percent') return `${Math.round(value)}%`
+  return `${Math.round(value)}`
+}
+
+function toneClass(tone: 'critical' | 'warning' | 'healthy' | 'info') {
+  if (tone === 'critical') return 'state-critical'
+  if (tone === 'warning') return 'state-warning'
+  if (tone === 'healthy') return 'state-healthy'
+  return 'state-info'
+}
+
+function payload(form: HTMLFormElement) {
+  return Object.fromEntries(new FormData(form).entries())
+}
+
+function apiErrorMessage(data: unknown, fallback: string) {
+  if (data && typeof data === 'object' && 'error' in data && typeof (data as { error?: unknown }).error === 'string') {
+    return (data as { error: string }).error
+  }
+
+  if (data && typeof data === 'object' && 'message' in data && typeof (data as { message?: unknown }).message === 'string') {
+    return (data as { message: string }).message
+  }
+
+  return fallback
+}
+
+function Panel({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
+  return (
+    <article className="card">
+      <div className="card-header">
+        <h3>{title}</h3>
+        <span>{subtitle}</span>
+      </div>
+      <div className="card-body">{children}</div>
+    </article>
+  )
+}
+
+function RecordList({ items, empty, render }: { items: Row[]; empty: EmptyState; render: (row: Row) => ReactNode }) {
+  if (!items.length) {
+    return (
+      <div className="empty">
+        <strong>{empty.title}</strong>
+        <p className="muted">{empty.hint}</p>
+        <a className="inline-link" href={empty.actionHref}>
+          {empty.actionLabel}
+        </a>
+      </div>
+    )
+  }
+
+  return <div className="stack">{items.map(render)}</div>
+}
+
+type ControlCenterMode = 'all' | 'dashboard' | 'portfolio' | 'leases' | 'billing' | 'operations'
+
+export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }) {
   const [state, setState] = useState<State>(initialState)
   const [notice, setNotice] = useState<Notice>(null)
   const [loading, setLoading] = useState(true)
@@ -107,9 +277,15 @@ export default function Home() {
     return byStatus && byPriority
   }), [state.maintenance, ticketStatusFilter, ticketPriorityFilter])
 
+  const showDashboard = mode === 'all' || mode === 'dashboard'
+  const showPortfolio = mode === 'all' || mode === 'portfolio'
+  const showLeases = mode === 'all' || mode === 'leases'
+  const showBilling = mode === 'all' || mode === 'billing'
+  const showOperations = mode === 'all' || mode === 'operations'
+
   return (
     <main className="app-shell">
-      <section className="section" style={{ paddingBottom: 0 }}>
+      {showDashboard ? <section className="section" style={{ paddingBottom: 0 }}>
         <div className="section-header">
           <div>
             <h2 className="section-title">Sessão</h2>
@@ -126,8 +302,8 @@ export default function Home() {
             Logout
           </button>
         </div>
-      </section>
-      <section className="hero">
+      </section> : null}
+      {showDashboard ? <section className="hero">
         <div className="hero-grid">
           <div>
             <span className="eyebrow">Applandlord MVP</span>
@@ -163,9 +339,9 @@ export default function Home() {
             </div>
           </aside>
         </div>
-      </section>
+      </section> : null}
 
-      <section className="section">
+      {showDashboard ? <section className="section">
         <div className="attention-shell">
           <article className="attention-summary card">
             <div className="card-header">
@@ -231,9 +407,9 @@ export default function Home() {
             </div>
           </article>
         </div>
-      </section>
+      </section> : null}
 
-      <section className="section" id="cadastros">
+      {showPortfolio ? <section className="section" id="cadastros">
         <div className="section-header">
           <div>
             <h2 className="section-title">Base do portfólio</h2>
@@ -304,9 +480,9 @@ export default function Home() {
             )} />
           </Panel>
         </div>
-      </section>
+      </section> : null}
 
-      <section className="section" id="contratos">
+      {showLeases ? <section className="section" id="contratos">
         <div className="section-header">
           <div>
             <h2 className="section-title">Contratos de arrendamento</h2>
@@ -336,8 +512,8 @@ export default function Home() {
             )} />
           </Panel>
         </div>
-      </section>
-      <section className="section" id="financeiro">
+      </section> : null}
+      {showBilling ? <section className="section" id="financeiro">
         <div className="section-header">
           <div>
             <h2 className="section-title">Cobrança e pagamentos</h2>
@@ -396,9 +572,9 @@ export default function Home() {
             )} />
           </Panel>
         </div>
-      </section>
+      </section> : null}
 
-      <section className="section" id="operacao">
+      {showOperations ? <section className="section" id="operacao">
         <div className="section-header">
           <div>
             <h2 className="section-title">Operação</h2>
@@ -459,7 +635,7 @@ export default function Home() {
             />
           </Panel>
         </div>
-      </section>
+      </section> : null}
 
       <footer className="footer-note">
         {loading ? 'A atualizar dados do senhorio...' : 'Painel pronto para decisão: um próximo passo por bloco.'}

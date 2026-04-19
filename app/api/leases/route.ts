@@ -18,7 +18,7 @@ import {
  */
 export async function GET() {
   const { userId, response } = await requireCurrentUserId()
-  if (!userId) return response
+  if (!userId) return response ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
     const leases = await prisma.lease.findMany({
@@ -90,7 +90,7 @@ async function resolveRenterId(payload: ReturnType<typeof parseLeaseWizardPayloa
  */
 export async function POST(request: Request) {
   const { userId, response } = await requireCurrentUserId()
-  if (!userId) return response
+  if (!userId) return response ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
     const body = await request.json()
@@ -201,7 +201,7 @@ export async function POST(request: Request) {
  */
 export async function PATCH(request: Request) {
   const { userId, response } = await requireCurrentUserId()
-  if (!userId) return response
+  if (!userId) return response ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
     const body = await request.json()

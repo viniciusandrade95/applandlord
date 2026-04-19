@@ -4,7 +4,7 @@ import { requireCurrentUserId } from '@/lib/auth'
 
 export async function POST(request: Request) {
   const { userId, response } = await requireCurrentUserId()
-  if (!userId) return response
+  if (!userId) return response ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
     const body = await request.json()

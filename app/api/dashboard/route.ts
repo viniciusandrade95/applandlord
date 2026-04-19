@@ -5,7 +5,9 @@ import { buildDashboardAttentionModel } from '@/lib/dashboard-attention'
 
 export async function GET() {
   const { userId, response } = await requireCurrentUserId()
-  if (!userId) return response
+  if (!userId) {
+    return response ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
 
   try {
     const now = new Date()

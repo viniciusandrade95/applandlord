@@ -161,8 +161,8 @@ export function LeaseWizard({ propertyOptions, unitOptions, renterOptions, submi
       {step === 1 && (
         <div className="form-grid">
           <div className="field">
-            <label>Imóvel</label>
-            <select value={form.propertyId} onChange={(event) => {
+            <label htmlFor="wizard-property">Imóvel</label>
+            <select id="wizard-property" value={form.propertyId} onChange={(event) => {
               updateField('propertyId', event.target.value)
               updateField('unitId', '')
             }}>
@@ -173,8 +173,8 @@ export function LeaseWizard({ propertyOptions, unitOptions, renterOptions, submi
             </select>
           </div>
           <div className="field">
-            <label>Unidade</label>
-            <select value={form.unitId} onChange={(event) => updateField('unitId', event.target.value)}>
+            <label htmlFor="wizard-unit">Unidade</label>
+            <select id="wizard-unit" value={form.unitId} onChange={(event) => updateField('unitId', event.target.value)}>
               <option value="">Selecionar unidade</option>
               {filteredUnits.map((unit) => (
                 <option key={unit.id} value={unit.id}>{unit.label}</option>
@@ -187,16 +187,16 @@ export function LeaseWizard({ propertyOptions, unitOptions, renterOptions, submi
       {step === 2 && (
         <div className="form-grid">
           <div className="field field-full">
-            <label>Modo do inquilino</label>
-            <select value={form.renterMode} onChange={(event) => updateField('renterMode', event.target.value as 'existing' | 'new')}>
+            <label htmlFor="wizard-renter-mode">Modo do inquilino</label>
+            <select id="wizard-renter-mode" value={form.renterMode} onChange={(event) => updateField('renterMode', event.target.value as 'existing' | 'new')}>
               <option value="existing">Usar inquilino já registado</option>
               <option value="new">Registar novo inquilino</option>
             </select>
           </div>
           {form.renterMode === 'existing' ? (
             <div className="field field-full">
-              <label>Inquilino existente</label>
-              <select value={form.renterId} onChange={(event) => updateField('renterId', event.target.value)}>
+              <label htmlFor="wizard-renter">Inquilino existente</label>
+              <select id="wizard-renter" value={form.renterId} onChange={(event) => updateField('renterId', event.target.value)}>
                 <option value="">Selecionar inquilino</option>
                 {renterOptions.map((renter) => (
                   <option key={renter.id} value={renter.id}>{renter.label}</option>
@@ -205,11 +205,11 @@ export function LeaseWizard({ propertyOptions, unitOptions, renterOptions, submi
             </div>
           ) : (
             <>
-              <div className="field field-full"><label>Nome completo</label><input value={form.newRenterFullName} onChange={(event) => updateField('newRenterFullName', event.target.value)} /></div>
-              <div className="field"><label>Email</label><input type="email" value={form.newRenterEmail} onChange={(event) => updateField('newRenterEmail', event.target.value)} /></div>
-              <div className="field"><label>Telefone</label><input value={form.newRenterPhone} onChange={(event) => updateField('newRenterPhone', event.target.value)} /></div>
-              <div className="field"><label>Documento</label><input value={form.newRenterGovernmentId} onChange={(event) => updateField('newRenterGovernmentId', event.target.value)} /></div>
-              <div className="field field-full"><label>Notas do inquilino</label><textarea value={form.newRenterNotes} onChange={(event) => updateField('newRenterNotes', event.target.value)} /></div>
+              <div className="field field-full"><label htmlFor="wizard-new-name">Nome completo</label><input id="wizard-new-name" name="newRenterFullName" autoComplete="name" value={form.newRenterFullName} onChange={(event) => updateField('newRenterFullName', event.target.value)} /></div>
+              <div className="field"><label htmlFor="wizard-new-email">Email</label><input id="wizard-new-email" name="newRenterEmail" type="email" autoComplete="email" value={form.newRenterEmail} onChange={(event) => updateField('newRenterEmail', event.target.value)} /></div>
+              <div className="field"><label htmlFor="wizard-new-phone">Telefone</label><input id="wizard-new-phone" name="newRenterPhone" type="tel" autoComplete="tel" value={form.newRenterPhone} onChange={(event) => updateField('newRenterPhone', event.target.value)} /></div>
+              <div className="field"><label htmlFor="wizard-new-doc">Documento</label><input id="wizard-new-doc" value={form.newRenterGovernmentId} onChange={(event) => updateField('newRenterGovernmentId', event.target.value)} /></div>
+              <div className="field field-full"><label htmlFor="wizard-new-notes">Notas do inquilino</label><textarea id="wizard-new-notes" value={form.newRenterNotes} onChange={(event) => updateField('newRenterNotes', event.target.value)} /></div>
             </>
           )}
         </div>
@@ -217,13 +217,13 @@ export function LeaseWizard({ propertyOptions, unitOptions, renterOptions, submi
 
       {step === 3 && (
         <div className="form-grid">
-          <div className="field"><label>Início</label><input type="date" value={form.startDate} onChange={(event) => updateField('startDate', event.target.value)} /></div>
-          <div className="field"><label>Fim (opcional)</label><input type="date" value={form.endDate} onChange={(event) => updateField('endDate', event.target.value)} /></div>
-          <div className="field"><label>Renda</label><input type="number" step="0.01" value={form.monthlyRent} onChange={(event) => updateField('monthlyRent', event.target.value)} /></div>
-          <div className="field"><label>Dia vencimento</label><input type="number" min={1} max={28} value={form.dueDay} onChange={(event) => updateField('dueDay', event.target.value)} /></div>
-          <div className="field"><label>Caução</label><input type="number" step="0.01" value={form.depositAmount} onChange={(event) => updateField('depositAmount', event.target.value)} /></div>
-          <div className="field"><label>Estado</label><select value={form.status} onChange={(event) => updateField('status', event.target.value)}><option value="Active">Active</option><option value="Planned">Planned</option><option value="Ended">Ended</option></select></div>
-          <div className="field field-full"><label>Notas</label><textarea value={form.notes} onChange={(event) => updateField('notes', event.target.value)} /></div>
+          <div className="field"><label htmlFor="wizard-start">Início</label><input id="wizard-start" type="date" value={form.startDate} onChange={(event) => updateField('startDate', event.target.value)} /></div>
+          <div className="field"><label htmlFor="wizard-end">Fim (opcional)</label><input id="wizard-end" type="date" value={form.endDate} onChange={(event) => updateField('endDate', event.target.value)} /></div>
+          <div className="field"><label htmlFor="wizard-rent">Renda</label><input id="wizard-rent" type="number" step="0.01" value={form.monthlyRent} onChange={(event) => updateField('monthlyRent', event.target.value)} /></div>
+          <div className="field"><label htmlFor="wizard-dueday">Dia vencimento</label><input id="wizard-dueday" type="number" min={1} max={28} value={form.dueDay} onChange={(event) => updateField('dueDay', event.target.value)} /></div>
+          <div className="field"><label htmlFor="wizard-deposit">Caução</label><input id="wizard-deposit" type="number" step="0.01" value={form.depositAmount} onChange={(event) => updateField('depositAmount', event.target.value)} /></div>
+          <div className="field"><label htmlFor="wizard-status">Estado</label><select id="wizard-status" value={form.status} onChange={(event) => updateField('status', event.target.value)}><option value="Active">Ativo</option><option value="Planned">Planeado</option><option value="Ended">Terminado</option></select></div>
+          <div className="field field-full"><label htmlFor="wizard-notes">Notas</label><textarea id="wizard-notes" value={form.notes} onChange={(event) => updateField('notes', event.target.value)} /></div>
         </div>
       )}
 

@@ -44,20 +44,20 @@ export default function LoginPage() {
     <main className="app-shell" style={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>
       <section className="card" style={{ width: 'min(420px, 100%)' }}>
         <div className="card-header">
-          <h1>Login</h1>
-          <span>Use email e password (min 6 chars)</span>
+          <h1>Entrar</h1>
+          <span>Use o seu email e palavra-passe (mínimo 6 caracteres)</span>
         </div>
         <div className="card-body">
           <form onSubmit={onSubmit} className="stack">
             <div className="field">
               <label htmlFor="email">Email</label>
-              <input id="email" name="email" type="email" required />
+              <input id="email" name="email" type="email" autoComplete="email" inputMode="email" required />
             </div>
             <div className="field">
-              <label htmlFor="password">Password</label>
-              <input id="password" name="password" type="password" required minLength={6} />
+              <label htmlFor="password">Palavra-passe</label>
+              <input id="password" name="password" type="password" autoComplete="current-password" required minLength={6} />
             </div>
-            {error ? <p className="notice notice-error">{error}</p> : null}
+            {error ? <p className="notice notice-error" role="alert" aria-live="assertive">{error}</p> : null}
             <button className="button button-primary" type="submit" disabled={submitting}>
               {submitting ? 'Entrando...' : 'Entrar'}
             </button>

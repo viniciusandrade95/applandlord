@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-07-01 (v0.2.0 — Acessibilidade Fase A + indicador de versão)
+- **Autor:** Vinicius + Claude
+- **Tipo:** feat/a11y
+- **Escopo:** melhorias de acessibilidade e usabilidade (foco no público sénior/não técnico) e indicador de versão visível na interface
+- **Descrição:** adicionado foco visível por teclado (`:focus-visible`) global em links, botões e campos, com contorno claro sobre a barra lateral escura (`app/globals.css`); notificações passam a ser anunciadas por leitores de ecrã com `role="alert"`/`aria-live="assertive"` (erros) e `role="status"`/`aria-live="polite"` (sucessos) em `app/components/control-center-page.tsx` e `app/login/page.tsx`; todos os campos do wizard de contrato passaram a ter `label`+`htmlFor`/`id` associados (`app/components/lease-wizard.tsx`); adicionado link "Saltar para o conteúdo" no layout do workspace e `<h1>` único por página; adicionados atributos `autocomplete`/`inputmode` a login, inquilino e imóvel; traduzido texto solto em inglês (`Active/Planned/Ended`, "Login", "Password"); adicionado indicador de versão em build-time via `next.config.mjs` (`NEXT_PUBLIC_APP_VERSION`, `NEXT_PUBLIC_GIT_SHA`, `NEXT_PUBLIC_GIT_DATE`, `NEXT_PUBLIC_BUILD_TIME`) exposto por `lib/version.ts` e apresentado no rodapé do painel; versão de `package.json` elevada para `0.2.0`.
+- **Impacto no roadmap:** melhora conformidade de acessibilidade (WCAG) e rastreabilidade de releases; não altera schema nem regras de negócio.
+- **Risco/rollback:** risco baixo (mudanças aditivas de UI/CSS e configuração de build); rollback por reversão dos ficheiros alterados e do `next.config.mjs`.
+
 ## 2026-04-18 (Sprint 14 — Demo final + go-live controlado)
 - **Autor:** Codex
 - **Tipo:** feat/docs/test

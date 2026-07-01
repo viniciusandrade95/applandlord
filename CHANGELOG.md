@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-07-01 (v0.4.0 — Gestão do dia-a-dia: editar, terminar, confirmar, despesas)
+- **Autor:** Vinicius + Claude
+- **Tipo:** feat/ux
+- **Escopo:** fecha as lacunas de gestão identificadas na auditoria de fricção — a app deixa de ser só um funil de entrada de dados e passa a permitir manter o que já existe
+- **Descrição:**
+  - **Confirmar pagamento:** botão "Confirmar pagamento" na lista de pagamentos (liga a `POST /api/payments/[id]/confirm`, que já existia mas estava órfã); os pagamentos deixam de ficar eternamente "a aguardar" e passam a entrar no resumo financeiro. Mostra o estado (Confirmado / A aguardar confirmação).
+  - **Terminar contrato:** botão "Terminar contrato" nos contratos ativos (liga a `PATCH /api/leases`), que encerra o contrato e liberta a unidade.
+  - **Editar imóvel/unidade/inquilino:** adicionados `PATCH` a `/api/properties`, `/api/units`, `/api/renters` (não existiam) + `EditEntityForm` reutilizável e botões "Editar" nos cartões de imóvel, linhas de unidade e numa nova lista de inquilinos na aba "Imóveis".
+  - **Despesas:** UI de despesas (registar por categoria/imóvel/data + lista com apagar), ligada ao CRUD `/api/expenses` que já existia sem interface; o lucro líquido passa a poder refletir custos reais.
+  - **Rendas em atraso:** na aba "Finanças", resumo destacado (N em atraso · total €), filtro (todas / só em atraso / por receber) e data de vencimento por cobrança.
+  - **Navegação:** o separador de contratos deixa de se chamar "Mais" («…») no telemóvel e passa a "Contratos" com ícone próprio, revelando uma ação central antes escondida.
+- **Impacto no roadmap:** cobre criar + manter (editar/terminar/confirmar/apagar) das entidades centrais; sem mudança de schema.
+- **Risco/rollback:** risco baixo-médio (novos handlers PATCH com scoping por owner; UI aditiva). Rollback por reversão dos ficheiros alterados.
+
 ## 2026-07-01 (v0.3.0 — Vista de gestão do portfólio na aba "Imóveis")
 - **Autor:** Vinicius + Claude
 - **Tipo:** feat/ux

@@ -73,3 +73,48 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to create property' }, { status: 500 })
   }
 }
+
+export async function PATCH(request: Request) {
+  const { userId, response } = await requireCurrentUserId()
+  if (!userId) return response ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  try {
+    const body = await request.json()
+    const id = asString(body.id)
+    if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 })
+
+    const existing = await prisma.property.findFirst({ where: { id, ownerId: userId } })
+    if (!existing) return NextResponse.json({ error: 'Property not found' }, { status: 404 })
+
+    const name = asString(body.name, existing.name)
+    const addressLine1 = asString(body.addressLine1, existing.addressLine1)
+    const city = asString(body.city, existing.city)
+    const region = asString(body.region, existing.region)
+    const postalCode = asString(body.postalCode, existing.postalCode)
+
+    if (!name || !addressLine1 || !city || !region || !postalCode) {
+      return NextResponse.json(
+        { error: 'name, addressLine1, city, region and postalCode are required' },
+        { status: 400 }
+      )
+    }
+
+    const property = await prisma.property.update({
+      where: { id },
+      data: {
+        name,
+        addressLine1,
+        addressLine2: body.addressLine2 === undefined ? existing.addressLine2 : asString(body.addressLine2) || null,
+        city,
+        region,
+        postalCode,
+        country: asString(body.country, existing.country),
+        description: body.description === undefined ? existing.description : asString(body.description) || null,
+      },
+    })
+
+    return NextResponse.json(property)
+  } catch {
+    return NextResponse.json({ error: 'Failed to update property' }, { status: 500 })
+  }
+}

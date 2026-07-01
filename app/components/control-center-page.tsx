@@ -413,23 +413,29 @@ type Apartment = {
 
 const EXPENSE_CATEGORIES = ['Manutenção', 'Condomínio', 'IMI', 'Seguro', 'Água', 'Eletricidade', 'Gás', 'Limpeza', 'Outros'] as const
 
-function apartmentBadgeLabel(status: Apartment['monthStatus']) {
-  switch (status) {
-    case 'paid':
-      return 'Pago este mês'
-    case 'confirming':
-      return 'Pagamento por confirmar'
-    case 'due':
-      return 'Falta pagar'
-    default:
-      return 'Vago · sem inquilino'
-  }
+const STATUS_WORD: Record<Apartment['monthStatus'], string> = {
+  paid: 'Pago',
+  confirming: 'A confirmar',
+  due: 'Por pagar',
+  vacant: 'Vago',
+}
+
+// Marca de estado à direita do cartão: cor apenas no texto e na marca (sem fundos pastel).
+function StatusMark({ status }: { status: Apartment['monthStatus'] }) {
+  return (
+    <span className={`apt-status apt-status-${status}`}>
+      {status === 'paid'
+        ? <svg className="apt-status-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 12.5 5 5L20 6.5" /></svg>
+        : <span className="apt-status-dot" aria-hidden="true" />}
+      <span>{STATUS_WORD[status]}</span>
+    </span>
+  )
 }
 
 /**
- * Cartão grande e legível de um apartamento na página inicial.
- * Mostra o essencial que a senhora precisa: morada, inquilino, renda e se já pagou este mês.
- * O cartão inteiro abre o detalhe; o botão "Marcar como pago" é uma ação separada (não aninhada).
+ * Cartão de um apartamento. Desenho intencional: ícone à esquerda; nome + estado no topo
+ * (o estado é a âncora, à direita); inquilino e renda por baixo; e um rodapé discreto só
+ * quando há contrato/avarias. Fundo branco, sem listras nem pastéis.
  */
 function ApartmentCard({ apt, onOpen, onMarkPaid, paying }: {
   apt: Apartment
@@ -437,22 +443,24 @@ function ApartmentCard({ apt, onOpen, onMarkPaid, paying }: {
   onMarkPaid: (apt: Apartment) => void
   paying: boolean
 }) {
-  const { unit, lease, renter, monthStatus, rent, title, address, openTickets } = apt
+  const { unit, lease, renter, monthStatus, rent, title, openTickets } = apt
   return (
-    <div className={`apt-card apt-card-${monthStatus}`}>
+    <div className="apt-card">
       <button className="apt-card-main" type="button" data-apt-card={unit.id as string} aria-label={`Abrir ${title}`} onClick={() => onOpen(unit.id as string)}>
-        <span className="apt-card-avatar"><UiIcon name="building" /></span>
-        <span className="apt-card-info">
-          <strong className="apt-card-title">{title}</strong>
-          {address ? <span className="apt-card-sub">{address}</span> : null}
-          <span className="apt-card-tenant">{renter ? `${renter.fullName as string} · ${money(rent)}/mês` : 'Sem inquilino'}</span>
-          <span className="apt-card-meta">
-            <span className={`apt-badge apt-badge-${monthStatus}`}>{apartmentBadgeLabel(monthStatus)}</span>
-            {lease?.endDate ? <span className="apt-chip-soft">Contrato até {date(lease.endDate)}</span> : null}
-            {openTickets > 0 ? <span className="apt-chip-ticket">{openTickets} {openTickets === 1 ? 'avaria' : 'avarias'}</span> : null}
+        <span className="apt-card-icon"><UiIcon name="building" /></span>
+        <span className="apt-card-body">
+          <span className="apt-card-top">
+            <strong className="apt-card-title">{title}</strong>
+            <StatusMark status={monthStatus} />
           </span>
+          <span className="apt-card-tenant">{renter ? `${renter.fullName as string} · ${money(rent)}` : 'Sem inquilino'}</span>
+          {lease?.endDate || openTickets > 0 ? (
+            <span className="apt-card-foot">
+              {lease?.endDate ? <span className="apt-foot-item">Contrato até {date(lease.endDate)}</span> : null}
+              {openTickets > 0 ? <span className="apt-foot-item apt-foot-alert">{openTickets} {openTickets === 1 ? 'avaria' : 'avarias'}</span> : null}
+            </span>
+          ) : null}
         </span>
-        <span className="apt-card-arrow"><UiIcon name="arrow" /></span>
       </button>
       {monthStatus === 'due' || monthStatus === 'confirming' ? (
         <button className="apt-pay" type="button" disabled={paying} aria-busy={paying} onClick={() => onMarkPaid(apt)}>
@@ -1126,20 +1134,21 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
               </div>
             </div>
 
-            {apartments.length > 3 ? (
-              <div className="apt-search">
-                <input
-                  type="search"
-                  value={apartmentQuery}
-                  onChange={(event) => setApartmentQuery(event.target.value)}
-                  placeholder="Procurar apartamento, morada ou inquilino…"
-                  aria-label="Procurar apartamento"
-                />
-                <p className="sr-only" role="status" aria-live="polite">
-                  {apartmentQuery ? `${visibleApartments.length} ${visibleApartments.length === 1 ? 'apartamento encontrado' : 'apartamentos encontrados'}` : ''}
-                </p>
-              </div>
-            ) : null}
+            <div className="apt-search">
+              <span className="apt-search-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.2-3.2" /></svg>
+              </span>
+              <input
+                type="search"
+                value={apartmentQuery}
+                onChange={(event) => setApartmentQuery(event.target.value)}
+                placeholder="Procurar apartamento ou inquilino…"
+                aria-label="Procurar apartamento"
+              />
+              <p className="sr-only" role="status" aria-live="polite">
+                {apartmentQuery ? `${visibleApartments.length} ${visibleApartments.length === 1 ? 'apartamento encontrado' : 'apartamentos encontrados'}` : ''}
+              </p>
+            </div>
 
             <section className="apt-list" aria-label="Os meus apartamentos">
               {visibleApartments.length ? visibleApartments.map((apt) => (

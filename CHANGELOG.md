@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-07-01 (v0.3.0 — Vista de gestão do portfólio na aba "Imóveis")
+- **Autor:** Vinicius + Claude
+- **Tipo:** feat/ux
+- **Escopo:** a aba "Imóveis" (`/portfolio`) deixa de ser apenas um assistente de configuração e passa a mostrar a carteira real quando a conta já está configurada
+- **Descrição:** enquanto o portfólio não está completo, mantém-se o funil guiado de onboarding; quando existem imóvel + unidade + inquilino (`setupComplete`), a página passa a mostrar uma vista de gestão — resumo (imóveis, unidades, ocupadas, vagas, em manutenção) e um cartão por imóvel (`PropertyCard`) com as suas unidades, renda, estado e inquilino ocupante (via contrato ativo). Ação principal "Adicionar imóvel" e "Adicionar unidade"/"Voltar aos imóveis" secundárias; os formulários de criação (imóvel/unidade/inquilino) são reutilizados. Revisto por revisão adversarial multi-agente; corrigidos contraste dos chips (escurecidos `chip-positive`/`chip-warning` para cumprir WCAG AA sobre o fundo da página) e o bucket de unidades em manutenção (para os totais baterem certo).
+- **Impacto no roadmap:** resolve a lacuna de o senhorio nunca ver a sua lista de imóveis; alinha com "Reconhecimento > memória" da constituição. Sem mudança de schema nem de API.
+- **Risco/rollback:** risco baixo (mudança de UI/CSS); rollback por reversão dos ficheiros alterados.
+
 ## 2026-07-01 (v0.2.0 — Acessibilidade Fase A + indicador de versão)
 - **Autor:** Vinicius + Claude
 - **Tipo:** feat/a11y

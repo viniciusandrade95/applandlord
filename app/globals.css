@@ -285,6 +285,41 @@ select:focus-visible,
   text-underline-offset: 3px;
 }
 
+button.inline-link {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.portfolio-summary {
+  margin-bottom: 4px;
+}
+
+.unit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid rgba(23, 32, 51, 0.08);
+}
+
+.unit-row:first-child {
+  border-top: 0;
+}
+
+.unit-row strong {
+  display: block;
+}
+
+.unit-row .muted {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.88rem;
+}
+
 .status-panel {
   display: grid;
   gap: 14px;
@@ -597,12 +632,12 @@ select:focus-visible,
 
 .chip-positive {
   background: rgba(34, 197, 94, 0.12);
-  color: #15803d;
+  color: #0f6b33;
 }
 
 .chip-warning {
   background: rgba(251, 191, 36, 0.16);
-  color: #a16207;
+  color: #7a4a06;
 }
 
 .chip-danger {

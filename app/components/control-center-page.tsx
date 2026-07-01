@@ -260,6 +260,55 @@ function SmartEmptyState({ title, description, actionLabel, actionHref }: { titl
   </div>
 }
 
+/**
+ * Cartão de gestão de um imóvel: mostra morada, resumo de ocupação e a lista de
+ * unidades com renda, estado e inquilino ocupante (via contrato ativo).
+ */
+function PropertyCard({ property }: { property: Row }) {
+  const units: Row[] = Array.isArray(property.units) ? (property.units as Row[]) : []
+  const leases: Row[] = Array.isArray(property.leases) ? (property.leases as Row[]) : []
+  const occupied = units.filter((unit) => unit.status === 'Occupied').length
+  const vacant = units.filter((unit) => unit.status === 'Vacant').length
+  const other = units.length - occupied - vacant
+  const monthlyRent = units.reduce((sum, unit) => sum + (unit.status === 'Occupied' ? Number(unit.monthlyRent ?? 0) : 0), 0)
+
+  return (
+    <article className="card">
+      <div className="card-header">
+        <h2>{property.name as string}</h2>
+        <span>{property.addressLine1 as string}{property.city ? `, ${property.city as string}` : ''}</span>
+      </div>
+      <div className="card-body">
+        <div className="chips" style={{ marginBottom: 14 }}>
+          <span className="chip chip-accent">{units.length} {units.length === 1 ? 'unidade' : 'unidades'}</span>
+          {occupied ? <span className="chip chip-positive">{occupied} ocupada{occupied === 1 ? '' : 's'}</span> : null}
+          {vacant ? <span className="chip chip-warning">{vacant} vaga{vacant === 1 ? '' : 's'}</span> : null}
+          {other > 0 ? <span className="chip chip-accent">{other} em manutenção</span> : null}
+          {monthlyRent ? <span className="chip chip-accent">{money(monthlyRent)}/mês</span> : null}
+        </div>
+        {units.length ? (
+          <div className="stack">
+            {units.map((unit) => {
+              const tenant = leases.find((lease) => lease.unitId === unit.id && lease.status === 'Active')?.renter?.fullName as string | undefined
+              return (
+                <div key={unit.id as string} className="unit-row">
+                  <div>
+                    <strong>{unit.name as string}</strong>
+                    <span className="muted">{money(Number(unit.monthlyRent ?? 0))} · {tenant ?? 'Sem inquilino'}</span>
+                  </div>
+                  <span className={chipClass(unit.status as string)}>{statusLabel(unit.status as string)}</span>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <p className="muted">Ainda sem unidades neste imóvel.</p>
+        )}
+      </div>
+    </article>
+  )
+}
+
 type ControlCenterMode = 'all' | 'dashboard' | 'portfolio' | 'leases' | 'billing' | 'operations'
 
 export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }) {
@@ -382,9 +431,12 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
     ...(attention?.attentionByPriority?.high ?? []),
     ...(attention?.attentionByPriority?.medium ?? []),
   ].slice(0, 3)
-  const currentSetupStep: SetupStep | null = setupStep ?? (
-    !propertyOptions.length ? 'property' : !unitOptions.length ? 'unit' : !renterOptions.length ? 'renter' : null
-  )
+  const setupComplete = propertyOptions.length > 0 && unitOptions.length > 0 && renterOptions.length > 0
+  // Durante o onboarding, guia automaticamente até ao próximo passo em falta.
+  // Com o portfólio já configurado, só abre um formulário quando o utilizador escolhe adicionar algo.
+  const currentSetupStep: SetupStep | null = setupComplete
+    ? setupStep
+    : (setupStep ?? (!propertyOptions.length ? 'property' : !unitOptions.length ? 'unit' : !renterOptions.length ? 'renter' : null))
 
   return (
     <main className="app-shell" id="conteudo-principal" tabIndex={-1}>
@@ -525,22 +577,45 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
       {showPortfolio ? <section className="section" id="cadastros">
         <div className="section-header">
           <div>
-            <SectionHeading className="section-title">Configuração do portfólio</SectionHeading>
-            <p>Complete estes passos pela ordem indicada. Mostramos apenas o que precisa em cada momento.</p>
+            <SectionHeading className="section-title">{setupComplete ? 'Os seus imóveis' : 'Configuração do portfólio'}</SectionHeading>
+            <p>{setupComplete ? 'A sua carteira de imóveis, unidades e ocupação num só lugar.' : 'Complete estes passos pela ordem indicada. Mostramos apenas o que precisa em cada momento.'}</p>
           </div>
-          {loading ? <span className="pill pill-soft">A atualizar...</span> : <span className="pill pill-positive">Tudo atualizado</span>}
+          {setupComplete && !currentSetupStep
+            ? <button className="button button-primary" type="button" onClick={() => setSetupStep('property')}>Adicionar imóvel</button>
+            : loading ? <span className="pill pill-soft">A atualizar...</span> : <span className="pill pill-positive">Tudo atualizado</span>}
         </div>
+
+        {!setupComplete ? (
         <div className="setup-progress" aria-label="Passos de configuração">
           <SetupStepCard number={1} title="Registar imóvel" description="Morada e dados principais." status={propertyOptions.length ? 'completed' : currentSetupStep === 'property' ? 'active' : 'available'} onSelect={() => setSetupStep('property')} />
           <SetupStepCard number={2} title="Criar unidade" description={propertyOptions.length ? 'Defina renda e ocupação.' : 'Disponível depois do primeiro imóvel.'} status={!propertyOptions.length ? 'locked' : unitOptions.length ? 'completed' : currentSetupStep === 'unit' ? 'active' : 'available'} onSelect={() => setSetupStep('unit')} />
           <SetupStepCard number={3} title="Adicionar inquilino" description={unitOptions.length ? 'Registe os dados de contacto.' : 'Disponível depois da primeira unidade.'} status={!unitOptions.length ? 'locked' : renterOptions.length ? 'completed' : currentSetupStep === 'renter' ? 'active' : 'available'} onSelect={() => setSetupStep('renter')} />
           <SetupStepCard number={4} title="Criar contrato" description={renterOptions.length ? 'Associe imóvel, unidade e inquilino.' : 'Disponível depois do primeiro inquilino.'} status={!renterOptions.length ? 'locked' : state.leases.length ? 'completed' : 'available'} href="/leases" />
         </div>
-        {currentSetupStep === null ? <div className="setup-complete"><UiIcon name="check" /><span><strong>Configuração principal concluída</strong><small>Escolha um passo acima apenas quando quiser adicionar outro registo.</small></span></div> : null}
+        ) : null}
+
+        {setupComplete && !currentSetupStep ? (
+        <>
+          <div className="chips portfolio-summary">
+            <span className="chip chip-accent">{state.properties.length} {state.properties.length === 1 ? 'imóvel' : 'imóveis'}</span>
+            <span className="chip chip-accent">{state.units.length} {state.units.length === 1 ? 'unidade' : 'unidades'}</span>
+            {state.units.filter((unit) => unit.status === 'Occupied').length ? <span className="chip chip-positive">{state.units.filter((unit) => unit.status === 'Occupied').length} ocupadas</span> : null}
+            {state.units.filter((unit) => unit.status === 'Vacant').length ? <span className="chip chip-warning">{state.units.filter((unit) => unit.status === 'Vacant').length} vagas</span> : null}
+            {state.units.filter((unit) => unit.status !== 'Occupied' && unit.status !== 'Vacant').length ? <span className="chip chip-accent">{state.units.filter((unit) => unit.status !== 'Occupied' && unit.status !== 'Vacant').length} em manutenção</span> : null}
+          </div>
+          <div className="grid-2">
+            {state.properties.map((property) => <PropertyCard key={property.id as string} property={property} />)}
+          </div>
+          <p className="meta">Quer registar uma unidade num imóvel existente? <button className="inline-link" type="button" onClick={() => setSetupStep('unit')}>Adicionar unidade</button></p>
+        </>
+        ) : null}
+
+        {setupComplete && currentSetupStep ? <div className="form-actions"><button className="button button-secondary" type="button" onClick={() => setSetupStep(null)}>← Voltar aos imóveis</button></div> : null}
+
         <div className="setup-form-layout">
           {currentSetupStep === 'property' ?
           <Panel title="Imóveis" subtitle={`${propertyOptions.length} registados`}>
-            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/properties', payload(form), 'Imóvel registado com sucesso. Agora pode criar a primeira unidade.') ; form.reset(); setSetupStep('unit') } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível registar o imóvel.' }) } }}>
+            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/properties', payload(form), 'Imóvel registado com sucesso. Agora pode criar a primeira unidade.') ; form.reset(); setSetupStep(setupComplete ? null : 'unit') } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível registar o imóvel.' }) } }}>
               <div className="form-grid">
                 <div className="field"><label htmlFor="property-name">Nome</label><input id="property-name" name="name" required /></div>
                 <div className="field"><label htmlFor="property-address1">Endereço</label><input id="property-address1" name="addressLine1" autoComplete="address-line1" required /></div>
@@ -562,7 +637,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
           : null}
           {currentSetupStep === 'unit' ?
           <Panel title="Unidades" subtitle={`${unitOptions.length} registadas`}>
-            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/units', payload(form), 'Unidade registada com sucesso. Agora pode adicionar o inquilino.') ; form.reset(); setSetupStep('renter') } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível registar a unidade.' }) } }}>
+            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/units', payload(form), 'Unidade registada com sucesso. Agora pode adicionar o inquilino.') ; form.reset(); setSetupStep(setupComplete ? null : 'renter') } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível registar a unidade.' }) } }}>
               <div className="form-grid">
                 <div className="field"><label htmlFor="unit-property">Imóvel</label><select id="unit-property" name="propertyId" required defaultValue=""><option value="" disabled>Selecionar</option>{propertyOptions.map((property) => <option key={property.id} value={property.id}>{property.label}</option>)}</select></div>
                 <div className="field"><label htmlFor="unit-name">Nome</label><input id="unit-name" name="name" required /></div>
@@ -586,7 +661,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
 
           {currentSetupStep === 'renter' ?
           <Panel title="Inquilinos" subtitle={`${renterOptions.length} registados`}>
-            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/renters', payload(form), 'Inquilino registado com sucesso.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível registar o inquilino.' }) } }}>
+            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/renters', payload(form), 'Inquilino registado com sucesso.') ; form.reset(); setSetupStep(null) } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível registar o inquilino.' }) } }}>
               <div className="form-grid">
                 <div className="field field-full"><label htmlFor="renter-name">Nome completo</label><input id="renter-name" name="fullName" autoComplete="name" required /></div>
                 <div className="field"><label htmlFor="renter-email">Email</label><input id="renter-email" name="email" type="email" autoComplete="email" inputMode="email" /></div>

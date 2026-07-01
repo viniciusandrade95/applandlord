@@ -112,17 +112,16 @@ function chipClass(value?: string) {
 }
 
 
-function kpiValue(value: number, format: 'count' | 'currency' | 'percent') {
-  if (format === 'currency') return money(value)
-  if (format === 'percent') return `${Math.round(value)}%`
-  return `${Math.round(value)}`
-}
+function UiIcon({ name }: { name: 'building' | 'income' | 'check' | 'tools' | 'arrow' }) {
+  const paths: Record<string, ReactNode> = {
+    building: <><path d="M4 21V5l8-3v19M12 8h8v13M8 7v2M8 12v2M8 17v2M16 12v2M16 17v2M2 21h20" /></>,
+    income: <><path d="M4 19V9M10 19V5M16 19v-7M22 19V3" /><path d="M2 21h22" /></>,
+    check: <><circle cx="12" cy="12" r="9" /><path d="m8 12 2.5 2.5L16 9" /></>,
+    tools: <><path d="m14 7 3-3 3 3-3 3M5 19l9-9M4 14l6 6" /></>,
+    arrow: <><path d="M5 12h14M14 7l5 5-5 5" /></>,
+  }
 
-function toneClass(tone: 'critical' | 'warning' | 'healthy' | 'info') {
-  if (tone === 'critical') return 'state-critical'
-  if (tone === 'warning') return 'state-warning'
-  if (tone === 'healthy') return 'state-healthy'
-  return 'state-info'
+  return <svg className="ui-icon" viewBox="0 0 24 24" aria-hidden="true">{paths[name]}</svg>
 }
 
 function payload(form: HTMLFormElement) {
@@ -282,132 +281,138 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
   const showLeases = mode === 'all' || mode === 'leases'
   const showBilling = mode === 'all' || mode === 'billing'
   const showOperations = mode === 'all' || mode === 'operations'
+  const occupancyRate = counts?.units ? Math.round(((counts.occupiedUnits ?? 0) / counts.units) * 100) : 0
+  const dashboardAlerts = [
+    ...(attention?.attentionByPriority?.high ?? []),
+    ...(attention?.attentionByPriority?.medium ?? []),
+  ].slice(0, 3)
 
   return (
     <main className="app-shell">
-      {showDashboard ? <section className="section" style={{ paddingBottom: 0 }}>
-        <div className="section-header">
+      {showDashboard ? <>
+        <header className="mobile-dashboard-header">
           <div>
-            <h2 className="section-title">Sessão</h2>
-            <p>Conta autenticada ativa.</p>
+            <p className="screen-kicker">Resumo dos seus imóveis</p>
+            <h1>Painel geral</h1>
           </div>
           <button
-            className="button button-secondary"
+            className="session-button"
             type="button"
+            aria-label="Terminar sessão"
+            title="Terminar sessão"
             onClick={async () => {
               await fetch('/api/auth/logout', { method: 'POST' })
               window.location.href = '/login'
             }}
           >
-            Logout
+            Sair
           </button>
-        </div>
-      </section> : null}
-      {showDashboard ? <section className="hero">
-        <div className="hero-grid">
+        </header>
+
+        <section className={`wellbeing-card ${(counts?.overdueInvoices ?? 0) > 0 ? 'wellbeing-card-warning' : ''}`}>
+          <div className="wellbeing-icon"><UiIcon name="check" /></div>
           <div>
-            <span className="eyebrow">Applandlord MVP</span>
-            <h1>Imóveis, contratos e cobranças num só painel.</h1>
-            <p className="hero-copy">
-              Organize o dia da sua operação de arrendamento num único fluxo: cadastrar imóveis, ocupar unidades, emitir cobranças e confirmar pagamentos.
-            </p>
-            <div className="hero-actions">
-              <a className="button button-primary" href="#cadastros">Começar cadastro base</a>
-              <a className="inline-link" href="#financeiro">Já tenho base pronta, quero ir ao financeiro</a>
-            </div>
-            <div className="summary-grid">
-              <article className="summary-card"><div className="label">Imóveis</div><div className="value">{counts?.properties ?? 0}</div><div className="hint">Portfólio ativo</div></article>
-              <article className="summary-card"><div className="label">Unidades</div><div className="value">{counts?.units ?? 0}</div><div className="hint">{counts ? `${counts.occupiedUnits} ocupadas` : 'Estrutura operacional'}</div></article>
-              <article className="summary-card"><div className="label">A receber</div><div className="value">{finances ? money(finances.openInvoices) : '€0'}</div><div className="hint">Saldo aberto</div></article>
-              <article className="summary-card"><div className="label">Receita confirmada</div><div className="value">{finances ? money(finances.monthlyConfirmedPayments) : '€0'}</div><div className="hint">Pagamentos confirmados</div></article>
-            </div>
+            <span>{loading ? 'A atualizar informação' : (counts?.overdueInvoices ?? 0) > 0 ? 'Precisa da sua atenção' : 'Tudo em ordem'}</span>
+            <strong>{attention?.daySummary.title ?? 'Estamos a preparar o seu resumo.'}</strong>
           </div>
-          <aside className="status-panel">
-            <h2>Resumo do senhorio</h2>
-            <p>Veja rapidamente o que precisa de decisão hoje: contratos ativos, cobranças em atraso e lucro líquido do mês.</p>
-            <div className="pills">
-              <span className="pill pill-soft">Base operacional</span>
-              <span className="pill pill-positive">Cobranças ativas</span>
-              <span className="pill pill-warning">Manutenção em curso</span>
-            </div>
-            <div className="stack-sm">
-              <div className="pill pill-soft">Contratos ativos: {counts?.activeLeases ?? 0}</div>
-              <div className="pill pill-soft">Cobranças em atraso: {counts?.overdueInvoices ?? 0}</div>
-              <div className="pill pill-soft">Taxa de recebimento: {finances?.collectionRate ?? 0}%</div>
-              <div className="pill pill-soft">Aguardando confirmação: {finances?.awaitingConfirmation ?? 0}</div>
-              <div className="pill pill-soft">Lucro líquido mensal: {finances ? money(finances.monthlyNetProfit) : '€0'}</div>
-            </div>
-          </aside>
-        </div>
-      </section> : null}
+        </section>
 
-      {showDashboard ? <section className="section">
-        <div className="attention-shell">
-          <article className="attention-summary card">
-            <div className="card-header">
-              <h3>Resumo humano do dia</h3>
-              <span>{loading ? 'Atualizando...' : 'Atualizado agora'}</span>
-            </div>
-            <div className="card-body">
-              <p className="attention-title">{attention?.daySummary.title ?? 'Sem dados de atenção no momento.'}</p>
-              <p className="muted">{attention?.daySummary.detail ?? 'Ao carregar dados, o painel mostra um resumo acionável da operação diária.'}</p>
-              <div className="pills">{(attention?.daySummary.highlights ?? ['0 em atraso', '0 aguardando confirmação', '0 tickets urgentes']).map((item) => <span key={item} className="pill pill-soft">{item}</span>)}</div>
-            </div>
-          </article>
+        {notice ? <div className={`notice ${notice.kind === 'success' ? 'notice-success' : 'notice-error'}`}>{notice.text}</div> : null}
 
-          <article className="card">
-            <div className="card-header"><h3>Ações rápidas</h3><span>5 CTAs essenciais</span></div>
-            <div className="card-body">
-              <div className="quick-actions-grid">
-                {(attention?.quickActions ?? []).map((action) => (
-                  <a key={action.id} href={action.href} className={`quick-action-card ${toneClass(action.tone)}`}>
-                    <strong>{action.label}</strong>
-                    <span>{action.detail}</span>
-                  </a>
-                ))}
-                {!attention?.quickActions?.length ? <div className="empty">Sem ações rápidas disponíveis (fallback de UI).</div> : null}
+        <section className="senior-kpi-grid" aria-label="Resumo principal">
+          <a className="senior-kpi-card" href="/portfolio">
+            <span className="kpi-icon kpi-icon-blue"><UiIcon name="building" /></span>
+            <span className="kpi-label">Imóveis</span>
+            <strong>{counts?.properties ?? 0}</strong>
+            <small>{counts?.vacantUnits ? `${counts.vacantUnits} unidades vagas` : 'Todos acompanhados'}</small>
+          </a>
+          <a className="senior-kpi-card" href="/billing">
+            <span className="kpi-icon kpi-icon-green"><UiIcon name="income" /></span>
+            <span className="kpi-label">Recebido</span>
+            <strong>{finances ? money(finances.monthlyConfirmedPayments) : '€0'}</strong>
+            <small>Este mês</small>
+          </a>
+          <a className="senior-kpi-card" href="/billing">
+            <span className="kpi-icon kpi-icon-green"><UiIcon name="check" /></span>
+            <span className="kpi-label">Pagamentos</span>
+            <strong>{counts?.overdueInvoices ? `${counts.overdueInvoices} em atraso` : 'Em dia'}</strong>
+            <small>{finances?.awaitingConfirmation ?? 0} por confirmar</small>
+          </a>
+          <a className="senior-kpi-card" href="/operations">
+            <span className="kpi-icon kpi-icon-orange"><UiIcon name="tools" /></span>
+            <span className="kpi-label">Manutenção</span>
+            <strong>{counts?.openMaintenance ?? 0}</strong>
+            <small>{counts?.openMaintenance ? 'Pedidos pendentes' : 'Tudo em ordem'}</small>
+          </a>
+        </section>
+
+        <section className="dashboard-overview-grid">
+          <article className="dashboard-simple-card occupancy-card">
+            <div className="simple-card-heading">
+              <div><span>Ocupação</span><strong>Estado dos imóveis</strong></div>
+              <a href="/portfolio">Ver todos</a>
+            </div>
+            <div className="occupancy-content">
+              <div className="occupancy-ring" style={{ background: `conic-gradient(#1f9d67 ${occupancyRate * 3.6}deg, #e8edf2 0deg)` }}>
+                <div><strong>{occupancyRate}%</strong><span>ocupado</span></div>
+              </div>
+              <div className="occupancy-legend">
+                <span><i className="legend-dot legend-green" />Ocupadas <strong>{counts?.occupiedUnits ?? 0}</strong></span>
+                <span><i className="legend-dot legend-gray" />Vagas <strong>{counts?.vacantUnits ?? 0}</strong></span>
               </div>
             </div>
           </article>
 
-          <article className="card">
-            <div className="card-header"><h3>Atenção necessária por prioridade</h3><span>Ordem de execução</span></div>
-            <div className="card-body">
-              <div className="priority-columns">
-                {(['high', 'medium', 'low'] as const).map((priority) => (
-                  <div key={priority} className="priority-column">
-                    <h4 className={`priority-title ${toneClass(priority === 'high' ? 'critical' : priority === 'medium' ? 'warning' : 'info')}`}>{priority === 'high' ? 'Alta' : priority === 'medium' ? 'Média' : 'Baixa'}</h4>
-                    {(attention?.attentionByPriority?.[priority] ?? []).map((item) => (
-                      <a key={item.id} href={item.href} className="priority-item">
-                        <strong>{item.title}</strong>
-                        <span>{item.detail}</span>
-                        <em>{item.cta}</em>
-                      </a>
-                    ))}
-                    {(attention?.attentionByPriority?.[priority] ?? []).length === 0 ? <div className="empty">Sem itens nesta prioridade.</div> : null}
-                  </div>
-                ))}
-              </div>
+          <article className="dashboard-simple-card finance-summary-card">
+            <div className="simple-card-heading">
+              <div><span>Finanças</span><strong>Resumo deste mês</strong></div>
+              <a href="/billing">Detalhes</a>
             </div>
+            <dl className="finance-summary-list">
+              <div><dt>Receita recebida</dt><dd className="positive-value">{finances ? money(finances.monthlyConfirmedPayments) : '€0'}</dd></div>
+              <div><dt>Despesas</dt><dd>{finances ? money(finances.monthlyExpenses) : '€0'}</dd></div>
+              <div><dt>Saldo líquido</dt><dd>{finances ? money(finances.monthlyNetProfit) : '€0'}</dd></div>
+            </dl>
           </article>
+        </section>
 
-          <article className="card">
-            <div className="card-header"><h3>KPIs acionáveis</h3><span>8 indicadores com próximo passo</span></div>
-            <div className="card-body">
-              <div className="kpi-grid">
-                {(attention?.kpis ?? []).map((kpi) => (
-                  <a key={kpi.id} href={kpi.href} className={`kpi-card ${toneClass(kpi.status)}`}>
-                    <div className="label">{kpi.label}</div>
-                    <div className="value">{kpiValue(kpi.value, kpi.format)}</div>
-                    <div className="hint">{kpi.actionLabel}</div>
-                  </a>
-                ))}
-                {!attention?.kpis?.length ? <div className="empty">Sem KPIs disponíveis (fallback de UI).</div> : null}
-              </div>
-            </div>
-          </article>
-        </div>
-      </section> : null}
+        <section className="dashboard-simple-card dashboard-alerts">
+          <div className="simple-card-heading">
+            <div><span>Próximos passos</span><strong>{dashboardAlerts.length ? 'Precisa da sua atenção' : 'Não há tarefas urgentes'}</strong></div>
+          </div>
+          <div className="friendly-list">
+            {dashboardAlerts.map((item) => (
+              <a key={item.id} href={item.href} className="friendly-list-item">
+                <span className="friendly-list-status" />
+                <span><strong>{item.title}</strong><small>{item.cta}</small></span>
+                <UiIcon name="arrow" />
+              </a>
+            ))}
+            {!dashboardAlerts.length ? <div className="friendly-empty"><UiIcon name="check" /><span><strong>Está tudo bem com os seus imóveis.</strong><small>Voltaremos a avisar quando houver algo importante.</small></span></div> : null}
+          </div>
+        </section>
+
+        <section className="dashboard-simple-card property-preview-card">
+          <div className="simple-card-heading">
+            <div><span>Os seus imóveis</span><strong>Visão rápida</strong></div>
+            <a href="/portfolio">Ver todos</a>
+          </div>
+          <div className="friendly-list">
+            {state.properties.slice(0, 3).map((property) => {
+              const propertyUnits = state.units.filter((unit) => unit.propertyId === property.id)
+              const vacant = propertyUnits.filter((unit) => unit.status === 'Vacant').length
+              return <a key={property.id} href="/portfolio" className="friendly-list-item property-preview-item">
+                <span className="property-avatar"><UiIcon name="building" /></span>
+                <span><strong>{property.name as string}</strong><small>{property.addressLine1 as string}, {property.city as string}</small></span>
+                <span className={`friendly-status ${vacant ? 'friendly-status-warning' : ''}`}>{vacant ? `${vacant} vaga` : 'Em dia'}</span>
+                <UiIcon name="arrow" />
+              </a>
+            })}
+            {!state.properties.length ? <div className="friendly-empty"><UiIcon name="building" /><span><strong>Adicione o seu primeiro imóvel.</strong><small>Leva apenas alguns minutos.</small></span></div> : null}
+          </div>
+          <a className="dashboard-primary-action" href="/portfolio">Adicionar imóvel</a>
+        </section>
+      </> : null}
 
       {showPortfolio ? <section className="section" id="cadastros">
         <div className="section-header">

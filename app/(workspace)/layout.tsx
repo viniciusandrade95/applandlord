@@ -11,29 +11,22 @@ const navItems = [
 
 export default function WorkspaceLayout({ children }: { children: ReactNode }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', minHeight: '100vh' }}>
-      <aside style={{ borderRight: '1px solid rgba(148, 163, 184, 0.25)', padding: '24px 16px', background: '#0f172a' }}>
-        <div style={{ color: '#e2e8f0', fontWeight: 700, marginBottom: 16 }}>Applandlord</div>
-        <nav style={{ display: 'grid', gap: 8 }}>
+    <div className="workspace-layout">
+      <aside className="workspace-sidebar">
+        <Link className="workspace-brand" href="/dashboard">Applandlord</Link>
+        <nav className="workspace-nav" aria-label="Navegação principal">
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              style={{
-                color: '#cbd5e1',
-                textDecoration: 'none',
-                border: '1px solid rgba(148, 163, 184, 0.25)',
-                borderRadius: 10,
-                padding: '10px 12px',
-                fontSize: 14,
-              }}
+              className="workspace-nav-link"
             >
               {item.label}
             </Link>
           ))}
         </nav>
       </aside>
-      <div>{children}</div>
+      <div className="workspace-content">{children}</div>
     </div>
   )
 }

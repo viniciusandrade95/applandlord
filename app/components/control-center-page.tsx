@@ -579,8 +579,6 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
           <div>
             <h2 className="section-title">Operação</h2>
             <p>Fluxo de tickets com rastreabilidade completa e filtros por prioridade/estado.</p>
-            <h2 className="section-title">Operação e manutenção</h2>
-            <p>Abra pedidos de manutenção com prioridade e acompanhe o estado sem perder contexto.</p>
           </div>
           <span className="pill pill-soft">Tickets: {filteredTickets.length}/{state.maintenance.length}</span>
         </div>

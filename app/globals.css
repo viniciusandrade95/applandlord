@@ -2408,3 +2408,181 @@ button.inline-link {
   .apt-detail-month { flex-direction: column; align-items: stretch; }
   .apt-detail-month .apt-pay { width: 100%; min-width: 0; }
 }
+
+/* ============================================================
+   v0.7.0 — mini-barra, pesquisa, chips de contrato/avarias,
+   formulários de apartamento e contas
+   ============================================================ */
+
+.apt-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 9px;
+}
+
+.apt-card-meta .apt-badge { margin-top: 0; align-self: auto; }
+
+.apt-chip-soft,
+.apt-chip-ticket {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 11px;
+  border-radius: 999px;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.apt-chip-soft { color: #45526a; background: #eef1f5; }
+.apt-chip-ticket { color: #8a4b12; background: #fff3e0; }
+
+/* Mini-barra de resumo */
+.apt-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.apt-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 14px 8px;
+  border: 1px solid #e3e7ec;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(34, 51, 84, 0.05);
+}
+
+.apt-stat strong {
+  color: #16243d;
+  font-size: 1.7rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.apt-stat span {
+  color: #5b6577;
+  font-size: 0.9rem;
+  font-weight: 650;
+  text-align: center;
+}
+
+.apt-stat-warn strong { color: #b3261e; }
+
+/* Pesquisa */
+.apt-search { margin-bottom: 14px; }
+
+.apt-search input {
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 16px;
+  border: 1px solid #dde3ea;
+  border-radius: 14px;
+  background: #fff;
+  color: #16243d;
+  font-size: 1.02rem;
+}
+
+.apt-search input::placeholder { color: #5b6577; }
+
+/* Botão adicionar (agora <button>) */
+.apt-add { width: 100%; font-family: inherit; cursor: pointer; }
+
+/* Estado vazio da casa */
+.apt-empty-home {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 40px 24px;
+  border: 1px solid #e3e7ec;
+  border-radius: 20px;
+  background: #fff;
+  text-align: center;
+}
+
+.apt-empty-avatar { width: 64px; height: 64px; }
+.apt-empty-avatar .ui-icon { width: 32px; height: 32px; }
+.apt-empty-home h2 { margin: 0; color: #16243d; font-size: 1.25rem; }
+.apt-empty-home p { margin: 0 0 6px; max-width: 340px; color: #5b6577; font-size: 1.02rem; line-height: 1.5; }
+
+/* Formulário de apartamento e de contas */
+.apt-form-card {
+  padding: 20px 20px 24px;
+  border: 1px solid #e3e7ec;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(34, 51, 84, 0.055);
+}
+
+.apt-bill-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.apt-bill-grid .field { display: flex; flex-direction: column; gap: 6px; }
+.apt-bill-grid .field-full { grid-column: 1 / -1; }
+.apt-bill-grid label { color: #37435c; font-size: 0.95rem; font-weight: 650; }
+.apt-bill-grid input,
+.apt-bill-grid select {
+  min-height: 50px;
+  padding: 10px 14px;
+  border: 1px solid #dde3ea;
+  border-radius: 12px;
+  background: #fff;
+  color: #16243d;
+  font-size: 1.02rem;
+}
+
+.apt-form-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+
+.apt-bill-form {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid #eef1f4;
+}
+
+.apt-mini-delete {
+  min-height: 44px;
+  padding: 6px 14px;
+  border: 1px solid #f0d4d0;
+  border-radius: 10px;
+  color: #b3261e;
+  background: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.apt-mini-delete:hover { background: #fdecea; }
+.apt-mini-delete:disabled { opacity: 0.5; cursor: default; }
+
+/* Botão de ação nos links do detalhe (mesmo estilo dos <a>) */
+.apt-detail-links button {
+  display: inline-flex;
+  flex: 1;
+  min-width: 150px;
+  min-height: 50px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 18px;
+  border: 1px solid #dde3ea;
+  border-radius: 14px;
+  color: #23395d;
+  background: #fff;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.apt-detail-links button:hover { border-color: #b7c1cf; background: #f7f9fb; }
+
+@media (max-width: 720px) {
+  .apt-bill-grid { grid-template-columns: 1fr; }
+  .apt-stat strong { font-size: 1.5rem; }
+  .apt-stat span { font-size: 0.82rem; }
+}

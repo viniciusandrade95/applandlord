@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-07-01 (v0.7.0 — Um imóvel = um apartamento; contas, resumo e pesquisa)
+- **Autor:** Vinicius + Claude
+- **Tipo:** feat/ux + fix
+- **Escopo:** segunda ronda de feedback sobre a casa centrada no apartamento.
+- **Descrição:**
+  - **Fim do conceito de "unidade" na interface:** adicionar/editar um apartamento é um só passo (nome, morada, cidade, código postal, renda). Por trás, imóvel + unidade são criados/atualizados **atomicamente** por um novo endpoint `/api/apartments` (transação) — nunca deixa um imóvel órfão nem uma escrita parcial.
+  - **Cards mais completos:** mostram o estado do mês, **"Contrato até <data>"** e **"N avarias"** (tickets abertos), com o nome do inquilino e a renda.
+  - **Mini-barra de resumo:** nº de apartamentos, rendas em atraso e avarias abertas.
+  - **Pesquisa** de apartamentos (por nome, morada ou inquilino) — aparece quando há 4+.
+  - **Contas e despesas dentro de cada imóvel:** lista + adicionar (tipo de conta, valor, data, descrição) + apagar, ligadas à API de despesas por imóvel.
+  - **Detalhe do apartamento** reúne inquilino + contrato (datas, renda, avarias abertas), últimos pagamentos, contas e ações (editar/avaria).
+- **Correções (algumas encontradas por teste ao vivo + revisão adversarial):**
+  - "Recebido X de Y" passa a somar os **pagamentos confirmados reais** do mês (antes usava a renda nominal e podia mostrar valores de outros meses, ex.: "1900 € de 950 €").
+  - Datas formatadas em **UTC** (deixam de aparecer trocadas por um dia).
+  - Avarias atribuídas à **unidade certa** (deixaram de aparecer em unidades vizinhas do mesmo prédio).
+  - **Editar já não sobrescreve a região** do imóvel com a cidade; o **nome da unidade** é sincronizado com o do imóvel.
+  - **Gestão de foco** ao entrar/sair dos formulários de adicionar/editar (teclado e leitor de ecrã não perdem o sítio).
+  - a11y: alvo de toque do "Apagar" ≥ 44px; mini-barra anunciada como unidades rotuladas (com estado); pesquisa com região viva do nº de resultados; contraste do placeholder; título do estado vazio como cabeçalho; reconciliação do apartamento aberto se deixar de existir.
+- **Validação:** typecheck 0 erros, build de produção OK, e **teste ponta-a-ponta em browser real** (adicionar → editar → conta → marcar como pago) com verificação na base de dados (transação atómica, região preservada, sem faturas/pagamentos duplicados). Revisão adversarial de 3 dimensões (19 agentes); 14 achados confirmados corrigidos.
+- **Risco/rollback:** risco médio (novo endpoint + reescrita do painel). Rollback por reversão. Novo ficheiro `app/api/apartments/route.ts` (sem alteração de schema).
+
 ## 2026-07-01 (v0.6.0 — Casa centrada no apartamento (radicalmente mais simples))
 - **Autor:** Vinicius + Claude
 - **Tipo:** feat/ux (redesenho da página inicial)

@@ -87,14 +87,18 @@ function date(value?: string | Date | null) {
   if (!value) return '—'
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) return '—'
-  return new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: 'short', year: 'numeric' }).format(parsed)
+  return new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(parsed)
+}
+
+function todayISO() {
+  return new Date().toISOString().slice(0, 10)
 }
 
 function dateTime(value?: string | Date | null) {
   if (!value) return '—'
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) return '—'
-  return new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).format(parsed)
+  return new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }).format(parsed)
 }
 
 function periodLabel(period?: string) {
@@ -402,7 +406,12 @@ type Apartment = {
   currentInvoice: Row | null
   monthStatus: 'paid' | 'confirming' | 'due' | 'vacant'
   rent: number
+  title: string
+  address: string
+  openTickets: number
 }
+
+const EXPENSE_CATEGORIES = ['Manutenção', 'Condomínio', 'IMI', 'Seguro', 'Água', 'Eletricidade', 'Gás', 'Limpeza', 'Outros'] as const
 
 function apartmentBadgeLabel(status: Apartment['monthStatus']) {
   switch (status) {
@@ -428,9 +437,7 @@ function ApartmentCard({ apt, onOpen, onMarkPaid, paying }: {
   onMarkPaid: (apt: Apartment) => void
   paying: boolean
 }) {
-  const { unit, property, renter, monthStatus, rent } = apt
-  const title = (property?.name as string) || (unit.name as string)
-  const address = property ? `${property.addressLine1 as string}${property.city ? `, ${property.city as string}` : ''}` : ''
+  const { unit, lease, renter, monthStatus, rent, title, address, openTickets } = apt
   return (
     <div className={`apt-card apt-card-${monthStatus}`}>
       <button className="apt-card-main" type="button" data-apt-card={unit.id as string} aria-label={`Abrir ${title}`} onClick={() => onOpen(unit.id as string)}>
@@ -439,7 +446,11 @@ function ApartmentCard({ apt, onOpen, onMarkPaid, paying }: {
           <strong className="apt-card-title">{title}</strong>
           {address ? <span className="apt-card-sub">{address}</span> : null}
           <span className="apt-card-tenant">{renter ? `${renter.fullName as string} · ${money(rent)}/mês` : 'Sem inquilino'}</span>
-          <span className={`apt-badge apt-badge-${monthStatus}`}>{apartmentBadgeLabel(monthStatus)}</span>
+          <span className="apt-card-meta">
+            <span className={`apt-badge apt-badge-${monthStatus}`}>{apartmentBadgeLabel(monthStatus)}</span>
+            {lease?.endDate ? <span className="apt-chip-soft">Contrato até {date(lease.endDate)}</span> : null}
+            {openTickets > 0 ? <span className="apt-chip-ticket">{openTickets} {openTickets === 1 ? 'avaria' : 'avarias'}</span> : null}
+          </span>
         </span>
         <span className="apt-card-arrow"><UiIcon name="arrow" /></span>
       </button>
@@ -457,17 +468,25 @@ function ApartmentCard({ apt, onOpen, onMarkPaid, paying }: {
  * Inquilino + contacto, renda, datas do contrato, estado do mês, histórico de pagamentos
  * e atalhos para as ações menos frequentes (editar dados, registar avaria).
  */
-function ApartmentDetail({ apt, payments, onMarkPaid, paying }: {
+function ApartmentDetail({ apt, payments, expenses, submitting, onMarkPaid, paying, onEdit, onAddExpense, onDeleteExpense }: {
   apt: Apartment
   payments: Row[]
+  expenses: Row[]
+  submitting: string | null
   onMarkPaid: (apt: Apartment) => void
   paying: boolean
+  onEdit: (apt: Apartment) => void
+  onAddExpense: (apt: Apartment, form: HTMLFormElement) => void
+  onDeleteExpense: (id: string) => void
 }) {
-  const { unit, property, lease, renter, monthStatus, rent } = apt
-  const address = property ? `${property.addressLine1 as string}${property.city ? `, ${property.city as string}` : ''}` : ''
+  const { property, lease, renter, monthStatus, rent, address, openTickets } = apt
   const phone = renter?.phone ? String(renter.phone) : ''
   const leasePayments = lease
     ? payments.filter((payment) => (payment.invoice?.lease?.id as string) === (lease.id as string))
+    : []
+  const propertyId = property?.id as string | undefined
+  const apartmentExpenses = propertyId
+    ? expenses.filter((expense) => ((expense.property?.id ?? expense.propertyId ?? expense.lease?.property?.id) as string) === propertyId)
     : []
   const monthTitle = monthStatus === 'paid'
     ? 'Renda recebida'
@@ -478,7 +497,7 @@ function ApartmentDetail({ apt, payments, onMarkPaid, paying }: {
         : 'Apartamento vago'
   return (
     <section className="apt-detail">
-      <p className="apt-detail-address">{address}{unit.name ? ` · ${unit.name as string}` : ''}</p>
+      <p className="apt-detail-address">{address}</p>
 
       <div className={`apt-detail-month apt-detail-month-${monthStatus}`}>
         <div>
@@ -494,13 +513,14 @@ function ApartmentDetail({ apt, payments, onMarkPaid, paying }: {
 
       {lease ? (
         <div className="apt-detail-card">
-          <h2>Inquilino</h2>
+          <h2>Inquilino e contrato</h2>
           <dl className="apt-facts">
             <div><dt>Nome</dt><dd>{(renter?.fullName as string) ?? '—'}</dd></div>
             <div><dt>Telefone</dt><dd>{phone ? <a href={`tel:${phone}`}>{phone}</a> : '—'}</dd></div>
             <div><dt>Renda</dt><dd>{money(rent)} por mês</dd></div>
             <div><dt>Contrato desde</dt><dd>{date(lease.startDate)}</dd></div>
             {lease.endDate ? <div><dt>Termina</dt><dd>{date(lease.endDate)}</dd></div> : null}
+            <div><dt>Avarias abertas</dt><dd>{openTickets > 0 ? `${openTickets}` : 'Nenhuma'}</dd></div>
           </dl>
           {phone ? <a className="apt-detail-call" href={`tel:${phone}`}>Ligar ao inquilino</a> : null}
         </div>
@@ -530,10 +550,111 @@ function ApartmentDetail({ apt, payments, onMarkPaid, paying }: {
         </div>
       ) : null}
 
+      <div className="apt-detail-card">
+        <h2>Contas e despesas</h2>
+        {apartmentExpenses.length ? (
+          <ul className="apt-history">
+            {apartmentExpenses.slice(0, 8).map((expense) => (
+              <li key={expense.id as string}>
+                <span className="apt-history-date">{(expense.category as string) || 'Despesa'} · {date(expense.incurredAt)}</span>
+                <strong>{money(Number(expense.amount ?? 0))}</strong>
+                <button
+                  className="apt-mini-delete"
+                  type="button"
+                  aria-label={`Apagar despesa de ${money(Number(expense.amount ?? 0))}`}
+                  disabled={submitting === `/api/expenses/${expense.id as string}`}
+                  onClick={() => { if (window.confirm('Apagar esta conta?')) onDeleteExpense(expense.id as string) }}
+                >Apagar</button>
+              </li>
+            ))}
+          </ul>
+        ) : <p className="muted">Ainda não há contas registadas neste apartamento.</p>}
+
+        {propertyId ? (
+          <form
+            className="apt-bill-form"
+            onSubmit={(event) => { event.preventDefault(); onAddExpense(apt, event.currentTarget) }}
+          >
+            <div className="apt-bill-grid">
+              <div className="field">
+                <label htmlFor="bill-category">Tipo de conta</label>
+                <select id="bill-category" name="category" defaultValue="Condomínio">
+                  {EXPENSE_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+                </select>
+              </div>
+              <div className="field">
+                <label htmlFor="bill-amount">Valor (€)</label>
+                <input id="bill-amount" name="amount" type="number" step="0.01" min="0.01" required />
+              </div>
+              <div className="field">
+                <label htmlFor="bill-date">Data</label>
+                <input id="bill-date" name="incurredAt" type="date" defaultValue={todayISO()} />
+              </div>
+              <div className="field field-full">
+                <label htmlFor="bill-desc">Descrição (opcional)</label>
+                <input id="bill-desc" name="description" placeholder="Ex.: Condomínio de julho" />
+              </div>
+            </div>
+            <button className="button button-primary" type="submit" disabled={submitting === '/api/expenses'}>
+              {submitting === '/api/expenses' ? 'A registar…' : 'Adicionar conta'}
+            </button>
+          </form>
+        ) : null}
+      </div>
+
       <div className="apt-detail-links">
-        <a href="/portfolio">Editar dados</a>
+        <button type="button" onClick={() => onEdit(apt)}>Editar apartamento</button>
         <a href="/operations">Registar uma avaria</a>
       </div>
+    </section>
+  )
+}
+
+/**
+ * Formulário único para adicionar ou editar um apartamento. Esconde o conceito de "unidade":
+ * a senhora preenche nome, morada e renda, e por trás criamos/atualizamos imóvel + unidade.
+ */
+function ApartmentForm({ apt, onSubmit, onCancel, submitting }: {
+  apt: Apartment | null
+  onSubmit: (form: HTMLFormElement) => void
+  onCancel: () => void
+  submitting: boolean
+}) {
+  const property = apt?.property
+  const unit = apt?.unit
+  const isEdit = !!apt
+  return (
+    <section className="apt-form-card">
+      <form onSubmit={(event) => { event.preventDefault(); onSubmit(event.currentTarget) }}>
+        <div className="apt-bill-grid">
+          <div className="field field-full">
+            <label htmlFor="apt-name">Nome do apartamento</label>
+            <input id="apt-name" name="name" defaultValue={(property?.name as string) ?? ''} placeholder="Ex.: Casa das Flores" required />
+          </div>
+          <div className="field field-full">
+            <label htmlFor="apt-address">Morada</label>
+            <input id="apt-address" name="addressLine1" autoComplete="address-line1" defaultValue={(property?.addressLine1 as string) ?? ''} placeholder="Rua e número" required />
+          </div>
+          <div className="field">
+            <label htmlFor="apt-city">Cidade</label>
+            <input id="apt-city" name="city" autoComplete="address-level2" defaultValue={(property?.city as string) ?? ''} required />
+          </div>
+          <div className="field">
+            <label htmlFor="apt-postal">Código postal</label>
+            <input id="apt-postal" name="postalCode" autoComplete="postal-code" inputMode="numeric" defaultValue={(property?.postalCode as string) ?? ''} placeholder="0000-000" required />
+          </div>
+          <div className="field">
+            <label htmlFor="apt-rent">Renda mensal (€)</label>
+            <input id="apt-rent" name="monthlyRent" type="number" step="1" min="1" defaultValue={unit ? Number(unit.monthlyRent ?? 0) : ''} required />
+          </div>
+        </div>
+        <div className="apt-form-actions">
+          <button className="button button-primary" type="submit" disabled={submitting}>
+            {submitting ? 'A guardar…' : isEdit ? 'Guardar alterações' : 'Adicionar apartamento'}
+          </button>
+          <button className="button button-secondary" type="button" onClick={onCancel}>Cancelar</button>
+        </div>
+      </form>
     </section>
   )
 }
@@ -554,9 +675,12 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
   const [invoiceFilter, setInvoiceFilter] = useState<'all' | 'overdue' | 'open'>('all')
   const [openApartmentId, setOpenApartmentId] = useState<string | null>(null)
   const [payingUnitId, setPayingUnitId] = useState<string | null>(null)
+  const [addingApartment, setAddingApartment] = useState(false)
+  const [editingApartment, setEditingApartment] = useState<Apartment | null>(null)
+  const [apartmentQuery, setApartmentQuery] = useState('')
   const currentPeriod = new Date().toISOString().slice(0, 7)
   const headingRef = useRef<HTMLHeadingElement>(null)
-  const prevOpenRef = useRef<string | null>(null)
+  const prevViewRef = useRef<string>('list')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -583,19 +707,37 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
     void load()
   }, [load])
 
-  // Gestão de foco ao navegar entre a lista e o detalhe de um apartamento, para quem usa
-  // teclado ou leitor de ecrã não perder o sítio: ao abrir vai para o título; ao voltar
-  // regressa ao cartão de onde saiu.
+  // Reconcilia: se o apartamento aberto deixar de existir (ex.: removido noutra sessão), fecha o detalhe.
   useEffect(() => {
-    const previous = prevOpenRef.current
-    if (openApartmentId && openApartmentId !== previous) {
-      headingRef.current?.focus()
-    } else if (!openApartmentId && previous) {
-      const card = document.querySelector<HTMLButtonElement>(`[data-apt-card="${previous}"]`)
-      card?.focus()
+    if (openApartmentId && !loading && !state.units.some((unit) => (unit.id as string) === openApartmentId)) {
+      setOpenApartmentId(null)
     }
-    prevOpenRef.current = openApartmentId
-  }, [openApartmentId])
+  }, [openApartmentId, loading, state.units])
+
+  // Gestão de foco ao navegar entre lista / detalhe / adicionar / editar, para quem usa teclado
+  // ou leitor de ecrã não perder o sítio: ao entrar numa subvista foca o título; ao voltar à
+  // lista devolve o foco ao cartão de onde saiu.
+  const focusViewKey = addingApartment
+    ? 'add'
+    : editingApartment
+      ? `edit:${editingApartment.unit.id as string}`
+      : openApartmentId
+        ? `detail:${openApartmentId}`
+        : 'list'
+  useEffect(() => {
+    const previous = prevViewRef.current
+    if (focusViewKey !== previous) {
+      if (focusViewKey === 'list') {
+        const originId = previous.startsWith('detail:') ? previous.slice('detail:'.length) : null
+        const card = originId ? document.querySelector<HTMLButtonElement>(`[data-apt-card="${originId}"]`) : null
+        if (card) card.focus()
+        else headingRef.current?.focus()
+      } else {
+        headingRef.current?.focus()
+      }
+    }
+    prevViewRef.current = focusViewKey
+  }, [focusViewKey])
 
   async function postJson(endpoint: string, body: Record<string, unknown>, message: string, method = 'POST') {
     if (submitting) return
@@ -710,6 +852,69 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
     }
   }
 
+  // Esconde o conceito de "unidade": um apartamento = imóvel + a sua unidade, criados/atualizados
+  // atomicamente por /api/apartments (transação) — sem imóvel órfão nem escrita parcial.
+  async function addApartment(form: HTMLFormElement) {
+    if (submitting) return
+    const data = payload(form)
+    setSubmitting('add-apartment')
+    try {
+      await apiSend('/api/apartments', {
+        name: data.name,
+        addressLine1: data.addressLine1,
+        city: data.city,
+        postalCode: data.postalCode,
+        monthlyRent: Number(data.monthlyRent),
+      })
+      setNotice({ kind: 'success', text: 'Apartamento adicionado.' })
+      setAddingApartment(false)
+      await load()
+    } catch (error) {
+      setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível adicionar o apartamento.' })
+    } finally {
+      setSubmitting(null)
+    }
+  }
+
+  async function updateApartment(apt: Apartment, form: HTMLFormElement) {
+    if (submitting || !apt.property) return
+    const data = payload(form)
+    setSubmitting('edit-apartment')
+    try {
+      await apiSend('/api/apartments', {
+        propertyId: apt.property.id,
+        unitId: apt.unit.id,
+        name: data.name,
+        addressLine1: data.addressLine1,
+        city: data.city,
+        postalCode: data.postalCode,
+        monthlyRent: Number(data.monthlyRent),
+      }, 'PATCH')
+      setNotice({ kind: 'success', text: 'Apartamento atualizado.' })
+      setEditingApartment(null)
+      await load()
+    } catch (error) {
+      setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível guardar as alterações.' })
+    } finally {
+      setSubmitting(null)
+    }
+  }
+
+  async function addApartmentExpense(apt: Apartment, form: HTMLFormElement) {
+    if (!apt.property || submitting) return
+    const data = payload(form)
+    try {
+      await postJson('/api/expenses', { ...data, propertyId: apt.property.id }, 'Conta registada.')
+      form.reset() // só limpa após sucesso real (o guard acima evita limpar quando outra ação está a decorrer)
+    } catch {
+      // erro já mostrado por postJson
+    }
+  }
+
+  function deleteApartmentExpense(id: string) {
+    void postJson(`/api/expenses/${id}`, {}, 'Conta apagada.', 'DELETE')
+  }
+
   const dashboard = state.dashboard
   const counts = dashboard?.counts
   const finances = dashboard?.finances
@@ -759,10 +964,22 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
               ? 'confirming'
               : 'due'
         const rent = lease ? Number(lease.monthlyRent ?? 0) : Number(unit.monthlyRent ?? 0)
-        return { unit, property, lease, renter, currentInvoice, monthStatus, rent }
+        // Um imóvel = um apartamento. Só juntamos o nome da unidade se o imóvel tiver mais que uma.
+        const propertyUnitCount = state.units.filter((item) => (item.propertyId as string) === (unit.propertyId as string)).length
+        const propertyName = (property?.name as string) || (unit.name as string)
+        const title = propertyUnitCount > 1 ? `${propertyName} · ${unit.name as string}` : propertyName
+        const address = property ? `${property.addressLine1 as string}${property.city ? `, ${property.city as string}` : ''}` : ''
+        const openTickets = state.maintenance.filter((ticket) => {
+          // Ticket com unidade específica conta só nessa unidade; sem unidade, conta no imóvel.
+          const matches = ticket.unitId
+            ? (ticket.unitId as string) === (unit.id as string)
+            : (!!property && (ticket.propertyId as string) === (property.id as string))
+          return matches && ticket.status !== 'Resolved' && ticket.status !== 'Closed'
+        }).length
+        return { unit, property, lease, renter, currentInvoice, monthStatus, rent, title, address, openTickets }
       })
       .sort((a, b) => order[a.monthStatus] - order[b.monthStatus])
-  }, [state.units, state.leases, state.properties, state.invoices, currentPeriod])
+  }, [state.units, state.leases, state.properties, state.invoices, state.maintenance, currentPeriod])
 
   const openApartment = openApartmentId ? apartments.find((apt) => (apt.unit.id as string) === openApartmentId) ?? null : null
   const occupiedApartments = apartments.filter((apt) => apt.lease)
@@ -770,6 +987,19 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
   const dueThisMonth = occupiedApartments.filter((apt) => apt.monthStatus === 'due').length
   const confirmingThisMonth = occupiedApartments.filter((apt) => apt.monthStatus === 'confirming').length
   const expectedThisMonth = occupiedApartments.reduce((sum, apt) => sum + apt.rent, 0)
+  // Recebido = soma dos pagamentos confirmados das faturas deste mês (dinheiro real, não renda nominal).
+  const receivedThisMonth = state.payments
+    .filter((payment) => payment.confirmationStatus === 'Confirmed' && ((payment.invoice?.period) as string) === currentPeriod)
+    .reduce((sum, payment) => sum + Number(payment.amount ?? 0), 0)
+  const openTicketsTotal = state.maintenance.filter((ticket) => ticket.status !== 'Resolved' && ticket.status !== 'Closed').length
+  const apartmentSearch = apartmentQuery.trim().toLowerCase()
+  const visibleApartments = apartmentSearch
+    ? apartments.filter((apt) =>
+        apt.title.toLowerCase().includes(apartmentSearch) ||
+        apt.address.toLowerCase().includes(apartmentSearch) ||
+        ((apt.renter?.fullName as string) ?? '').toLowerCase().includes(apartmentSearch)
+      )
+    : apartments
 
   const showDashboard = mode === 'all' || mode === 'dashboard'
   const showPortfolio = mode === 'all' || mode === 'portfolio'
@@ -808,10 +1038,16 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
       {showDashboard ? <>
         <header className="mobile-dashboard-header">
           <div>
-            {openApartment
-              ? <button className="apt-back" type="button" onClick={() => setOpenApartmentId(null)}>‹ Os meus apartamentos</button>
+            {addingApartment || editingApartment || openApartment
+              ? <button className="apt-back" type="button" onClick={() => {
+                  if (addingApartment) setAddingApartment(false)
+                  else if (editingApartment) setEditingApartment(null)
+                  else setOpenApartmentId(null)
+                }}>{editingApartment ? '‹ Voltar' : '‹ Os meus apartamentos'}</button>
               : <p className="screen-kicker">A sua gestão, simples e clara</p>}
-            <h1 ref={headingRef} tabIndex={-1}>{openApartment ? ((openApartment.property?.name as string) || (openApartment.unit.name as string)) : 'Os meus apartamentos'}</h1>
+            <h1 ref={headingRef} tabIndex={-1}>
+              {addingApartment ? 'Adicionar apartamento' : editingApartment ? 'Editar apartamento' : openApartment ? openApartment.title : 'Os meus apartamentos'}
+            </h1>
           </div>
           <button
             className="session-button"
@@ -829,14 +1065,28 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
 
         {loading && apartments.length === 0 ? (
           <p className="muted" style={{ padding: '8px 2px' }}>A carregar os seus apartamentos…</p>
+        ) : addingApartment ? (
+          <ApartmentForm apt={null} onSubmit={addApartment} onCancel={() => setAddingApartment(false)} submitting={submitting === 'add-apartment'} />
+        ) : editingApartment ? (
+          <ApartmentForm apt={editingApartment} onSubmit={(form) => { if (editingApartment) updateApartment(editingApartment, form) }} onCancel={() => setEditingApartment(null)} submitting={submitting === 'edit-apartment'} />
         ) : apartments.length === 0 ? (
-          <EmptyDashboardState />
+          <div className="apt-empty-home">
+            <span className="apt-card-avatar apt-empty-avatar"><UiIcon name="building" /></span>
+            <h2>Ainda não tem apartamentos</h2>
+            <p>Adicione o seu primeiro apartamento para começar a acompanhar rendas e contas.</p>
+            <button className="button button-primary" type="button" onClick={() => setAddingApartment(true)}>Adicionar apartamento</button>
+          </div>
         ) : openApartment ? (
           <ApartmentDetail
             apt={openApartment}
             payments={state.payments}
+            expenses={state.expenses}
+            submitting={submitting}
             onMarkPaid={markApartmentPaid}
             paying={payingUnitId === (openApartment.unit.id as string)}
+            onEdit={(apt) => setEditingApartment(apt)}
+            onAddExpense={addApartmentExpense}
+            onDeleteExpense={deleteApartmentExpense}
           />
         ) : (
           <>
@@ -858,11 +1108,41 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
                   </div>
                 ) : null}
               </div>
-              <p className="apt-month-money">Recebido <strong>{finances ? money(finances.monthlyConfirmedPayments) : '€0'}</strong> de {money(expectedThisMonth)} este mês</p>
+              <p className="apt-month-money">Recebido <strong>{money(receivedThisMonth)}</strong> de {money(expectedThisMonth)} este mês</p>
             </section>
 
+            <div className="apt-stats" role="group" aria-label="Resumo do portfólio">
+              <div className="apt-stat" role="img" aria-label={`${apartments.length} ${apartments.length === 1 ? 'apartamento' : 'apartamentos'}`}>
+                <strong aria-hidden="true">{apartments.length}</strong>
+                <span aria-hidden="true">{apartments.length === 1 ? 'apartamento' : 'apartamentos'}</span>
+              </div>
+              <div className={`apt-stat ${dueThisMonth > 0 ? 'apt-stat-warn' : ''}`} role="img" aria-label={`${dueThisMonth} em atraso${dueThisMonth > 0 ? ', a precisar de atenção' : ''}`}>
+                <strong aria-hidden="true">{dueThisMonth}</strong>
+                <span aria-hidden="true">em atraso</span>
+              </div>
+              <div className={`apt-stat ${openTicketsTotal > 0 ? 'apt-stat-warn' : ''}`} role="img" aria-label={`${openTicketsTotal} ${openTicketsTotal === 1 ? 'avaria aberta' : 'avarias abertas'}${openTicketsTotal > 0 ? ', a precisar de atenção' : ''}`}>
+                <strong aria-hidden="true">{openTicketsTotal}</strong>
+                <span aria-hidden="true">{openTicketsTotal === 1 ? 'avaria' : 'avarias'}</span>
+              </div>
+            </div>
+
+            {apartments.length > 3 ? (
+              <div className="apt-search">
+                <input
+                  type="search"
+                  value={apartmentQuery}
+                  onChange={(event) => setApartmentQuery(event.target.value)}
+                  placeholder="Procurar apartamento, morada ou inquilino…"
+                  aria-label="Procurar apartamento"
+                />
+                <p className="sr-only" role="status" aria-live="polite">
+                  {apartmentQuery ? `${visibleApartments.length} ${visibleApartments.length === 1 ? 'apartamento encontrado' : 'apartamentos encontrados'}` : ''}
+                </p>
+              </div>
+            ) : null}
+
             <section className="apt-list" aria-label="Os meus apartamentos">
-              {apartments.map((apt) => (
+              {visibleApartments.length ? visibleApartments.map((apt) => (
                 <ApartmentCard
                   key={apt.unit.id as string}
                   apt={apt}
@@ -870,10 +1150,10 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
                   onMarkPaid={markApartmentPaid}
                   paying={payingUnitId === (apt.unit.id as string)}
                 />
-              ))}
+              )) : <p className="muted" style={{ padding: '8px 2px' }}>Nenhum apartamento corresponde à pesquisa.</p>}
             </section>
 
-            <a className="apt-add" href="/portfolio">+ Adicionar apartamento</a>
+            <button className="apt-add" type="button" onClick={() => setAddingApartment(true)}>+ Adicionar apartamento</button>
           </>
         )}
       </> : null}

@@ -168,6 +168,49 @@ function RecordList({ items, empty, render }: { items: Row[]; empty: EmptyState;
   return <div className="stack">{items.map(render)}</div>
 }
 
+type SetupStep = 'property' | 'unit' | 'renter'
+type SetupStepStatus = 'active' | 'locked' | 'completed' | 'available'
+
+function SetupStepCard({
+  number,
+  title,
+  description,
+  status,
+  onSelect,
+  href,
+}: {
+  number: number
+  title: string
+  description: string
+  status: SetupStepStatus
+  onSelect?: () => void
+  href?: string
+}) {
+  const label = status === 'completed' ? 'Concluído' : status === 'locked' ? 'Bloqueado' : status === 'active' ? 'Em curso' : 'Começar'
+  const content = <>
+    <span className="setup-step-number">{status === 'completed' ? '✓' : number}</span>
+    <span className="setup-step-copy"><strong>{title}</strong><small>{description}</small></span>
+    <span className="setup-step-status">{label}</span>
+  </>
+
+  if (href && status !== 'locked') return <a className={`setup-step-card setup-step-${status}`} href={href}>{content}</a>
+
+  return <button className={`setup-step-card setup-step-${status}`} type="button" disabled={status === 'locked'} onClick={onSelect}>{content}</button>
+}
+
+function EmptyDashboardState() {
+  return <section className="empty-dashboard-state">
+    <div className="empty-dashboard-illustration"><UiIcon name="building" /></div>
+    <p className="screen-kicker">Vamos começar</p>
+    <h2>Ainda não existem imóveis registados</h2>
+    <p>Adicione o seu primeiro imóvel para acompanhar rendas, contratos, despesas e manutenção num só lugar.</p>
+    <a className="dashboard-primary-action" href="/portfolio">Adicionar primeiro imóvel</a>
+    <div className="empty-dashboard-benefits" aria-label="Funcionalidades disponíveis depois da configuração">
+      {['Receitas mensais', 'Pagamentos em atraso', 'Taxa de ocupação', 'Despesas', 'Contratos', 'Manutenção'].map((benefit) => <span key={benefit}><UiIcon name="check" />{benefit}</span>)}
+    </div>
+  </section>
+}
+
 type ControlCenterMode = 'all' | 'dashboard' | 'portfolio' | 'leases' | 'billing' | 'operations'
 
 export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }) {
@@ -178,6 +221,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
   const [sendingInvoiceId, setSendingInvoiceId] = useState<string | null>(null)
   const [ticketStatusFilter, setTicketStatusFilter] = useState<string>('')
   const [ticketPriorityFilter, setTicketPriorityFilter] = useState<string>('')
+  const [setupStep, setSetupStep] = useState<SetupStep>('property')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -309,6 +353,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
           </button>
         </header>
 
+        {!loading && state.properties.length === 0 ? <EmptyDashboardState /> : <>
         <section className={`wellbeing-card ${(counts?.overdueInvoices ?? 0) > 0 ? 'wellbeing-card-warning' : ''}`}>
           <div className="wellbeing-icon"><UiIcon name="check" /></div>
           <div>
@@ -412,20 +457,28 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
           </div>
           <a className="dashboard-primary-action" href="/portfolio">Adicionar imóvel</a>
         </section>
+        </>}
       </> : null}
 
       {showPortfolio ? <section className="section" id="cadastros">
         <div className="section-header">
           <div>
-            <h2 className="section-title">Base do portfólio</h2>
-            <p>Registe imóveis, unidades e inquilinos para começar a cobrar com contexto completo.</p>
+            <h2 className="section-title">Configuração do portfólio</h2>
+            <p>Complete estes passos pela ordem indicada. Mostramos apenas o que precisa em cada momento.</p>
           </div>
           {loading ? <span className="pill pill-soft">Sincronizando...</span> : <span className="pill pill-positive">Online</span>}
         </div>
         {notice ? <div className={`notice ${notice.kind === 'success' ? 'notice-success' : 'notice-error'}`}>{notice.text}</div> : null}
-        <div className="grid-3">
+        <div className="setup-progress" aria-label="Passos de configuração">
+          <SetupStepCard number={1} title="Registar imóvel" description="Morada e dados principais." status={propertyOptions.length ? 'completed' : setupStep === 'property' ? 'active' : 'available'} onSelect={() => setSetupStep('property')} />
+          <SetupStepCard number={2} title="Criar unidade" description={propertyOptions.length ? 'Defina renda e ocupação.' : 'Disponível depois do primeiro imóvel.'} status={!propertyOptions.length ? 'locked' : unitOptions.length ? 'completed' : setupStep === 'unit' ? 'active' : 'available'} onSelect={() => setSetupStep('unit')} />
+          <SetupStepCard number={3} title="Adicionar inquilino" description={unitOptions.length ? 'Registe os dados de contacto.' : 'Disponível depois da primeira unidade.'} status={!unitOptions.length ? 'locked' : renterOptions.length ? 'completed' : setupStep === 'renter' ? 'active' : 'available'} onSelect={() => setSetupStep('renter')} />
+          <SetupStepCard number={4} title="Criar contrato" description={renterOptions.length ? 'Associe imóvel, unidade e inquilino.' : 'Disponível depois do primeiro inquilino.'} status={!renterOptions.length ? 'locked' : state.leases.length ? 'completed' : 'available'} href="/leases" />
+        </div>
+        <div className="setup-form-layout">
+          {setupStep === 'property' ?
           <Panel title="Imóveis" subtitle={`${propertyOptions.length} registados`}>
-            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/properties', payload(form), 'Imóvel registado com sucesso.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível registar o imóvel.' }) } }}>
+            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/properties', payload(form), 'Imóvel registado com sucesso. Agora pode criar a primeira unidade.') ; form.reset(); setSetupStep('unit') } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível registar o imóvel.' }) } }}>
               <div className="form-grid">
                 <div className="field"><label htmlFor="property-name">Nome</label><input id="property-name" name="name" required /></div>
                 <div className="field"><label htmlFor="property-address1">Endereço</label><input id="property-address1" name="addressLine1" required /></div>
@@ -444,8 +497,10 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
               </div>
             )} />
           </Panel>
+          : null}
+          {setupStep === 'unit' ?
           <Panel title="Unidades" subtitle={`${unitOptions.length} registadas`}>
-            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/units', payload(form), 'Unidade registada com sucesso.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível registar a unidade.' }) } }}>
+            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/units', payload(form), 'Unidade registada com sucesso. Agora pode adicionar o inquilino.') ; form.reset(); setSetupStep('renter') } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível registar a unidade.' }) } }}>
               <div className="form-grid">
                 <div className="field"><label htmlFor="unit-property">Imóvel</label><select id="unit-property" name="propertyId" required defaultValue=""><option value="" disabled>Selecionar</option>{propertyOptions.map((property) => <option key={property.id} value={property.id}>{property.label}</option>)}</select></div>
                 <div className="field"><label htmlFor="unit-name">Nome</label><input id="unit-name" name="name" required /></div>
@@ -465,7 +520,9 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
               </div>
             )} />
           </Panel>
+          : null}
 
+          {setupStep === 'renter' ?
           <Panel title="Inquilinos" subtitle={`${renterOptions.length} registados`}>
             <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/renters', payload(form), 'Inquilino registado com sucesso.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível registar o inquilino.' }) } }}>
               <div className="form-grid">
@@ -484,6 +541,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
               </div>
             )} />
           </Panel>
+          : null}
         </div>
       </section> : null}
 

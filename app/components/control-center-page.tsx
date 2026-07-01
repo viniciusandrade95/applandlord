@@ -700,12 +700,12 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
 
         {setupComplete && !currentSetupStep && !editing ? (
         <>
-          <div className="chips portfolio-summary">
-            <span className="chip chip-accent">{state.properties.length} {state.properties.length === 1 ? 'imóvel' : 'imóveis'}</span>
-            <span className="chip chip-accent">{state.units.length} {state.units.length === 1 ? 'unidade' : 'unidades'}</span>
-            {state.units.filter((unit) => unit.status === 'Occupied').length ? <span className="chip chip-positive">{state.units.filter((unit) => unit.status === 'Occupied').length} ocupadas</span> : null}
-            {state.units.filter((unit) => unit.status === 'Vacant').length ? <span className="chip chip-warning">{state.units.filter((unit) => unit.status === 'Vacant').length} vagas</span> : null}
-            {state.units.filter((unit) => unit.status !== 'Occupied' && unit.status !== 'Vacant').length ? <span className="chip chip-accent">{state.units.filter((unit) => unit.status !== 'Occupied' && unit.status !== 'Vacant').length} em manutenção</span> : null}
+          <div className="stat-tiles">
+            <div className="stat-tile"><span className="stat-label">Imóveis</span><strong className="stat-value">{state.properties.length}</strong></div>
+            <div className="stat-tile"><span className="stat-label">Unidades</span><strong className="stat-value">{state.units.length}</strong></div>
+            <div className="stat-tile stat-tile-positive"><span className="stat-label">Ocupadas</span><strong className="stat-value">{state.units.filter((unit) => unit.status === 'Occupied').length}</strong></div>
+            <div className="stat-tile stat-tile-warning"><span className="stat-label">Vagas</span><strong className="stat-value">{state.units.filter((unit) => unit.status === 'Vacant').length}</strong></div>
+            {state.units.filter((unit) => unit.status !== 'Occupied' && unit.status !== 'Vacant').length ? <div className="stat-tile"><span className="stat-label">Em manutenção</span><strong className="stat-value">{state.units.filter((unit) => unit.status !== 'Occupied' && unit.status !== 'Vacant').length}</strong></div> : null}
           </div>
           <div className="grid-2">
             {state.properties.map((property) => <PropertyCard key={property.id as string} property={property} onEditProperty={(p) => setEditing({ type: 'property', data: p })} onEditUnit={(u) => setEditing({ type: 'unit', data: u })} />)}
@@ -857,6 +857,14 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
           </div>
           <span className="pill pill-soft">A receber: {finances ? money(finances.openInvoices) : '€0'}</span>
         </div>
+        {state.invoices.length > 0 ? (
+          <div className="stat-tiles">
+            <div className="stat-tile stat-tile-danger"><span className="stat-label">Em atraso</span><strong className="stat-value">{overdueInvoices.length}</strong></div>
+            <div className="stat-tile stat-tile-warning"><span className="stat-label">Por receber</span><strong className="stat-value">{state.invoices.filter((invoice) => invoice.status === 'Pending' || invoice.status === 'Partial' || invoice.status === 'AwaitingConfirmation').length}</strong></div>
+            <div className="stat-tile stat-tile-positive"><span className="stat-label">Recebidas</span><strong className="stat-value">{state.invoices.filter((invoice) => invoice.status === 'Paid').length}</strong></div>
+            <div className="stat-tile stat-tile-danger"><span className="stat-label">Total em atraso</span><strong className="stat-value">{money(overdueTotal)}</strong></div>
+          </div>
+        ) : null}
         <div className="grid-2">
           <Panel title="Gerar cobranças" subtitle="Cobrança mensal automática">
             {activeLeaseCount === 0 ? <SmartEmptyState title="Ainda não existem contratos ativos" description="Crie um contrato antes de gerar as cobranças mensais." actionLabel="Criar contrato" actionHref="/leases" /> : <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/invoices/generate', payload(form), 'Cobranças criadas. Já pode acompanhar e enviar lembretes aos inquilinos.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível gerar as cobranças.' }) } }}>
@@ -990,7 +998,13 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
                 <div className="field field-full"><label htmlFor="ticket-description">Conte-nos mais</label><textarea id="ticket-description" name="description" placeholder="Descreva o que aconteceu e quando começou." /></div>
                 <div className="field"><label htmlFor="ticket-property">Onde aconteceu?</label><select id="ticket-property" name="propertyId" value={ticketPropertyId} onChange={(event) => setTicketPropertyId(event.target.value)}><option value="">Selecionar imóvel</option>{propertyOptions.map((property) => <option key={property.id} value={property.id}>{property.label}</option>)}</select></div>
                 {ticketPropertyId ? <div className="field"><label htmlFor="ticket-unit">Unidade</label><select id="ticket-unit" name="unitId" defaultValue=""><option value="">Sem unidade específica</option>{unitOptions.filter((unit) => unit.propertyId === ticketPropertyId).map((unit) => <option key={unit.id} value={unit.id}>{unit.label}</option>)}</select></div> : null}
-                <div className="field"><label htmlFor="ticket-priority">Qual é a urgência?</label><select id="ticket-priority" name="priority" defaultValue="Normal"><option value="Low">Baixa</option><option value="Normal">Normal</option><option value="High">Alta</option><option value="Urgent">Urgente</option></select></div>
+                <div className="field field-full"><label>Qual é a urgência?</label>
+                  <div className="segmented" role="radiogroup" aria-label="Urgência">
+                    {([['Low', 'Baixa'], ['Normal', 'Normal'], ['High', 'Alta'], ['Urgent', 'Urgente']] as const).map(([value, label]) => (
+                      <label key={value}><input type="radio" name="priority" value={value} defaultChecked={value === 'Normal'} /><span>{label}</span></label>
+                    ))}
+                  </div>
+                </div>
                 <input type="hidden" name="status" value="New" />
               </div>
               <div className="form-actions"><button className="button button-primary" type="submit" disabled={submitting === '/api/tickets'}>{submitting === '/api/tickets' ? 'A criar...' : 'Criar pedido'}</button></div>

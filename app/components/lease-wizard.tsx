@@ -156,7 +156,15 @@ export function LeaseWizard({ propertyOptions, unitOptions, renterOptions, submi
 
   return (
     <div className="stack">
-      <div className="pill pill-soft">Passo {step} de 5 · Um foco por vez</div>
+      <div className="wizard-steps" role="group" aria-label={`Passo ${step} de 5`}>
+        <span className="sr-only">Passo {step} de 5</span>
+        {([[1, 'Imóvel'], [2, 'Inquilino'], [3, 'Datas'], [4, 'Confirmação'], [5, 'Sucesso']] as const).map(([n, label]) => (
+          <div key={n} className={`wizard-step ${step === n ? 'wizard-step-active' : step > n ? 'wizard-step-done' : ''}`} aria-current={step === n ? 'step' : undefined}>
+            <span className="wizard-step-dot">{step > n ? '✓' : n}</span>
+            <span className="wizard-step-label">{label}</span>
+          </div>
+        ))}
+      </div>
 
       {step === 1 && (
         <div className="form-grid">

@@ -111,6 +111,45 @@ function chipClass(value?: string) {
   return 'chip chip-accent'
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  Pending: 'Pendente',
+  Overdue: 'Em atraso',
+  Partial: 'Pago parcialmente',
+  AwaitingConfirmation: 'A aguardar confirmação',
+  Paid: 'Pago',
+  Canceled: 'Cancelado',
+  Cancelled: 'Cancelado',
+  Active: 'Ativo',
+  Ended: 'Terminado',
+  Vacant: 'Vaga',
+  Occupied: 'Ocupada',
+  Maintenance: 'Em manutenção',
+  New: 'Novo',
+  Triaged: 'Em análise',
+  Waiting: 'A aguardar',
+  Resolved: 'Resolvido',
+  Closed: 'Fechado',
+  Low: 'Baixa',
+  Normal: 'Normal',
+  High: 'Alta',
+  Urgent: 'Urgente',
+}
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  'Bank transfer': 'Transferência bancária',
+  Cash: 'Dinheiro',
+  Card: 'Cartão',
+  'MB Way': 'MB Way',
+  Stripe: 'Stripe',
+}
+
+function statusLabel(value?: string) {
+  return value ? STATUS_LABELS[value] ?? value : '—'
+}
+
+function paymentMethodLabel(value?: string) {
+  return value ? PAYMENT_METHOD_LABELS[value] ?? value : '—'
+}
 
 function UiIcon({ name }: { name: 'building' | 'income' | 'check' | 'tools' | 'arrow' }) {
   const paths: Record<string, ReactNode> = {
@@ -211,6 +250,15 @@ function EmptyDashboardState() {
   </section>
 }
 
+function SmartEmptyState({ title, description, actionLabel, actionHref }: { title: string; description: string; actionLabel: string; actionHref: string }) {
+  return <div className="smart-empty-state">
+    <div className="smart-empty-icon"><UiIcon name="check" /></div>
+    <strong>{title}</strong>
+    <p>{description}</p>
+    <a className="button button-primary" href={actionHref}>{actionLabel}</a>
+  </div>
+}
+
 type ControlCenterMode = 'all' | 'dashboard' | 'portfolio' | 'leases' | 'billing' | 'operations'
 
 export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }) {
@@ -221,7 +269,8 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
   const [sendingInvoiceId, setSendingInvoiceId] = useState<string | null>(null)
   const [ticketStatusFilter, setTicketStatusFilter] = useState<string>('')
   const [ticketPriorityFilter, setTicketPriorityFilter] = useState<string>('')
-  const [setupStep, setSetupStep] = useState<SetupStep>('property')
+  const [ticketPropertyId, setTicketPropertyId] = useState<string>('')
+  const [setupStep, setSetupStep] = useState<SetupStep | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -330,6 +379,9 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
     ...(attention?.attentionByPriority?.high ?? []),
     ...(attention?.attentionByPriority?.medium ?? []),
   ].slice(0, 3)
+  const currentSetupStep: SetupStep | null = setupStep ?? (
+    !propertyOptions.length ? 'property' : !unitOptions.length ? 'unit' : !renterOptions.length ? 'renter' : null
+  )
 
   return (
     <main className="app-shell">
@@ -466,17 +518,18 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
             <h2 className="section-title">Configuração do portfólio</h2>
             <p>Complete estes passos pela ordem indicada. Mostramos apenas o que precisa em cada momento.</p>
           </div>
-          {loading ? <span className="pill pill-soft">Sincronizando...</span> : <span className="pill pill-positive">Online</span>}
+          {loading ? <span className="pill pill-soft">A atualizar...</span> : <span className="pill pill-positive">Tudo atualizado</span>}
         </div>
         {notice ? <div className={`notice ${notice.kind === 'success' ? 'notice-success' : 'notice-error'}`}>{notice.text}</div> : null}
         <div className="setup-progress" aria-label="Passos de configuração">
-          <SetupStepCard number={1} title="Registar imóvel" description="Morada e dados principais." status={propertyOptions.length ? 'completed' : setupStep === 'property' ? 'active' : 'available'} onSelect={() => setSetupStep('property')} />
-          <SetupStepCard number={2} title="Criar unidade" description={propertyOptions.length ? 'Defina renda e ocupação.' : 'Disponível depois do primeiro imóvel.'} status={!propertyOptions.length ? 'locked' : unitOptions.length ? 'completed' : setupStep === 'unit' ? 'active' : 'available'} onSelect={() => setSetupStep('unit')} />
-          <SetupStepCard number={3} title="Adicionar inquilino" description={unitOptions.length ? 'Registe os dados de contacto.' : 'Disponível depois da primeira unidade.'} status={!unitOptions.length ? 'locked' : renterOptions.length ? 'completed' : setupStep === 'renter' ? 'active' : 'available'} onSelect={() => setSetupStep('renter')} />
+          <SetupStepCard number={1} title="Registar imóvel" description="Morada e dados principais." status={propertyOptions.length ? 'completed' : currentSetupStep === 'property' ? 'active' : 'available'} onSelect={() => setSetupStep('property')} />
+          <SetupStepCard number={2} title="Criar unidade" description={propertyOptions.length ? 'Defina renda e ocupação.' : 'Disponível depois do primeiro imóvel.'} status={!propertyOptions.length ? 'locked' : unitOptions.length ? 'completed' : currentSetupStep === 'unit' ? 'active' : 'available'} onSelect={() => setSetupStep('unit')} />
+          <SetupStepCard number={3} title="Adicionar inquilino" description={unitOptions.length ? 'Registe os dados de contacto.' : 'Disponível depois da primeira unidade.'} status={!unitOptions.length ? 'locked' : renterOptions.length ? 'completed' : currentSetupStep === 'renter' ? 'active' : 'available'} onSelect={() => setSetupStep('renter')} />
           <SetupStepCard number={4} title="Criar contrato" description={renterOptions.length ? 'Associe imóvel, unidade e inquilino.' : 'Disponível depois do primeiro inquilino.'} status={!renterOptions.length ? 'locked' : state.leases.length ? 'completed' : 'available'} href="/leases" />
         </div>
+        {currentSetupStep === null ? <div className="setup-complete"><UiIcon name="check" /><span><strong>Configuração principal concluída</strong><small>Escolha um passo acima apenas quando quiser adicionar outro registo.</small></span></div> : null}
         <div className="setup-form-layout">
-          {setupStep === 'property' ?
+          {currentSetupStep === 'property' ?
           <Panel title="Imóveis" subtitle={`${propertyOptions.length} registados`}>
             <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/properties', payload(form), 'Imóvel registado com sucesso. Agora pode criar a primeira unidade.') ; form.reset(); setSetupStep('unit') } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível registar o imóvel.' }) } }}>
               <div className="form-grid">
@@ -498,14 +551,14 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
             )} />
           </Panel>
           : null}
-          {setupStep === 'unit' ?
+          {currentSetupStep === 'unit' ?
           <Panel title="Unidades" subtitle={`${unitOptions.length} registadas`}>
             <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/units', payload(form), 'Unidade registada com sucesso. Agora pode adicionar o inquilino.') ; form.reset(); setSetupStep('renter') } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível registar a unidade.' }) } }}>
               <div className="form-grid">
                 <div className="field"><label htmlFor="unit-property">Imóvel</label><select id="unit-property" name="propertyId" required defaultValue=""><option value="" disabled>Selecionar</option>{propertyOptions.map((property) => <option key={property.id} value={property.id}>{property.label}</option>)}</select></div>
                 <div className="field"><label htmlFor="unit-name">Nome</label><input id="unit-name" name="name" required /></div>
                 <div className="field"><label htmlFor="unit-rent">Renda mensal</label><input id="unit-rent" name="monthlyRent" type="number" step="0.01" required /></div>
-                <div className="field"><label htmlFor="unit-status">Estado</label><select id="unit-status" name="status" defaultValue="Vacant"><option value="Vacant">Vacant</option><option value="Occupied">Occupied</option><option value="Maintenance">Maintenance</option></select></div>
+                <div className="field"><label htmlFor="unit-status">Estado</label><select id="unit-status" name="status" defaultValue="Vacant"><option value="Vacant">Vaga</option><option value="Occupied">Ocupada</option><option value="Maintenance">Em manutenção</option></select></div>
                 <div className="field"><label htmlFor="unit-bedrooms">Quartos</label><input id="unit-bedrooms" name="bedrooms" type="number" step="1" /></div>
                 <div className="field"><label htmlFor="unit-bathrooms">Casas de banho</label><input id="unit-bathrooms" name="bathrooms" type="number" step="0.5" /></div>
                 <div className="field field-full"><label htmlFor="unit-notes">Notas</label><textarea id="unit-notes" name="notes" /></div>
@@ -516,13 +569,13 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
               <div key={unit.id} className="empty">
                 <strong>{unit.name as string}</strong><br />
                 <span className="muted">{unit.property?.name ?? '—'} · {money(Number(unit.monthlyRent ?? 0))}</span><br />
-                <span className={chipClass(unit.status as string)}>{unit.status as string}</span>
+                <span className={chipClass(unit.status as string)}>{statusLabel(unit.status as string)}</span>
               </div>
             )} />
           </Panel>
           : null}
 
-          {setupStep === 'renter' ?
+          {currentSetupStep === 'renter' ?
           <Panel title="Inquilinos" subtitle={`${renterOptions.length} registados`}>
             <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/renters', payload(form), 'Inquilino registado com sucesso.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível registar o inquilino.' }) } }}>
               <div className="form-grid">
@@ -570,7 +623,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
               <div key={lease.id} className="empty">
                 <strong>{lease.renter?.fullName ?? '—'}</strong><br />
                 <span className="muted">{lease.property?.name ?? '—'} · {lease.unit?.name ?? '—'} · {money(Number(lease.monthlyRent ?? 0))}</span><br />
-                <span className={chipClass(lease.status as string)}>{lease.status as string}</span>
+                <span className={chipClass(lease.status as string)}>{statusLabel(lease.status as string)}</span>
               </div>
             )} />
           </Panel>
@@ -586,24 +639,28 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
         </div>
         <div className="grid-2">
           <Panel title="Gerar cobranças" subtitle="Cobrança mensal automática">
-            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/invoices/generate', payload(form), 'Cobranças geradas com sucesso.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível gerar as cobranças.' }) } }}>
+            {activeLeaseCount === 0 ? <SmartEmptyState title="Ainda não existem contratos ativos" description="Crie um contrato antes de gerar as cobranças mensais." actionLabel="Criar contrato" actionHref="/leases" /> : <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/invoices/generate', payload(form), 'Cobranças criadas. Já pode acompanhar e enviar lembretes aos inquilinos.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível gerar as cobranças.' }) } }}>
               <div className="form-grid">
                 <div className="field"><label htmlFor="invoice-period">Período</label><input id="invoice-period" name="period" type="month" defaultValue={new Date().toISOString().slice(0, 7)} /></div>
-                <div className="field"><label>Contratos ativos</label><input value={`${activeLeaseCount}`} readOnly /></div>
+                <div className="information-tile"><span>Contratos ativos</span><strong>{activeLeaseCount}</strong><small>Disponíveis para cobrança</small></div>
               </div>
-              <div className="form-actions"><button className="button button-primary" type="submit" disabled={activeLeaseCount === 0 || submitting === '/api/invoices/generate'}>{submitting === '/api/invoices/generate' ? 'A gerar...' : 'Gerar cobranças do período'}</button></div>
-            </form>
-            <RecordList items={state.invoices} empty={{ title: 'Ainda não há cobranças emitidas.', hint: 'Escolha o período e gere cobranças para os contratos ativos.', actionLabel: 'Gerar cobranças agora', actionHref: '#invoice-period' }} render={(invoice) => (
+              <div className="form-actions"><button className="button button-primary" type="submit" disabled={submitting === '/api/invoices/generate'}>{submitting === '/api/invoices/generate' ? 'A gerar...' : `Gerar cobranças de ${periodLabel(new Date().toISOString().slice(0, 7))}`}</button></div>
+            </form>}
+            {activeLeaseCount > 0 || state.invoices.length > 0 ? <RecordList items={state.invoices} empty={{ title: 'Ainda não existem cobranças.', hint: 'Escolha o período e gere as cobranças para os contratos ativos.', actionLabel: 'Gerar cobranças agora', actionHref: '#invoice-period' }} render={(invoice) => (
               <div key={invoice.id} className="empty">
                 <strong>{invoice.lease?.renter?.fullName ?? '—'}</strong><br />
                 <span className="muted">{periodLabel(invoice.period as string)} · {money(Number(invoice.amount ?? 0))}</span><br />
-                <span className={chipClass(invoice.status as string)}>{invoice.status as string}</span>
+                <span className={chipClass(invoice.status as string)}>{statusLabel(invoice.status as string)}</span>
                 <div className="table-actions" style={{ marginTop: 10 }}>
                   <button
                     className="small-button"
                     type="button"
                     disabled={!invoice.lease?.renter?.phone || sendingInvoiceId === invoice.id}
-                    onClick={() => void sendInvoiceViaWhatsApp(invoice)}
+                    onClick={() => {
+                      if (window.confirm('Enviar lembrete por WhatsApp? O inquilino receberá os dados desta cobrança.')) {
+                        void sendInvoiceViaWhatsApp(invoice)
+                      }
+                    }}
                   >
                     {sendingInvoiceId === invoice.id
                       ? 'A enviar...'
@@ -613,26 +670,26 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
                   </button>
                 </div>
               </div>
-            )} />
+            )} /> : null}
           </Panel>
 
-          <Panel title="Registar pagamento" subtitle="Baixa e reconciliação manual">
-            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/payments', payload(form), 'Pagamento registado e enviado para confirmação.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível registar o pagamento.' }) } }}>
+          <Panel title="Registar pagamento" subtitle="Confirme uma renda recebida">
+            {invoiceOptions.length === 0 ? <SmartEmptyState title="Não existem cobranças por receber" description="Quando existir uma cobrança em aberto, poderá registar o pagamento aqui." actionLabel="Ver contratos" actionHref="/leases" /> : <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/payments', payload(form), 'Pagamento registado. Falta apenas confirmar para entrar no resumo financeiro.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível registar o pagamento.' }) } }}>
               <div className="form-grid">
-                <div className="field field-full"><label htmlFor="payment-invoice">Fatura</label><select id="payment-invoice" name="invoiceId" required defaultValue=""><option value="" disabled>Selecionar</option>{invoiceOptions.map((invoice) => <option key={invoice.id} value={invoice.id}>{invoice.label}</option>)}</select></div>
+                <div className="field field-full"><label htmlFor="payment-invoice">Cobrança</label><select id="payment-invoice" name="invoiceId" required defaultValue=""><option value="" disabled>Selecionar cobrança</option>{invoiceOptions.map((invoice) => <option key={invoice.id} value={invoice.id}>{invoice.label}</option>)}</select></div>
                 <div className="field"><label htmlFor="payment-amount">Valor</label><input id="payment-amount" name="amount" type="number" step="0.01" /></div>
-                <div className="field"><label htmlFor="payment-method">Método</label><select id="payment-method" name="method" defaultValue="Bank transfer"><option>Bank transfer</option><option>Cash</option><option>Card</option><option>MB Way</option><option>Stripe</option></select></div>
+                <div className="field"><label htmlFor="payment-method">Método</label><select id="payment-method" name="method" defaultValue="Bank transfer"><option value="Bank transfer">Transferência bancária</option><option value="Cash">Dinheiro</option><option value="Card">Cartão</option><option value="MB Way">MB Way</option><option value="Stripe">Stripe</option></select></div>
                 <div className="field field-full"><label htmlFor="payment-reference">Referência</label><input id="payment-reference" name="reference" /></div>
                 <div className="field field-full"><label htmlFor="payment-notes">Notas</label><textarea id="payment-notes" name="notes" /></div>
               </div>
-              <div className="form-actions"><button className="button button-primary" type="submit" disabled={invoiceOptions.length === 0 || submitting === '/api/payments'}>{submitting === '/api/payments' ? 'A registar...' : 'Registar pagamento'}</button></div>
-            </form>
-            <RecordList items={state.payments} empty={{ title: 'Ainda não há pagamentos registados.', hint: 'Selecione uma cobrança em aberto para registar o primeiro pagamento.', actionLabel: 'Registar pagamento', actionHref: '#payment-invoice' }} render={(payment) => (
+              <div className="form-actions"><button className="button button-primary" type="submit" disabled={submitting === '/api/payments'}>{submitting === '/api/payments' ? 'A registar...' : 'Registar pagamento'}</button></div>
+            </form>}
+            {state.payments.length > 0 ? <RecordList items={state.payments} empty={{ title: 'Ainda não existem pagamentos registados.', hint: 'Quando uma cobrança for paga, poderá registar o pagamento aqui.', actionLabel: 'Ver cobranças', actionHref: '#invoice-period' }} render={(payment) => (
               <div key={payment.id} className="empty">
                 <strong>{payment.invoice?.lease?.renter?.fullName ?? '—'}</strong><br />
-                <span className="muted">{dateTime(payment.paidAt)} · {money(Number(payment.amount ?? 0))} · {payment.method as string}</span>
+                <span className="muted">{dateTime(payment.paidAt)} · {money(Number(payment.amount ?? 0))} · {paymentMethodLabel(payment.method as string)}</span>
               </div>
-            )} />
+            )} /> : null}
           </Panel>
         </div>
       </section> : null}
@@ -640,56 +697,54 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
       {showOperations ? <section className="section" id="operacao">
         <div className="section-header">
           <div>
-            <h2 className="section-title">Operação</h2>
-            <p>Fluxo de tickets com rastreabilidade completa e filtros por prioridade/estado.</p>
+            <h2 className="section-title">Manutenção</h2>
+            <p>Crie e acompanhe pedidos de reparação dos seus imóveis.</p>
           </div>
-          <span className="pill pill-soft">Tickets: {filteredTickets.length}/{state.maintenance.length}</span>
+          <span className="pill pill-soft">Pedidos: {filteredTickets.length}/{state.maintenance.length}</span>
         </div>
         <div className="grid-2">
-          <Panel title="Novo ticket" subtitle="Abertura formal">
-            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/tickets', payload(form), 'Ticket criado.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Falha ao criar ticket' }) } }}>
+          <Panel title="Novo pedido de manutenção" subtitle="Descreva o problema">
+            <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/tickets', payload(form), 'Pedido criado. Pode acompanhar o estado nesta área de manutenção.') ; form.reset(); setTicketPropertyId('') } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível criar o pedido.' }) } }}>
               <div className="form-grid">
-                <div className="field field-full"><label htmlFor="ticket-title">Título</label><input id="ticket-title" name="title" required /></div>
-                <div className="field"><label htmlFor="ticket-property">Imóvel</label><select id="ticket-property" name="propertyId" defaultValue=""><option value="">Opcional</option>{propertyOptions.map((property) => <option key={property.id} value={property.id}>{property.label}</option>)}</select></div>
-                <div className="field"><label htmlFor="ticket-unit">Unidade</label><select id="ticket-unit" name="unitId" defaultValue=""><option value="">Opcional</option>{unitOptions.map((unit) => <option key={unit.id} value={unit.id}>{unit.label}</option>)}</select></div>
-                <div className="field"><label htmlFor="ticket-lease">Contrato</label><select id="ticket-lease" name="leaseId" defaultValue=""><option value="">Opcional</option>{state.leases.map((lease) => <option key={lease.id} value={lease.id}>{`${lease.unit?.name ?? 'Unidade'} · ${lease.renter?.fullName ?? 'Inquilino'} · ${lease.status as string}`}</option>)}</select></div>
-                <div className="field"><label htmlFor="ticket-renter">Inquilino</label><select id="ticket-renter" name="renterId" defaultValue=""><option value="">Opcional</option>{renterOptions.map((renter) => <option key={renter.id} value={renter.id}>{renter.label}</option>)}</select></div>
-                <div className="field"><label htmlFor="ticket-priority">Prioridade</label><select id="ticket-priority" name="priority" defaultValue="Normal"><option>Low</option><option>Normal</option><option>High</option><option>Urgent</option></select></div>
-                <div className="field"><label htmlFor="ticket-status">Estado</label><select id="ticket-status" name="status" defaultValue="New"><option>New</option><option>Triaged</option><option>Waiting</option><option>Resolved</option><option>Closed</option></select></div>
-                <div className="field field-full"><label htmlFor="ticket-description">Descrição</label><textarea id="ticket-description" name="description" /></div>
+                <div className="field field-full"><label htmlFor="ticket-title">Qual é o problema?</label><input id="ticket-title" name="title" required placeholder="Ex.: Infiltração na cozinha" /></div>
+                <div className="field field-full"><label htmlFor="ticket-description">Conte-nos mais</label><textarea id="ticket-description" name="description" placeholder="Descreva o que aconteceu e quando começou." /></div>
+                <div className="field"><label htmlFor="ticket-property">Onde aconteceu?</label><select id="ticket-property" name="propertyId" value={ticketPropertyId} onChange={(event) => setTicketPropertyId(event.target.value)}><option value="">Selecionar imóvel</option>{propertyOptions.map((property) => <option key={property.id} value={property.id}>{property.label}</option>)}</select></div>
+                {ticketPropertyId ? <div className="field"><label htmlFor="ticket-unit">Unidade</label><select id="ticket-unit" name="unitId" defaultValue=""><option value="">Sem unidade específica</option>{unitOptions.filter((unit) => unit.propertyId === ticketPropertyId).map((unit) => <option key={unit.id} value={unit.id}>{unit.label}</option>)}</select></div> : null}
+                <div className="field"><label htmlFor="ticket-priority">Qual é a urgência?</label><select id="ticket-priority" name="priority" defaultValue="Normal"><option value="Low">Baixa</option><option value="Normal">Normal</option><option value="High">Alta</option><option value="Urgent">Urgente</option></select></div>
+                <input type="hidden" name="status" value="New" />
               </div>
-              <div className="form-actions"><button className="button button-primary" type="submit" disabled={submitting === '/api/tickets'}>{submitting === '/api/tickets' ? 'A criar...' : 'Criar ticket'}</button></div>
+              <div className="form-actions"><button className="button button-primary" type="submit" disabled={submitting === '/api/tickets'}>{submitting === '/api/tickets' ? 'A criar...' : 'Criar pedido'}</button></div>
             </form>
           </Panel>
 
-          <Panel title="Tickets e timeline" subtitle="Gestão diária">
-            <div className="form-grid" style={{ marginBottom: 12 }}>
-              <div className="field"><label htmlFor="ticket-filter-status">Filtrar estado</label><select id="ticket-filter-status" value={ticketStatusFilter} onChange={(event) => setTicketStatusFilter(event.target.value)}><option value="">Todos</option><option>New</option><option>Triaged</option><option>Waiting</option><option>Resolved</option><option>Closed</option></select></div>
-              <div className="field"><label htmlFor="ticket-filter-priority">Filtrar prioridade</label><select id="ticket-filter-priority" value={ticketPriorityFilter} onChange={(event) => setTicketPriorityFilter(event.target.value)}><option value="">Todas</option><option>Low</option><option>Normal</option><option>High</option><option>Urgent</option></select></div>
-            </div>
+          <Panel title="Pedidos de manutenção" subtitle="Acompanhamento diário">
+            {state.maintenance.length > 0 ? <div className="form-grid" style={{ marginBottom: 12 }}>
+              <div className="field"><label htmlFor="ticket-filter-status">Estado</label><select id="ticket-filter-status" value={ticketStatusFilter} onChange={(event) => setTicketStatusFilter(event.target.value)}><option value="">Todos</option><option value="New">Novo</option><option value="Triaged">Em análise</option><option value="Waiting">A aguardar</option><option value="Resolved">Resolvido</option><option value="Closed">Fechado</option></select></div>
+              <div className="field"><label htmlFor="ticket-filter-priority">Urgência</label><select id="ticket-filter-priority" value={ticketPriorityFilter} onChange={(event) => setTicketPriorityFilter(event.target.value)}><option value="">Todas</option><option value="Low">Baixa</option><option value="Normal">Normal</option><option value="High">Alta</option><option value="Urgent">Urgente</option></select></div>
+            </div> : null}
             <RecordList
               items={filteredTickets}
               empty={{
-                title: 'Ainda não há tickets para o filtro selecionado.',
-                hint: 'Ajuste os filtros ou abra um novo ticket para iniciar o acompanhamento operacional.',
-                actionLabel: 'Criar ticket',
+                title: state.maintenance.length ? 'Não existem pedidos com estes filtros.' : 'Ainda não existem pedidos de manutenção.',
+                hint: state.maintenance.length ? 'Experimente escolher outro estado ou urgência.' : 'Quando surgir um problema num imóvel, ele aparecerá aqui.',
+                actionLabel: 'Criar pedido',
                 actionHref: '#ticket-title',
               }}
               render={(ticket) => (
               <div key={ticket.id} className="empty">
                 <strong>{ticket.title as string}</strong><br />
-                <span className="muted">{ticket.property?.name ?? '—'} {ticket.unit?.name ? `· ${ticket.unit?.name}` : ''} {ticket.lease ? `· contrato ${ticket.lease?.id?.slice(0, 6)}` : ''} {ticket.renter?.fullName ? `· ${ticket.renter?.fullName}` : ''}</span><br />
-                <span className={chipClass(ticket.status as string)}>{ticket.status as string}</span> <span className={chipClass(ticket.priority as string)}>{ticket.priority as string}</span>
-                <div className="stack" style={{ marginTop: 8 }}>
-                  {(ticket.events ?? []).slice(0, 4).map((event: Row) => (
-                    <span key={event.id as string} className="muted">• {dateTime(event.createdAt as string)} · {event.type as string}{event.toStatus ? ` → ${event.toStatus as string}` : ''}{event.note ? ` · ${event.note as string}` : ''}</span>
-                  ))}
-                </div>
+                <span className="muted">{ticket.property?.name ?? 'Sem imóvel associado'} {ticket.unit?.name ? `· ${ticket.unit?.name}` : ''} {ticket.renter?.fullName ? `· ${ticket.renter?.fullName}` : ''}</span><br />
+                <span className={chipClass(ticket.status as string)}>{statusLabel(ticket.status as string)}</span> <span className={chipClass(ticket.priority as string)}>{statusLabel(ticket.priority as string)}</span>
+                {ticket.currentEventAt ? <p className="meta">Atualizado em {dateTime(ticket.currentEventAt as string)}</p> : null}
                 <div className="form-actions" style={{ marginTop: 8 }}>
-                  {ticket.status !== 'Triaged' ? <button className="small-button" type="button" onClick={() => void postJson(`/api/tickets/${ticket.id as string}`, { status: 'Triaged', note: 'Triagem executada no painel.' }, 'Ticket triado.', 'PATCH')}>Triar</button> : null}
-                  {ticket.status !== 'Waiting' && ticket.status !== 'Closed' ? <button className="small-button" type="button" onClick={() => void postJson(`/api/tickets/${ticket.id as string}`, { status: 'Waiting', note: 'Aguardando fornecedor/peça.' }, 'Ticket em espera.', 'PATCH')}>Aguardar</button> : null}
-                  {ticket.status !== 'Resolved' && ticket.status !== 'Closed' ? <button className="small-button" type="button" onClick={() => void postJson(`/api/tickets/${ticket.id as string}`, { status: 'Resolved', note: 'Incidente resolvido.' }, 'Ticket resolvido.', 'PATCH')}>Resolver</button> : null}
-                  {ticket.status !== 'Closed' ? <button className="small-button" type="button" onClick={() => void postJson(`/api/tickets/${ticket.id as string}`, { status: 'Closed', note: 'Encerramento validado.' }, 'Ticket encerrado.', 'PATCH')}>Fechar</button> : null}
+                  {ticket.status === 'New' ? <button className="small-button" type="button" onClick={() => void postJson(`/api/tickets/${ticket.id as string}`, { status: 'Triaged', note: 'Pedido analisado no painel.' }, 'Pedido marcado como em análise.', 'PATCH')}>Começar análise</button> : null}
+                  {ticket.status !== 'Waiting' && ticket.status !== 'Closed' ? <button className="small-button" type="button" onClick={() => void postJson(`/api/tickets/${ticket.id as string}`, { status: 'Waiting', note: 'A aguardar fornecedor, peça ou resposta.' }, 'Pedido marcado como a aguardar.', 'PATCH')}>Marcar como a aguardar</button> : null}
+                  {ticket.status !== 'Resolved' && ticket.status !== 'Closed' ? <button className="small-button" type="button" onClick={() => void postJson(`/api/tickets/${ticket.id as string}`, { status: 'Resolved', note: 'Problema resolvido.' }, 'Pedido resolvido.', 'PATCH')}>Marcar como resolvido</button> : null}
+                  {ticket.status === 'Resolved' ? <button className="small-button" type="button" onClick={() => {
+                    if (window.confirm('Fechar este pedido? Continuará disponível no histórico de manutenção.')) {
+                      void postJson(`/api/tickets/${ticket.id as string}`, { status: 'Closed', note: 'Encerramento confirmado.' }, 'Pedido fechado.', 'PATCH')
+                    }
+                  }}>Fechar pedido</button> : null}
                 </div>
               </div>
               )}
@@ -699,7 +754,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
       </section> : null}
 
       <footer className="footer-note">
-        {loading ? 'A atualizar dados do senhorio...' : 'Painel pronto para decisão: um próximo passo por bloco.'}
+        {loading ? 'A atualizar a sua informação...' : 'A informação está atualizada.'}
       </footer>
     </main>
   )

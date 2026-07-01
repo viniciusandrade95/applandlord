@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-07-01 (v0.6.0 — Casa centrada no apartamento (radicalmente mais simples))
+- **Autor:** Vinicius + Claude
+- **Tipo:** feat/ux (redesenho da página inicial)
+- **Escopo:** repensar a página inicial à volta do que uma senhora de 70 anos entende — "os meus apartamentos" — em vez de conceitos de gestão (portfólio, ocupação, saldo líquido, KPIs).
+- **Descrição:**
+  - **Nova casa (`/dashboard`)** deixa de ser um painel de gestão e passa a ser a lista dos apartamentos:
+    - Banda **"Este mês"**: quantos já pagaram, quantos faltam, quantos a confirmar, e recebido vs esperado em euros.
+    - **Cartões grandes** por apartamento (morada · inquilino · renda · estado do mês), ordenados com "falta pagar" no topo. Botão **"Marcar como pago"** de um só toque.
+    - **"Marcar como pago"** garante a cobrança do mês, regista o pagamento **em falta** (não o total) e confirma-o — para o "Recebido este mês" ficar correto.
+    - Toque no cartão → **detalhe do apartamento**: inquilino + telefone (ligar), renda, datas do contrato, últimos pagamentos e atalhos para editar/avarias.
+  - Removido da casa o jargão de gestão (anel de ocupação %, saldo líquido, grelha de KPIs, alertas). Os separadores Finanças/Contratos/Manutenção continuam a funcionar para uso avançado.
+  - **Acessibilidade:** gestão de foco ao abrir/voltar (teclado e leitor de ecrã não perdem o sítio), `aria-busy` no botão a processar, alvos de toque ≥ 48px, contraste corrigido (botão a processar, seta do cartão, textos secundários), título longo do imóvel deixa de transbordar.
+  - A fatura do mês é lida da lista completa de faturas (não das 12 do contrato) para evitar faturas/pagamentos duplicados.
+- **Revisão:** dois revisores adversariais (lógica de pagamento + acessibilidade/responsivo). Corrigidos: duplo-pagamento em nova tentativa (leitura de pagamentos frescos), sobre-cobrança em pagamento parcial (paga só o que falta), risco de fatura duplicada, perda de foco na navegação, contraste do botão desativado (2.0:1→5.5:1), seta do cartão e alvo do botão "voltar".
+- **Impacto no roadmap:** primeira grande simplificação para o perfil sénior; próximos passos possíveis — simplificar o onboarding/adicionar apartamento e dobrar as ações avançadas dentro do apartamento.
+- **Risco/rollback:** risco médio (redesenho da página inicial + orquestração de pagamento no cliente). Rollback por reversão dos ficheiros. **Nota honesta:** validado por tipos + duas revisões de código; ainda **sem verificação visual/funcional com a app a correr**.
+
 ## 2026-07-01 (v0.5.0 — Uplift visual aproximando dos mockups)
 - **Autor:** Vinicius + Claude
 - **Tipo:** feat/ux/ui

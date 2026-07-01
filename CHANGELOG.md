@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-07-01 (v0.5.0 — Uplift visual aproximando dos mockups)
+- **Autor:** Vinicius + Claude
+- **Tipo:** feat/ux/ui
+- **Escopo:** melhorias visuais em toda a app a aproximar dos mockups de design, sem alterar regras de negócio
+- **Descrição:**
+  - **Tiles de estatística:** os resumos de Imóveis (imóveis/unidades/ocupadas/vagas/manutenção) e Finanças (em atraso/por receber/recebidas/total em atraso) passam de chips a cartões-número legíveis.
+  - **Indicador de passos do wizard:** o contrato passa a mostrar 1→5 com círculos numalados, linha de progresso e estados (ativo/concluído), em vez de "Passo X de 5". Com `role="group"`, `aria-current` e texto para leitor de ecrã.
+  - **Controlo segmentado:** a urgência da manutenção passa de dropdown a botões segmentados (radiogroup acessível).
+  - **Login:** marca "Applandlord" + tagline em destaque, cartão "Entrar na sua conta", botão **mostrar/ocultar palavra-passe** e linha de versão.
+  - **Barra lateral:** botão **"Sair"** fixo no rodapé (desktop), sempre acessível.
+  - Revisto por revisão adversarial; corrigidos o contraste do número dos passos pendentes e a exposição do progresso do wizard a leitores de ecrã.
+- **Impacto no roadmap:** aproxima a UI do design pretendido; base para a Fase B de acessibilidade. Sem mudança de schema/API.
+- **Risco/rollback:** risco baixo (CSS + markup aditivos). Rollback por reversão dos ficheiros. Nota: validado por tipos + revisão de código, ainda sem verificação visual na app a correr.
+
 ## 2026-07-01 (v0.4.0 — Gestão do dia-a-dia: editar, terminar, confirmar, despesas)
 - **Autor:** Vinicius + Claude
 - **Tipo:** feat/ux

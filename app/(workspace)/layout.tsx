@@ -19,6 +19,7 @@ function NavIcon({ name }: { name: string }) {
     wallet: <><path d="M3 6.5A2.5 2.5 0 0 1 5.5 4H19v16H5.5A2.5 2.5 0 0 1 3 17.5z"/><path d="M3 7h16M15 12h7v5h-7a2.5 2.5 0 0 1 0-5Z"/></>,
     tools: <><path d="m14 7 3-3 3 3-3 3M5 19l9-9M4 14l6 6M3 21l3-1-2-2z"/><path d="M13 4a5 5 0 0 0-7 6l3 3"/></>,
     contract: <><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="M10 13h6M10 17h6"/></>,
+    logout: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/></>,
     more: <><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></>,
   }
 
@@ -46,6 +47,18 @@ export default function WorkspaceLayout({ children }: { children: ReactNode }) {
             </Link>
           ))}
         </nav>
+        <div className="workspace-sidebar-footer">
+          <button
+            type="button"
+            onClick={async () => {
+              await fetch('/api/auth/logout', { method: 'POST' })
+              window.location.href = '/login'
+            }}
+          >
+            <NavIcon name="logout" />
+            <span>Sair</span>
+          </button>
+        </div>
       </aside>
       <div className="workspace-content">{children}</div>
     </div>

@@ -29,6 +29,7 @@ export default function WorkspaceLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="workspace-layout">
+      <a className="skip-link" href="#conteudo-principal">Saltar para o conteúdo</a>
       <aside className="workspace-sidebar">
         <Link className="workspace-brand" href="/dashboard">Applandlord</Link>
         <nav className="workspace-nav" aria-label="Navegação principal">

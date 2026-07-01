@@ -2,6 +2,7 @@
 
 import { FormEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { LeaseWizard } from '@/app/components/lease-wizard'
+import { appVersion } from '@/lib/version'
 
 type Dashboard = {
   counts: {
@@ -183,7 +184,7 @@ function Panel({ title, subtitle, children }: { title: string; subtitle: string;
   return (
     <article className="card">
       <div className="card-header">
-        <h3>{title}</h3>
+        <h2>{title}</h2>
         <span>{subtitle}</span>
       </div>
       <div className="card-body">{children}</div>
@@ -374,6 +375,8 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
   const showLeases = mode === 'all' || mode === 'leases'
   const showBilling = mode === 'all' || mode === 'billing'
   const showOperations = mode === 'all' || mode === 'operations'
+  // Em páginas de modo único o título da secção é o h1 da página; no painel combinado fica h2 sob o h1 do dashboard.
+  const SectionHeading = mode === 'all' || mode === 'dashboard' ? 'h2' : 'h1'
   const occupancyRate = counts?.units ? Math.round(((counts.occupiedUnits ?? 0) / counts.units) * 100) : 0
   const dashboardAlerts = [
     ...(attention?.attentionByPriority?.high ?? []),
@@ -384,7 +387,16 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
   )
 
   return (
-    <main className="app-shell">
+    <main className="app-shell" id="conteudo-principal" tabIndex={-1}>
+      {/* Regiões vivas persistentes: aparecem em todas as páginas e são anunciadas por leitores de ecrã */}
+      <div className="notice-region">
+        <div role="status" aria-live="polite" aria-atomic="true">
+          {notice?.kind === 'success' ? <div className="notice notice-success">{notice.text}</div> : null}
+        </div>
+        <div role="alert" aria-live="assertive" aria-atomic="true">
+          {notice?.kind === 'error' ? <div className="notice notice-error">{notice.text}</div> : null}
+        </div>
+      </div>
       {showDashboard ? <>
         <header className="mobile-dashboard-header">
           <div>
@@ -413,8 +425,6 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
             <strong>{attention?.daySummary.title ?? 'Estamos a preparar o seu resumo.'}</strong>
           </div>
         </section>
-
-        {notice ? <div className={`notice ${notice.kind === 'success' ? 'notice-success' : 'notice-error'}`}>{notice.text}</div> : null}
 
         <section className="senior-kpi-grid" aria-label="Resumo principal">
           <a className="senior-kpi-card" href="/portfolio">
@@ -515,12 +525,11 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
       {showPortfolio ? <section className="section" id="cadastros">
         <div className="section-header">
           <div>
-            <h2 className="section-title">Configuração do portfólio</h2>
+            <SectionHeading className="section-title">Configuração do portfólio</SectionHeading>
             <p>Complete estes passos pela ordem indicada. Mostramos apenas o que precisa em cada momento.</p>
           </div>
           {loading ? <span className="pill pill-soft">A atualizar...</span> : <span className="pill pill-positive">Tudo atualizado</span>}
         </div>
-        {notice ? <div className={`notice ${notice.kind === 'success' ? 'notice-success' : 'notice-error'}`}>{notice.text}</div> : null}
         <div className="setup-progress" aria-label="Passos de configuração">
           <SetupStepCard number={1} title="Registar imóvel" description="Morada e dados principais." status={propertyOptions.length ? 'completed' : currentSetupStep === 'property' ? 'active' : 'available'} onSelect={() => setSetupStep('property')} />
           <SetupStepCard number={2} title="Criar unidade" description={propertyOptions.length ? 'Defina renda e ocupação.' : 'Disponível depois do primeiro imóvel.'} status={!propertyOptions.length ? 'locked' : unitOptions.length ? 'completed' : currentSetupStep === 'unit' ? 'active' : 'available'} onSelect={() => setSetupStep('unit')} />
@@ -534,11 +543,11 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
             <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/properties', payload(form), 'Imóvel registado com sucesso. Agora pode criar a primeira unidade.') ; form.reset(); setSetupStep('unit') } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível registar o imóvel.' }) } }}>
               <div className="form-grid">
                 <div className="field"><label htmlFor="property-name">Nome</label><input id="property-name" name="name" required /></div>
-                <div className="field"><label htmlFor="property-address1">Endereço</label><input id="property-address1" name="addressLine1" required /></div>
-                <div className="field"><label htmlFor="property-city">Cidade</label><input id="property-city" name="city" required /></div>
-                <div className="field"><label htmlFor="property-region">Região</label><input id="property-region" name="region" required /></div>
-                <div className="field"><label htmlFor="property-postal">Código postal</label><input id="property-postal" name="postalCode" required /></div>
-                <div className="field"><label htmlFor="property-country">País</label><input id="property-country" name="country" defaultValue="Portugal" /></div>
+                <div className="field"><label htmlFor="property-address1">Endereço</label><input id="property-address1" name="addressLine1" autoComplete="address-line1" required /></div>
+                <div className="field"><label htmlFor="property-city">Cidade</label><input id="property-city" name="city" autoComplete="address-level2" required /></div>
+                <div className="field"><label htmlFor="property-region">Região</label><input id="property-region" name="region" autoComplete="address-level1" required /></div>
+                <div className="field"><label htmlFor="property-postal">Código postal</label><input id="property-postal" name="postalCode" autoComplete="postal-code" inputMode="numeric" required /></div>
+                <div className="field"><label htmlFor="property-country">País</label><input id="property-country" name="country" autoComplete="country-name" defaultValue="Portugal" /></div>
                 <div className="field field-full"><label htmlFor="property-description">Descrição</label><textarea id="property-description" name="description" /></div>
               </div>
               <div className="form-actions"><button className="button button-primary" type="submit" disabled={submitting === '/api/properties'}>{submitting === '/api/properties' ? 'A criar...' : 'Criar imóvel'}</button></div>
@@ -579,9 +588,9 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
           <Panel title="Inquilinos" subtitle={`${renterOptions.length} registados`}>
             <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/renters', payload(form), 'Inquilino registado com sucesso.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível registar o inquilino.' }) } }}>
               <div className="form-grid">
-                <div className="field field-full"><label htmlFor="renter-name">Nome completo</label><input id="renter-name" name="fullName" required /></div>
-                <div className="field"><label htmlFor="renter-email">Email</label><input id="renter-email" name="email" type="email" /></div>
-                <div className="field"><label htmlFor="renter-phone">Telefone</label><input id="renter-phone" name="phone" /></div>
+                <div className="field field-full"><label htmlFor="renter-name">Nome completo</label><input id="renter-name" name="fullName" autoComplete="name" required /></div>
+                <div className="field"><label htmlFor="renter-email">Email</label><input id="renter-email" name="email" type="email" autoComplete="email" inputMode="email" /></div>
+                <div className="field"><label htmlFor="renter-phone">Telefone</label><input id="renter-phone" name="phone" type="tel" autoComplete="tel" inputMode="tel" /></div>
                 <div className="field field-full"><label htmlFor="renter-id">Documento / NIF</label><input id="renter-id" name="governmentId" /></div>
                 <div className="field field-full"><label htmlFor="renter-notes">Notas</label><textarea id="renter-notes" name="notes" /></div>
               </div>
@@ -601,7 +610,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
       {showLeases ? <section className="section" id="contratos">
         <div className="section-header">
           <div>
-            <h2 className="section-title">Contratos de arrendamento</h2>
+            <SectionHeading className="section-title">Contratos de arrendamento</SectionHeading>
             <p>Ligue imóvel, unidade e inquilino com validações guiadas para reduzir erros de operação.</p>
           </div>
           <span className="pill pill-soft">Ativos: {activeLeaseCount}</span>
@@ -632,7 +641,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
       {showBilling ? <section className="section" id="financeiro">
         <div className="section-header">
           <div>
-            <h2 className="section-title">Cobrança e pagamentos</h2>
+            <SectionHeading className="section-title">Cobrança e pagamentos</SectionHeading>
             <p>Emita cobranças mensais e confirme pagamentos com uma linguagem clara para o dia a dia do senhorio.</p>
           </div>
           <span className="pill pill-soft">A receber: {finances ? money(finances.openInvoices) : '€0'}</span>
@@ -697,7 +706,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
       {showOperations ? <section className="section" id="operacao">
         <div className="section-header">
           <div>
-            <h2 className="section-title">Manutenção</h2>
+            <SectionHeading className="section-title">Manutenção</SectionHeading>
             <p>Crie e acompanhe pedidos de reparação dos seus imóveis.</p>
           </div>
           <span className="pill pill-soft">Pedidos: {filteredTickets.length}/{state.maintenance.length}</span>
@@ -754,7 +763,15 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
       </section> : null}
 
       <footer className="footer-note">
-        {loading ? 'A atualizar a sua informação...' : 'A informação está atualizada.'}
+        <span>{loading ? 'A atualizar a sua informação...' : 'A informação está atualizada.'}</span>
+        <span
+          className="app-version"
+          title={appVersion.buildTime ? `Build: ${appVersion.buildTime}` : undefined}
+          aria-label={`Versão ${appVersion.version}, edição ${appVersion.sha}${appVersion.commitDate ? `, atualizada em ${date(appVersion.commitDate)}` : ''}`}
+        >
+          Versão {appVersion.version} · {appVersion.sha}
+          {appVersion.commitDate ? ` · ${date(appVersion.commitDate)}` : ''}
+        </span>
       </footer>
     </main>
   )

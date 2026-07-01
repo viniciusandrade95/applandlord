@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-07-01 (v0.8.0 — Redesenho dos cards: branco, com intenção)
+- **Autor:** Vinicius + Claude
+- **Tipo:** ui/ux (redesenho visual da página inicial)
+- **Escopo:** feedback de design sobre a casa centrada no apartamento.
+- **Descrição:**
+  - **Cards redesenhados** com intenção: fundo **branco**, sem a listra colorida ao canto. Ícone com contorno limpo à esquerda; **o estado é a âncora à direita** (✓ Pago / ● Por pagar / ● Vago), com cor só no texto e na marca. Menos texto (a morada sai do card; inquilino e renda numa linha; rodapé discreto só com contrato/avarias).
+  - **Sem cores pastel:** removidos os fundos pastel dos selos, do ícone, da banda "Este mês" do detalhe e do botão "Ligar" — passa tudo a branco com cor apenas no texto/contorno.
+  - **Pesquisa sempre visível**, logo a seguir à mini-barra de resumo (no meio), agora com ícone de lupa.
+- **Validação:** typecheck 0, build de produção OK, e verificação visual com a app a correr (screenshots da home e do detalhe).
+- **Risco/rollback:** baixo (CSS + markup do card). Rollback por reversão. Sem alteração de API/schema.
+
 ## 2026-07-01 (v0.7.0 — Um imóvel = um apartamento; contas, resumo e pesquisa)
 - **Autor:** Vinicius + Claude
 - **Tipo:** feat/ux + fix

@@ -158,16 +158,46 @@ function paymentMethodLabel(value?: string) {
   return value ? PAYMENT_METHOD_LABELS[value] ?? value : '—'
 }
 
-function UiIcon({ name }: { name: 'building' | 'income' | 'check' | 'tools' | 'arrow' }) {
-  const paths: Record<string, ReactNode> = {
+type IconName =
+  | 'building' | 'income' | 'check' | 'tools' | 'arrow'
+  | 'wallet' | 'clock' | 'calendar' | 'user' | 'phone' | 'plus' | 'euro' | 'alert' | 'key'
+
+function UiIcon({ name }: { name: IconName }) {
+  const paths: Record<IconName, ReactNode> = {
     building: <><path d="M4 21V5l8-3v19M12 8h8v13M8 7v2M8 12v2M8 17v2M16 12v2M16 17v2M2 21h20" /></>,
     income: <><path d="M4 19V9M10 19V5M16 19v-7M22 19V3" /><path d="M2 21h22" /></>,
     check: <><circle cx="12" cy="12" r="9" /><path d="m8 12 2.5 2.5L16 9" /></>,
     tools: <><path d="m14 7 3-3 3 3-3 3M5 19l9-9M4 14l6 6" /></>,
     arrow: <><path d="M5 12h14M14 7l5 5-5 5" /></>,
+    wallet: <><path d="M4 7h13a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a1 1 0 0 1-1-1z" /><path d="M4 7V6a2 2 0 0 1 2-2h9v3" /><path d="M16 12.5h4v4h-4a2 2 0 0 1 0-4Z" /></>,
+    clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3 2" /></>,
+    calendar: <><rect x="3" y="4.5" width="18" height="16.5" rx="2.5" /><path d="M3 9.5h18M8 2.5v4M16 2.5v4" /></>,
+    user: <><circle cx="12" cy="8" r="3.6" /><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0" /></>,
+    phone: <><path d="M4 4.5h4l2 5-2.5 1.6a12.5 12.5 0 0 0 5.4 5.4L18 14l5 2v4a2 2 0 0 1-2.2 2A18.5 18.5 0 0 1 2 6.7 2 2 0 0 1 4 4.5Z" /></>,
+    plus: <><path d="M12 5v14M5 12h14" /></>,
+    euro: <><path d="M18.5 6.2a7 7 0 1 0 0 11.6" /><path d="M4 10h9.5M4 14h8" /></>,
+    alert: <><path d="M12 3.2 2.2 20.5h19.6z" /><path d="M12 10v4.5M12 18h.01" /></>,
+    key: <><circle cx="8" cy="15" r="4" /><path d="m11 12 8-8 2 2M17 6l2 2" /></>,
   }
 
   return <svg className="ui-icon" viewBox="0 0 24 24" aria-hidden="true">{paths[name]}</svg>
+}
+
+// Iniciais do inquilino para o avatar (ex.: "Carla Mendes" -> "CM").
+function initials(fullName: string) {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean)
+  if (!parts.length) return '—'
+  const first = parts[0][0] ?? ''
+  const last = parts.length > 1 ? parts[parts.length - 1][0] ?? '' : ''
+  return (first + last).toUpperCase()
+}
+
+// Cor determinística (forte, não pastel) para o avatar do inquilino, a partir do nome.
+const AVATAR_COLORS = ['#0f766e', '#4f46e5', '#b45309', '#be185d', '#0369a1', '#7c3aed']
+function avatarColor(seed: string) {
+  let hash = 0
+  for (let i = 0; i < seed.length; i += 1) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length]
 }
 
 function payload(form: HTMLFormElement) {
@@ -444,22 +474,24 @@ function ApartmentCard({ apt, onOpen, onMarkPaid, paying }: {
   paying: boolean
 }) {
   const { unit, lease, renter, monthStatus, rent, title, openTickets } = apt
+  const tenantName = (renter?.fullName as string) || ''
   return (
     <div className="apt-card">
       <button className="apt-card-main" type="button" data-apt-card={unit.id as string} aria-label={`Abrir ${title}`} onClick={() => onOpen(unit.id as string)}>
-        <span className="apt-card-icon"><UiIcon name="building" /></span>
+        {renter
+          ? <span className="apt-avatar" style={{ background: avatarColor(tenantName) }}>{initials(tenantName)}</span>
+          : <span className="apt-avatar apt-avatar-vacant"><UiIcon name="key" /></span>}
         <span className="apt-card-body">
           <span className="apt-card-top">
             <strong className="apt-card-title">{title}</strong>
             <StatusMark status={monthStatus} />
           </span>
-          <span className="apt-card-tenant">{renter ? `${renter.fullName as string} · ${money(rent)}` : 'Sem inquilino'}</span>
-          {lease?.endDate || openTickets > 0 ? (
-            <span className="apt-card-foot">
-              {lease?.endDate ? <span className="apt-foot-item">Contrato até {date(lease.endDate)}</span> : null}
-              {openTickets > 0 ? <span className="apt-foot-item apt-foot-alert">{openTickets} {openTickets === 1 ? 'avaria' : 'avarias'}</span> : null}
-            </span>
-          ) : null}
+          <span className="apt-card-tenant">{renter ? tenantName : 'Sem inquilino'}</span>
+          <span className="apt-card-facts">
+            {renter ? <span className="apt-fact"><UiIcon name="euro" />{money(rent)}</span> : null}
+            {lease?.endDate ? <span className="apt-fact"><UiIcon name="calendar" />{date(lease.endDate)}</span> : null}
+            {openTickets > 0 ? <span className="apt-fact apt-fact-alert" aria-label={`${openTickets} ${openTickets === 1 ? 'avaria' : 'avarias'}`}><UiIcon name="tools" />{openTickets}</span> : null}
+          </span>
         </span>
       </button>
       {monthStatus === 'due' || monthStatus === 'confirming' ? (
@@ -1098,39 +1130,34 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
           />
         ) : (
           <>
-            <section className="apt-month" aria-label="Resumo deste mês">
-              <p className="apt-month-title">Este mês</p>
-              <div className="apt-month-stats">
-                <div className="apt-month-stat apt-month-stat-paid">
-                  <strong>{paidThisMonth}</strong>
-                  <span>{paidThisMonth === 1 ? 'já pagou' : 'já pagaram'}</span>
-                </div>
-                <div className="apt-month-stat apt-month-stat-due">
-                  <strong>{dueThisMonth}</strong>
-                  <span>{dueThisMonth === 1 ? 'ainda falta' : 'ainda faltam'}</span>
-                </div>
-                {confirmingThisMonth > 0 ? (
-                  <div className="apt-month-stat apt-month-stat-confirm">
-                    <strong>{confirmingThisMonth}</strong>
-                    <span>a confirmar</span>
-                  </div>
-                ) : null}
+            <section className="apt-hero" aria-label="Resumo deste mês">
+              <p className="apt-hero-kicker"><UiIcon name="calendar" />Este mês</p>
+              <p className="apt-hero-amount">
+                <strong>{money(receivedThisMonth)}</strong>
+                <span>de {money(expectedThisMonth)}</span>
+              </p>
+              <div className="apt-progress" role="img" aria-label={`Recebido ${money(receivedThisMonth)} de ${money(expectedThisMonth)} previstos`}>
+                <span className="apt-progress-fill" style={{ width: `${expectedThisMonth > 0 ? Math.min(100, Math.round((receivedThisMonth / expectedThisMonth) * 100)) : 0}%` }} />
               </div>
-              <p className="apt-month-money">Recebido <strong>{money(receivedThisMonth)}</strong> de {money(expectedThisMonth)} este mês</p>
+              <div className="apt-hero-chips">
+                <span className="apt-hero-chip apt-hero-chip-paid"><UiIcon name="check" />{paidThisMonth} {paidThisMonth === 1 ? 'pago' : 'pagos'}</span>
+                <span className="apt-hero-chip apt-hero-chip-due"><UiIcon name="clock" />{dueThisMonth} por pagar</span>
+                {confirmingThisMonth > 0 ? <span className="apt-hero-chip apt-hero-chip-confirm"><UiIcon name="clock" />{confirmingThisMonth} a confirmar</span> : null}
+              </div>
             </section>
 
             <div className="apt-stats" role="group" aria-label="Resumo do portfólio">
               <div className="apt-stat" role="img" aria-label={`${apartments.length} ${apartments.length === 1 ? 'apartamento' : 'apartamentos'}`}>
+                <span className="apt-stat-ic"><UiIcon name="building" /></span>
                 <strong aria-hidden="true">{apartments.length}</strong>
-                <span aria-hidden="true">{apartments.length === 1 ? 'apartamento' : 'apartamentos'}</span>
               </div>
-              <div className={`apt-stat ${dueThisMonth > 0 ? 'apt-stat-warn' : ''}`} role="img" aria-label={`${dueThisMonth} em atraso${dueThisMonth > 0 ? ', a precisar de atenção' : ''}`}>
+              <div className={`apt-stat ${dueThisMonth > 0 ? 'apt-stat-warn' : ''}`} role="img" aria-label={`${dueThisMonth} em atraso`}>
+                <span className="apt-stat-ic"><UiIcon name="alert" /></span>
                 <strong aria-hidden="true">{dueThisMonth}</strong>
-                <span aria-hidden="true">em atraso</span>
               </div>
-              <div className={`apt-stat ${openTicketsTotal > 0 ? 'apt-stat-warn' : ''}`} role="img" aria-label={`${openTicketsTotal} ${openTicketsTotal === 1 ? 'avaria aberta' : 'avarias abertas'}${openTicketsTotal > 0 ? ', a precisar de atenção' : ''}`}>
+              <div className={`apt-stat ${openTicketsTotal > 0 ? 'apt-stat-warn' : ''}`} role="img" aria-label={`${openTicketsTotal} ${openTicketsTotal === 1 ? 'avaria' : 'avarias'}`}>
+                <span className="apt-stat-ic"><UiIcon name="tools" /></span>
                 <strong aria-hidden="true">{openTicketsTotal}</strong>
-                <span aria-hidden="true">{openTicketsTotal === 1 ? 'avaria' : 'avarias'}</span>
               </div>
             </div>
 

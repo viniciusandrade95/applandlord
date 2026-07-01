@@ -2486,32 +2486,34 @@ button.inline-link {
 
 .apt-stat {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 14px 8px;
-  border: 1px solid #e3e7ec;
+  justify-content: center;
+  gap: 11px;
+  padding: 18px 8px;
+  border: 1px solid #e6e9ee;
   border-radius: 16px;
   background: #fff;
-  box-shadow: 0 8px 24px rgba(34, 51, 84, 0.05);
+  box-shadow: 0 1px 2px rgba(23, 32, 51, 0.04);
 }
 
+.apt-stat-ic {
+  display: grid;
+  place-items: center;
+  color: #94a1b2;
+}
+
+.apt-stat-ic .ui-icon { width: 23px; height: 23px; }
+
 .apt-stat strong {
-  color: #16243d;
-  font-size: 1.7rem;
+  color: #101828;
+  font-size: 1.75rem;
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.03em;
 }
 
-.apt-stat span {
-  color: #5b6577;
-  font-size: 0.9rem;
-  font-weight: 650;
-  text-align: center;
-}
-
-.apt-stat-warn strong { color: #b3261e; }
+.apt-stat-warn .apt-stat-ic { color: #c02617; }
+.apt-stat-warn strong { color: #c02617; }
 
 /* Pesquisa */
 .apt-search {
@@ -2651,3 +2653,127 @@ button.inline-link {
   .apt-stat strong { font-size: 1.5rem; }
   .apt-stat span { font-size: 0.82rem; }
 }
+
+/* ============================================================
+   v0.9.0 — home mais visual: hero "Este mês", avatares, factos com ícones
+   ============================================================ */
+
+.apt-hero {
+  margin-bottom: 16px;
+  padding: 22px;
+  border: 1px solid #e6e9ee;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(23, 32, 51, 0.04), 0 16px 34px rgba(23, 32, 51, 0.06);
+}
+
+.apt-hero-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  color: #6b7688;
+  font-size: 0.9rem;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.apt-hero-kicker .ui-icon { width: 16px; height: 16px; }
+
+.apt-hero-amount {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin: 12px 0 14px;
+}
+
+.apt-hero-amount strong {
+  color: #0f7a3d;
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
+.apt-hero-amount span {
+  color: #6b7688;
+  font-size: 1.02rem;
+  font-weight: 600;
+}
+
+.apt-progress {
+  overflow: hidden;
+  height: 10px;
+  border-radius: 999px;
+  background: #eef1f5;
+}
+
+.apt-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #159a52, #0f7a3d);
+  transition: width 0.4s ease;
+}
+
+.apt-hero-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  margin-top: 16px;
+}
+
+.apt-hero-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 1rem;
+  font-weight: 750;
+}
+
+.apt-hero-chip .ui-icon { width: 18px; height: 18px; }
+.apt-hero-chip-paid { color: #0f7a3d; }
+.apt-hero-chip-due { color: #c02617; }
+.apt-hero-chip-confirm { color: #1d5fbf; }
+
+/* Avatar do inquilino (iniciais) — elemento visual com cor forte, não pastel */
+.apt-avatar {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 750;
+}
+
+.apt-avatar-vacant {
+  color: #8a97a8;
+  background: #f1f4f8;
+}
+
+.apt-avatar-vacant .ui-icon { width: 22px; height: 22px; }
+
+/* Factos do card com ícones em vez de texto */
+.apt-card-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-top: 9px;
+}
+
+.apt-fact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #475569;
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.apt-fact .ui-icon { width: 16px; height: 16px; color: #94a1b2; }
+.apt-fact-alert { color: #b45309; }
+.apt-fact-alert .ui-icon { color: #b45309; }

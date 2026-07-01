@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-07-01 (v0.9.0 — Home mais visual (ícones, avatares, "Este mês") + dados demo)
+- **Autor:** Vinicius + Claude
+- **Tipo:** ui/ux + dados
+- **Descrição:**
+  - **"Este mês" redesenhado:** montante recebido em destaque, **barra de progresso** até ao previsto, e chips com ícones (✓ pagos / 🕐 por pagar).
+  - **Mini-barra iconificada:** apartamentos / em atraso / avarias passam a **ícone + número** (sem etiqueta de texto), com `aria-label` para leitores de ecrã.
+  - **Cards com mais intenção:** **avatar do inquilino** (iniciais, cor forte) ou ícone de chave quando vago; factos com **ícones** em vez de texto (💶 renda · 📅 fim do contrato · 🔧 avarias).
+  - **Pesquisa** sempre visível com ícone de lupa.
+  - Conjunto de ícones alargado (carteira, relógio, calendário, utilizador, telefone, euro, alerta, chave…).
+  - **Regra nova de design:** preferir ícones a texto sempre que o ícone seja claro.
+  - **Dados demo** (`prisma/seed-demo.js`): **2 apartamentos, 2 inquilinos, contratos desde 2023 (~3 anos)**, com histórico de rendas pagas, uma renda por pagar este mês, despesas e uma avaria. Login: `demo@applandlord.local` (password definida no primeiro acesso).
+- **Validação:** typecheck 0, verificação visual com a app a correr.
+- **A fazer a seguir:** aplicar a mesma linguagem visual às Finanças e restantes páginas.
+
 ## 2026-07-01 (v0.8.0 — Redesenho dos cards: branco, com intenção)
 - **Autor:** Vinicius + Claude
 - **Tipo:** ui/ux (redesenho visual da página inicial)

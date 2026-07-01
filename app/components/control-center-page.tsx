@@ -59,6 +59,7 @@ type State = {
   invoices: Row[]
   payments: Row[]
   maintenance: Row[]
+  expenses: Row[]
 }
 
 type Notice = { kind: 'success' | 'error'; text: string } | null
@@ -73,6 +74,7 @@ const initialState: State = {
   invoices: [],
   payments: [],
   maintenance: [],
+  expenses: [],
 }
 
 function money(value: number) {
@@ -264,7 +266,7 @@ function SmartEmptyState({ title, description, actionLabel, actionHref }: { titl
  * Cartão de gestão de um imóvel: mostra morada, resumo de ocupação e a lista de
  * unidades com renda, estado e inquilino ocupante (via contrato ativo).
  */
-function PropertyCard({ property }: { property: Row }) {
+function PropertyCard({ property, onEditProperty, onEditUnit }: { property: Row; onEditProperty: (property: Row) => void; onEditUnit: (unit: Row) => void }) {
   const units: Row[] = Array.isArray(property.units) ? (property.units as Row[]) : []
   const leases: Row[] = Array.isArray(property.leases) ? (property.leases as Row[]) : []
   const occupied = units.filter((unit) => unit.status === 'Occupied').length
@@ -276,9 +278,10 @@ function PropertyCard({ property }: { property: Row }) {
     <article className="card">
       <div className="card-header">
         <h2>{property.name as string}</h2>
-        <span>{property.addressLine1 as string}{property.city ? `, ${property.city as string}` : ''}</span>
+        <button className="small-button" type="button" onClick={() => onEditProperty(property)}>Editar</button>
       </div>
       <div className="card-body">
+        <p className="muted" style={{ margin: '0 0 12px' }}>{property.addressLine1 as string}{property.city ? `, ${property.city as string}` : ''}</p>
         <div className="chips" style={{ marginBottom: 14 }}>
           <span className="chip chip-accent">{units.length} {units.length === 1 ? 'unidade' : 'unidades'}</span>
           {occupied ? <span className="chip chip-positive">{occupied} ocupada{occupied === 1 ? '' : 's'}</span> : null}
@@ -296,7 +299,10 @@ function PropertyCard({ property }: { property: Row }) {
                     <strong>{unit.name as string}</strong>
                     <span className="muted">{money(Number(unit.monthlyRent ?? 0))} · {tenant ?? 'Sem inquilino'}</span>
                   </div>
-                  <span className={chipClass(unit.status as string)}>{statusLabel(unit.status as string)}</span>
+                  <div className="unit-row-actions">
+                    <span className={chipClass(unit.status as string)}>{statusLabel(unit.status as string)}</span>
+                    <button className="small-button" type="button" onClick={() => onEditUnit(unit)}>Editar</button>
+                  </div>
                 </div>
               )
             })}
@@ -306,6 +312,85 @@ function PropertyCard({ property }: { property: Row }) {
         )}
       </div>
     </article>
+  )
+}
+
+type EditingEntity = { type: SetupStep; data: Row }
+
+/**
+ * Formulário de edição para imóvel, unidade ou inquilino. Reutiliza os campos de
+ * criação, pré-preenchidos, e submete via PATCH para a coleção respetiva.
+ */
+function EditEntityForm({
+  editing,
+  onSubmit,
+  onDone,
+  setNotice,
+}: {
+  editing: EditingEntity
+  onSubmit: (endpoint: string, body: Record<string, unknown>, message: string, method?: string) => Promise<void>
+  onDone: () => void
+  setNotice: (notice: Notice) => void
+}) {
+  const d = editing.data
+  const title = editing.type === 'property' ? 'Editar imóvel' : editing.type === 'unit' ? 'Editar unidade' : 'Editar inquilino'
+  const endpoint = editing.type === 'property' ? '/api/properties' : editing.type === 'unit' ? '/api/units' : '/api/renters'
+
+  return (
+    <div className="setup-form-layout">
+      <Panel title={title} subtitle="Atualize os dados e guarde">
+        <form
+          key={d.id as string}
+          onSubmit={async (event: FormEvent<HTMLFormElement>) => {
+            event.preventDefault()
+            const form = event.currentTarget
+            try {
+              await onSubmit(endpoint, { id: d.id, ...payload(form) }, 'Dados atualizados com sucesso.', 'PATCH')
+              onDone()
+            } catch (error) {
+              setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível guardar as alterações.' })
+            }
+          }}
+        >
+          <div className="form-grid">
+            {editing.type === 'property' ? (
+              <>
+                <div className="field"><label htmlFor="edit-name">Nome</label><input id="edit-name" name="name" defaultValue={d.name as string} required /></div>
+                <div className="field"><label htmlFor="edit-address1">Endereço</label><input id="edit-address1" name="addressLine1" autoComplete="address-line1" defaultValue={d.addressLine1 as string} required /></div>
+                <div className="field"><label htmlFor="edit-city">Cidade</label><input id="edit-city" name="city" autoComplete="address-level2" defaultValue={d.city as string} required /></div>
+                <div className="field"><label htmlFor="edit-region">Região</label><input id="edit-region" name="region" autoComplete="address-level1" defaultValue={d.region as string} required /></div>
+                <div className="field"><label htmlFor="edit-postal">Código postal</label><input id="edit-postal" name="postalCode" autoComplete="postal-code" inputMode="numeric" defaultValue={d.postalCode as string} required /></div>
+                <div className="field"><label htmlFor="edit-country">País</label><input id="edit-country" name="country" autoComplete="country-name" defaultValue={(d.country as string) ?? 'Portugal'} /></div>
+                <div className="field field-full"><label htmlFor="edit-description">Descrição</label><textarea id="edit-description" name="description" defaultValue={(d.description as string) ?? ''} /></div>
+              </>
+            ) : null}
+            {editing.type === 'unit' ? (
+              <>
+                <div className="field"><label htmlFor="edit-uname">Nome</label><input id="edit-uname" name="name" defaultValue={d.name as string} required /></div>
+                <div className="field"><label htmlFor="edit-urent">Renda mensal</label><input id="edit-urent" name="monthlyRent" type="number" step="0.01" defaultValue={Number(d.monthlyRent ?? 0)} required /></div>
+                <div className="field"><label htmlFor="edit-ustatus">Estado</label><select id="edit-ustatus" name="status" defaultValue={(d.status as string) ?? 'Vacant'}><option value="Vacant">Vaga</option><option value="Occupied">Ocupada</option><option value="Maintenance">Em manutenção</option></select></div>
+                <div className="field"><label htmlFor="edit-ubedrooms">Quartos</label><input id="edit-ubedrooms" name="bedrooms" type="number" step="1" defaultValue={Number(d.bedrooms ?? 0)} /></div>
+                <div className="field"><label htmlFor="edit-ubathrooms">Casas de banho</label><input id="edit-ubathrooms" name="bathrooms" type="number" step="0.5" defaultValue={Number(d.bathrooms ?? 0)} /></div>
+                <div className="field field-full"><label htmlFor="edit-unotes">Notas</label><textarea id="edit-unotes" name="notes" defaultValue={(d.notes as string) ?? ''} /></div>
+              </>
+            ) : null}
+            {editing.type === 'renter' ? (
+              <>
+                <div className="field field-full"><label htmlFor="edit-rname">Nome completo</label><input id="edit-rname" name="fullName" autoComplete="name" defaultValue={d.fullName as string} required /></div>
+                <div className="field"><label htmlFor="edit-remail">Email</label><input id="edit-remail" name="email" type="email" autoComplete="email" inputMode="email" defaultValue={(d.email as string) ?? ''} /></div>
+                <div className="field"><label htmlFor="edit-rphone">Telefone</label><input id="edit-rphone" name="phone" type="tel" autoComplete="tel" inputMode="tel" defaultValue={(d.phone as string) ?? ''} /></div>
+                <div className="field field-full"><label htmlFor="edit-rdoc">Documento / NIF</label><input id="edit-rdoc" name="governmentId" defaultValue={(d.governmentId as string) ?? ''} /></div>
+                <div className="field field-full"><label htmlFor="edit-rnotes">Notas</label><textarea id="edit-rnotes" name="notes" defaultValue={(d.notes as string) ?? ''} /></div>
+              </>
+            ) : null}
+          </div>
+          <div className="form-actions">
+            <button className="button button-primary" type="submit">Guardar alterações</button>
+            <button className="button button-secondary" type="button" onClick={onDone}>Cancelar</button>
+          </div>
+        </form>
+      </Panel>
+    </div>
   )
 }
 
@@ -321,11 +406,13 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
   const [ticketPriorityFilter, setTicketPriorityFilter] = useState<string>('')
   const [ticketPropertyId, setTicketPropertyId] = useState<string>('')
   const [setupStep, setSetupStep] = useState<SetupStep | null>(null)
+  const [editing, setEditing] = useState<EditingEntity | null>(null)
+  const [invoiceFilter, setInvoiceFilter] = useState<'all' | 'overdue' | 'open'>('all')
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const endpoints = ['/api/dashboard', '/api/properties', '/api/units', '/api/renters', '/api/leases', '/api/invoices', '/api/payments', '/api/tickets']
+      const endpoints = ['/api/dashboard', '/api/properties', '/api/units', '/api/renters', '/api/leases', '/api/invoices', '/api/payments', '/api/tickets', '/api/expenses']
       const responses = await Promise.all(endpoints.map((endpoint) => fetch(endpoint)))
       const data = await Promise.all(
         responses.map(async (response) => {
@@ -335,7 +422,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
         })
       )
 
-      setState({ dashboard: data[0], properties: data[1], units: data[2], renters: data[3], leases: data[4], invoices: data[5], payments: data[6], maintenance: data[7] })
+      setState({ dashboard: data[0], properties: data[1], units: data[2], renters: data[3], leases: data[4], invoices: data[5], payments: data[6], maintenance: data[7], expenses: data[8] })
     } catch (error) {
       setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Falha ao carregar painel do senhorio.' })
     } finally {
@@ -357,6 +444,10 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
       if (!response.ok) throw new Error(apiErrorMessage(data, 'Não foi possível concluir o pedido.'))
       setNotice({ kind: 'success', text: message })
       await load()
+    } catch (error) {
+      // Centraliza o erro para que os botões de ação (confirmar/terminar/apagar) também o mostrem.
+      setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível concluir o pedido.' })
+      throw error
     } finally {
       setSubmitting(null)
     }
@@ -427,6 +518,15 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
   // Em páginas de modo único o título da secção é o h1 da página; no painel combinado fica h2 sob o h1 do dashboard.
   const SectionHeading = mode === 'all' || mode === 'dashboard' ? 'h2' : 'h1'
   const occupancyRate = counts?.units ? Math.round(((counts.occupiedUnits ?? 0) / counts.units) * 100) : 0
+  const overdueInvoices = state.invoices.filter((invoice) => invoice.status === 'Overdue')
+  const overdueTotal = overdueInvoices.reduce((sum, invoice) => sum + Number(invoice.amount ?? 0), 0)
+  const visibleInvoices = state.invoices.filter((invoice) =>
+    invoiceFilter === 'all'
+      ? true
+      : invoiceFilter === 'overdue'
+        ? invoice.status === 'Overdue'
+        : invoice.status !== 'Paid' && invoice.status !== 'Canceled' && invoice.status !== 'Cancelled'
+  )
   const dashboardAlerts = [
     ...(attention?.attentionByPriority?.high ?? []),
     ...(attention?.attentionByPriority?.medium ?? []),
@@ -580,8 +680,8 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
             <SectionHeading className="section-title">{setupComplete ? 'Os seus imóveis' : 'Configuração do portfólio'}</SectionHeading>
             <p>{setupComplete ? 'A sua carteira de imóveis, unidades e ocupação num só lugar.' : 'Complete estes passos pela ordem indicada. Mostramos apenas o que precisa em cada momento.'}</p>
           </div>
-          {setupComplete && !currentSetupStep
-            ? <button className="button button-primary" type="button" onClick={() => setSetupStep('property')}>Adicionar imóvel</button>
+          {setupComplete && !currentSetupStep && !editing
+            ? <button className="button button-primary" type="button" onClick={() => { setEditing(null); setSetupStep('property') }}>Adicionar imóvel</button>
             : loading ? <span className="pill pill-soft">A atualizar...</span> : <span className="pill pill-positive">Tudo atualizado</span>}
         </div>
 
@@ -594,7 +694,11 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
         </div>
         ) : null}
 
-        {setupComplete && !currentSetupStep ? (
+        {setupComplete && !currentSetupStep && editing ? (
+          <EditEntityForm editing={editing} onSubmit={postJson} onDone={() => setEditing(null)} setNotice={setNotice} />
+        ) : null}
+
+        {setupComplete && !currentSetupStep && !editing ? (
         <>
           <div className="chips portfolio-summary">
             <span className="chip chip-accent">{state.properties.length} {state.properties.length === 1 ? 'imóvel' : 'imóveis'}</span>
@@ -604,8 +708,24 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
             {state.units.filter((unit) => unit.status !== 'Occupied' && unit.status !== 'Vacant').length ? <span className="chip chip-accent">{state.units.filter((unit) => unit.status !== 'Occupied' && unit.status !== 'Vacant').length} em manutenção</span> : null}
           </div>
           <div className="grid-2">
-            {state.properties.map((property) => <PropertyCard key={property.id as string} property={property} />)}
+            {state.properties.map((property) => <PropertyCard key={property.id as string} property={property} onEditProperty={(p) => setEditing({ type: 'property', data: p })} onEditUnit={(u) => setEditing({ type: 'unit', data: u })} />)}
           </div>
+          {state.renters.length ? (
+            <article className="card">
+              <div className="card-header"><h2>Inquilinos</h2><span>{state.renters.length} {state.renters.length === 1 ? 'registado' : 'registados'}</span></div>
+              <div className="card-body"><div className="stack">
+                {state.renters.map((renter) => (
+                  <div key={renter.id as string} className="unit-row">
+                    <div>
+                      <strong>{renter.fullName as string}</strong>
+                      <span className="muted">{(renter.email as string) || 'Sem email'} · {(renter.phone as string) || 'Sem telefone'}</span>
+                    </div>
+                    <button className="small-button" type="button" onClick={() => setEditing({ type: 'renter', data: renter })}>Editar</button>
+                  </div>
+                ))}
+              </div></div>
+            </article>
+          ) : null}
           <p className="meta">Quer registar uma unidade num imóvel existente? <button className="inline-link" type="button" onClick={() => setSetupStep('unit')}>Adicionar unidade</button></p>
         </>
         ) : null}
@@ -708,6 +828,22 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
                 <strong>{lease.renter?.fullName ?? '—'}</strong><br />
                 <span className="muted">{lease.property?.name ?? '—'} · {lease.unit?.name ?? '—'} · {money(Number(lease.monthlyRent ?? 0))}</span><br />
                 <span className={chipClass(lease.status as string)}>{statusLabel(lease.status as string)}</span>
+                {lease.status === 'Active' ? (
+                  <div className="form-actions" style={{ marginTop: 10 }}>
+                    <button
+                      className="small-button small-button-danger"
+                      type="button"
+                      disabled={submitting === '/api/leases'}
+                      onClick={() => {
+                        if (window.confirm('Terminar este contrato? A unidade fica livre para um novo arrendamento.')) {
+                          void postJson('/api/leases', { leaseId: lease.id, status: 'Ended' }, 'Contrato terminado. A unidade ficou livre.', 'PATCH')
+                        }
+                      }}
+                    >
+                      {submitting === '/api/leases' ? 'A terminar...' : 'Terminar contrato'}
+                    </button>
+                  </div>
+                ) : null}
               </div>
             )} />
           </Panel>
@@ -730,10 +866,27 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
               </div>
               <div className="form-actions"><button className="button button-primary" type="submit" disabled={submitting === '/api/invoices/generate'}>{submitting === '/api/invoices/generate' ? 'A gerar...' : `Gerar cobranças de ${periodLabel(new Date().toISOString().slice(0, 7))}`}</button></div>
             </form>}
-            {activeLeaseCount > 0 || state.invoices.length > 0 ? <RecordList items={state.invoices} empty={{ title: 'Ainda não existem cobranças.', hint: 'Escolha o período e gere as cobranças para os contratos ativos.', actionLabel: 'Gerar cobranças agora', actionHref: '#invoice-period' }} render={(invoice) => (
+            {state.invoices.length > 0 ? (
+              <div style={{ marginTop: 12 }}>
+                <div className="chips portfolio-summary" style={{ marginBottom: 10 }}>
+                  {overdueInvoices.length
+                    ? <span className="chip chip-danger">{overdueInvoices.length} em atraso · {money(overdueTotal)}</span>
+                    : <span className="chip chip-positive">Sem rendas em atraso</span>}
+                </div>
+                <div className="field" style={{ marginBottom: 12 }}>
+                  <label htmlFor="invoice-filter">Mostrar</label>
+                  <select id="invoice-filter" value={invoiceFilter} onChange={(event) => setInvoiceFilter(event.target.value as 'all' | 'overdue' | 'open')}>
+                    <option value="all">Todas as cobranças</option>
+                    <option value="overdue">Só em atraso</option>
+                    <option value="open">Por receber</option>
+                  </select>
+                </div>
+              </div>
+            ) : null}
+            {activeLeaseCount > 0 || state.invoices.length > 0 ? <RecordList items={visibleInvoices} empty={{ title: invoiceFilter === 'all' ? 'Ainda não existem cobranças.' : 'Nenhuma cobrança com este filtro.', hint: invoiceFilter === 'all' ? 'Escolha o período e gere as cobranças para os contratos ativos.' : 'Experimente mudar o filtro acima.', actionLabel: 'Gerar cobranças agora', actionHref: '#invoice-period' }} render={(invoice) => (
               <div key={invoice.id} className="empty">
                 <strong>{invoice.lease?.renter?.fullName ?? '—'}</strong><br />
-                <span className="muted">{periodLabel(invoice.period as string)} · {money(Number(invoice.amount ?? 0))}</span><br />
+                <span className="muted">{periodLabel(invoice.period as string)} · {money(Number(invoice.amount ?? 0))} · vence {date(invoice.dueDate)}</span><br />
                 <span className={chipClass(invoice.status as string)}>{statusLabel(invoice.status as string)}</span>
                 <div className="table-actions" style={{ marginTop: 10 }}>
                   <button
@@ -768,12 +921,55 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
               </div>
               <div className="form-actions"><button className="button button-primary" type="submit" disabled={submitting === '/api/payments'}>{submitting === '/api/payments' ? 'A registar...' : 'Registar pagamento'}</button></div>
             </form>}
-            {state.payments.length > 0 ? <RecordList items={state.payments} empty={{ title: 'Ainda não existem pagamentos registados.', hint: 'Quando uma cobrança for paga, poderá registar o pagamento aqui.', actionLabel: 'Ver cobranças', actionHref: '#invoice-period' }} render={(payment) => (
+            {state.payments.length > 0 ? <RecordList items={state.payments} empty={{ title: 'Ainda não existem pagamentos registados.', hint: 'Quando uma cobrança for paga, poderá registar o pagamento aqui.', actionLabel: 'Ver cobranças', actionHref: '#invoice-period' }} render={(payment) => {
+              const confirmed = payment.confirmationStatus === 'Confirmed'
+              return (
               <div key={payment.id} className="empty">
                 <strong>{payment.invoice?.lease?.renter?.fullName ?? '—'}</strong><br />
-                <span className="muted">{dateTime(payment.paidAt)} · {money(Number(payment.amount ?? 0))} · {paymentMethodLabel(payment.method as string)}</span>
+                <span className="muted">{dateTime(payment.paidAt)} · {money(Number(payment.amount ?? 0))} · {paymentMethodLabel(payment.method as string)}</span><br />
+                <span className={confirmed ? 'chip chip-positive' : 'chip chip-warning'}>{confirmed ? 'Confirmado' : 'A aguardar confirmação'}</span>
+                {!confirmed ? (
+                  <div className="form-actions" style={{ marginTop: 10 }}>
+                    <button
+                      className="small-button"
+                      type="button"
+                      disabled={submitting === `/api/payments/${payment.id as string}/confirm`}
+                      onClick={() => void postJson(`/api/payments/${payment.id as string}/confirm`, {}, 'Pagamento confirmado. Já entra no resumo financeiro.')}
+                    >
+                      {submitting === `/api/payments/${payment.id as string}/confirm` ? 'A confirmar...' : 'Confirmar pagamento'}
+                    </button>
+                  </div>
+                ) : null}
               </div>
-            )} /> : null}
+              )
+            }} /> : null}
+          </Panel>
+        </div>
+        <div className="grid-2" style={{ marginTop: 16 }}>
+          <Panel title="Registar despesa" subtitle="Custos por imóvel para o lucro líquido">
+            {propertyOptions.length === 0 ? <SmartEmptyState title="Ainda não existem imóveis" description="Adicione um imóvel antes de registar despesas." actionLabel="Adicionar imóvel" actionHref="/portfolio" /> : <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/expenses', payload(form), 'Despesa registada.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível registar a despesa.' }) } }}>
+              <div className="form-grid">
+                <div className="field"><label htmlFor="expense-category">Categoria</label><select id="expense-category" name="category" defaultValue="Manutenção"><option value="Manutenção">Manutenção</option><option value="Condomínio">Condomínio</option><option value="IMI">IMI</option><option value="Seguro">Seguro</option><option value="Água">Água</option><option value="Eletricidade">Eletricidade</option><option value="Gás">Gás</option><option value="Limpeza">Limpeza</option><option value="Outros">Outros</option></select></div>
+                <div className="field"><label htmlFor="expense-amount">Valor</label><input id="expense-amount" name="amount" type="number" step="0.01" required /></div>
+                <div className="field"><label htmlFor="expense-property">Imóvel</label><select id="expense-property" name="propertyId" required defaultValue=""><option value="" disabled>Selecionar imóvel</option>{propertyOptions.map((property) => <option key={property.id} value={property.id}>{property.label}</option>)}</select></div>
+                <div className="field"><label htmlFor="expense-date">Data</label><input id="expense-date" name="incurredAt" type="date" defaultValue={new Date().toISOString().slice(0, 10)} /></div>
+                <div className="field field-full"><label htmlFor="expense-description">Descrição</label><input id="expense-description" name="description" placeholder="Ex.: Reparação de canalização" /></div>
+              </div>
+              <div className="form-actions"><button className="button button-primary" type="submit" disabled={submitting === '/api/expenses'}>{submitting === '/api/expenses' ? 'A registar...' : 'Registar despesa'}</button></div>
+            </form>}
+          </Panel>
+
+          <Panel title="Despesas recentes" subtitle={`${state.expenses.length} ${state.expenses.length === 1 ? 'registada' : 'registadas'}`}>
+            <RecordList items={state.expenses} empty={{ title: 'Ainda não existem despesas.', hint: 'Registe custos (manutenção, IMI, seguros...) para o lucro líquido refletir a realidade.', actionLabel: 'Registar despesa', actionHref: '#expense-category' }} render={(expense) => (
+              <div key={expense.id} className="empty">
+                <strong>{expense.category as string}</strong><br />
+                <span className="muted">{money(Number(expense.amount ?? 0))} · {(expense.property?.name as string) ?? (expense.lease?.property?.name as string) ?? '—'} · {date(expense.incurredAt)}</span>
+                {expense.description ? <><br /><span className="muted">{expense.description as string}</span></> : null}
+                <div className="form-actions" style={{ marginTop: 10 }}>
+                  <button className="small-button small-button-danger" type="button" onClick={() => { if (window.confirm('Apagar esta despesa?')) { void postJson(`/api/expenses/${expense.id as string}`, {}, 'Despesa apagada.', 'DELETE') } }}>Apagar</button>
+                </div>
+              </div>
+            )} />
           </Panel>
         </div>
       </section> : null}

@@ -310,6 +310,13 @@ button.inline-link {
   border-top: 0;
 }
 
+.unit-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
 .unit-row strong {
   display: block;
 }

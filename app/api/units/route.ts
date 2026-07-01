@@ -73,3 +73,40 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to create unit' }, { status: 500 })
   }
 }
+
+export async function PATCH(request: Request) {
+  const { userId, response } = await requireCurrentUserId()
+  if (!userId) return response ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  try {
+    const body = await request.json()
+    const id = asString(body.id)
+    if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 })
+
+    const existing = await prisma.unit.findFirst({ where: { id, ownerId: userId } })
+    if (!existing) return NextResponse.json({ error: 'Unit not found' }, { status: 404 })
+
+    const name = asString(body.name, existing.name)
+    const monthlyRent = body.monthlyRent === undefined ? existing.monthlyRent : asNumber(body.monthlyRent, existing.monthlyRent)
+
+    if (!name || !Number.isFinite(monthlyRent) || monthlyRent <= 0) {
+      return NextResponse.json({ error: 'name and a positive monthlyRent are required' }, { status: 400 })
+    }
+
+    const unit = await prisma.unit.update({
+      where: { id },
+      data: {
+        name,
+        monthlyRent,
+        status: asString(body.status, existing.status),
+        bedrooms: body.bedrooms === undefined || body.bedrooms === '' ? existing.bedrooms : Math.trunc(asNumber(body.bedrooms, existing.bedrooms)),
+        bathrooms: body.bathrooms === undefined || body.bathrooms === '' ? existing.bathrooms : asNumber(body.bathrooms, existing.bathrooms),
+        notes: body.notes === undefined ? existing.notes : asString(body.notes) || null,
+      },
+    })
+
+    return NextResponse.json(unit)
+  } catch {
+    return NextResponse.json({ error: 'Failed to update unit' }, { status: 500 })
+  }
+}

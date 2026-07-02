@@ -49,6 +49,13 @@ async function main() {
   })
   const ownerId = owner.id
 
+  // Idempotência: o upsert acima garante sempre a password. Se a conta demo já tiver imóveis,
+  // mantemos os dados (não apagamos edições a cada arranque do serviço). Forçar com DEMO_FORCE_RESEED.
+  if (!process.env.DEMO_FORCE_RESEED && (await prisma.property.count({ where: { ownerId } })) > 0) {
+    console.log('Conta demo já tem dados — mantidos. Login: adilson@teste.com / password123!')
+    return
+  }
+
   // Limpar tudo do owner para um estado demo reproduzível.
   await prisma.ticketEvent.deleteMany({ where: { ownerId } })
   await prisma.maintenanceTicket.deleteMany({ where: { ownerId } })

@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-07-02 (v0.15.0 — P0 de escala: paginação, agregados e mutações cirúrgicas)
+- **Autor:** Vinicius + Claude
+- **Tipo:** arquitetura/performance (fundação para carteiras grandes — auditoria "3.000 apartamentos")
+- **Problema:** o carregamento inicial descarregava a base de dados inteira (9 coleções sem paginação, ~200–350 MB estimados a 3.000 apartamentos), cada clique recarregava tudo, e a home renderizava todos os cartões no DOM.
+- **Descrição:**
+  - **P0.1 Paginação por cursor em todos os GETs** (`invoices, payments, expenses, tickets, properties, units, renters, leases`) — resposta `{ items, nextCursor, total }`, `take` limitado, filtros no servidor (estado da cobrança, estado/urgência do ticket, `q` de pesquisa). Removidos includes mortos (ex.: renters trazia TODAS as faturas).
+  - **P0.2 Endpoints agregados:** novo `GET /api/home` (tarefas top-5 + contagens + resumo do mês — **payload constante ~900 bytes**, com 2 ou 3.000 apartamentos) e novo `GET /api/apartments` (view-models prontos, paginados, pesquisa server-side por morada/nome/cidade/inquilino) + `GET /api/apartments/[unitId]` (detalhe com pagamentos/contas limitados). O cálculo O(n²) que vivia no browser passou para o servidor (4 queries por página).
+  - **P0.3 Mutações cirúrgicas:** novo `POST /api/apartments/[unitId]/mark-paid` — **um pedido atómico** (garante fatura do período, reaproveita pagamento por confirmar, paga o valor em falta, confirma e atualiza a fatura, com auditoria). O cliente atualiza só o cartão afetado + agregado leve; **fim do reload global de 9 coleções por clique**.
+  - **P0.4 Componente dividido:** home extraída para `home-page.tsx` (o monólito de ~1.700 linhas perdeu o painel), cartões com `React.memo`, helpers partilhados em `shared.tsx`. **DOM limitado**: 24 cartões por página + botão "Ver mais (X de Y)" em todas as listas (home, imóveis, inquilinos, contratos, cobranças, despesas, manutenção). Pesquisa da home com debounce e no servidor.
+  - Restantes páginas re-ligadas a cargas por modo (só o que cada página precisa) e tiles de resumo alimentadas pelos agregados do dashboard (`overdueTotal`, `occupiedRent` adicionados).
+- **Validação em volume:** gerados 82 apartamentos localmente — home abre com 24 cartões (12 KB), `/api/home` 894 bytes/0,15s, "Ver mais" 24→48 sem duplicados, mark-paid com 1 pedido a atualizar tarefa+agregado, pesquisa server-side. As 4 páginas restantes verificadas por screenshot sem erros. Typecheck 0, build OK.
+- **Revisão adversarial (corrigido antes do envio):** o mark-paid ganhou **lock de linha (`FOR UPDATE`)** contra cliques concorrentes — testado com 2 pedidos paralelos reais: 1 pagamento criado, o outro devolve "já pago"; deixou de **fabricar um pagamento extra** quando já não há valor em falta; **reativa fatura cancelada** do período em vez de violar o unique (leaseId, period); `paidAt` alinhado com a rota de confirmação; erros internos deixam de vazar para o browser. No cliente: pesquisa com **número de sequência** (respostas fora de ordem descartadas), `React.memo` dos cartões efetivo (callbacks memoizados), toast honesto em pagamento parcial ("ainda falta receber parte"), fim do double-fetch no mount e removido um fetch morto de 100 faturas no billing. Paginação por cursor e agregados do /api/home verificados como corretos (empiricamente e por prova via unique constraint).
+- **Fica para P1 (assumido):** combobox assíncrono nos selects (hoje limitados a 500 opções), ações em massa, import/export CSV, pesquisa/ordenação nas outras listas, relatórios, equipas.
+- **Risco/rollback:** médio-alto (contratos de API de listagem mudaram de `[]` para `{items,...}` — o único consumidor é o cliente, atualizado em conjunto). Rollback por reversão. Sem alteração de schema.
+
 ## 2026-07-02 (v0.14.0 — Painel assistente: primeiro tarefas, depois números)
 - **Autor:** Vinicius + Claude
 - **Tipo:** ux (nova mentalidade — "assistente do senhorio")

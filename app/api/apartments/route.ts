@@ -2,6 +2,52 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { asNumber, asString } from '@/lib/landlord'
 import { requireCurrentUserId } from '@/lib/auth'
+import { apartmentUnitInclude, buildApartmentVMs } from '@/lib/apartments'
+import { pageResult, parsePageParams } from '@/lib/pagination'
+
+/**
+ * GET /api/apartments?take=24&cursor=<unitId>&q=<texto>
+ * Lista paginada de apartamentos (view-models prontos), ordenada por morada.
+ * A pesquisa `q` cobre nome/morada/cidade do imóvel, nome da unidade e nome do inquilino ativo.
+ * Resposta: { items: ApartmentVM[], nextCursor, total }.
+ */
+export async function GET(request: Request) {
+  const { userId, response } = await requireCurrentUserId()
+  if (!userId) return response ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  try {
+    const { take, cursor, q } = parsePageParams(request.url, { take: 24, maxTake: 100 })
+
+    const where: Record<string, unknown> = { ownerId: userId }
+    if (q) {
+      where.OR = [
+        { name: { contains: q, mode: 'insensitive' } },
+        { property: { name: { contains: q, mode: 'insensitive' } } },
+        { property: { addressLine1: { contains: q, mode: 'insensitive' } } },
+        { property: { city: { contains: q, mode: 'insensitive' } } },
+        { leases: { some: { status: 'Active', renter: { fullName: { contains: q, mode: 'insensitive' } } } } },
+      ]
+    }
+
+    const [rows, total] = await Promise.all([
+      prisma.unit.findMany({
+        where,
+        include: apartmentUnitInclude,
+        orderBy: [{ property: { addressLine1: 'asc' } }, { id: 'asc' }],
+        take: take + 1,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      }),
+      prisma.unit.count({ where }),
+    ])
+
+    const page = pageResult(rows, take, total)
+    const items = await buildApartmentVMs(userId, page.items)
+
+    return NextResponse.json({ items, nextCursor: page.nextCursor, total })
+  } catch {
+    return NextResponse.json({ error: 'Failed to fetch apartments' }, { status: 500 })
+  }
+}
 
 /**
  * Objetivo: tratar um "apartamento" como uma unidade atómica de imóvel + unidade, escondendo

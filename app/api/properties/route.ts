@@ -2,34 +2,46 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { asString } from '@/lib/landlord'
 import { requireCurrentUserId } from '@/lib/auth'
+import { pageResult, parsePageParams } from '@/lib/pagination'
 
-export async function GET() {
+/**
+ * GET /api/properties?take=24&cursor=<id>&q=<texto>
+ * Lista paginada de imóveis (com unidades) ordenada por morada.
+ * `take` pode ir a 500 para alimentar selects de formulários (até o combobox assíncrono chegar).
+ */
+export async function GET(request: Request) {
   const { userId, response } = await requireCurrentUserId()
   if (!userId) return response ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const properties = await prisma.property.findMany({
-      where: { ownerId: userId },
-      include: {
-        units: {
-          where: { ownerId: userId },
-          orderBy: { createdAt: 'desc' },
-        },
-        leases: {
-          where: { ownerId: userId },
-          include: {
-            renter: true,
-            unit: true,
-          },
-          orderBy: { createdAt: 'desc' },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    })
+    const { take, cursor, q } = parsePageParams(request.url, { take: 24, maxTake: 500 })
 
-    return NextResponse.json(properties)
+    const where: Record<string, unknown> = { ownerId: userId }
+    if (q) {
+      where.OR = [
+        { name: { contains: q, mode: 'insensitive' } },
+        { addressLine1: { contains: q, mode: 'insensitive' } },
+        { city: { contains: q, mode: 'insensitive' } },
+      ]
+    }
+
+    const [rows, total] = await Promise.all([
+      prisma.property.findMany({
+        where,
+        include: {
+          units: {
+            where: { ownerId: userId },
+            orderBy: { createdAt: 'desc' },
+          },
+        },
+        orderBy: [{ addressLine1: 'asc' }, { id: 'asc' }],
+        take: take + 1,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      }),
+      prisma.property.count({ where }),
+    ])
+
+    return NextResponse.json(pageResult(rows, take, total))
   } catch {
     return NextResponse.json({ error: 'Failed to fetch properties' }, { status: 500 })
   }

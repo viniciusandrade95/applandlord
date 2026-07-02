@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { asDate, asString } from '@/lib/landlord'
 import { requireCurrentUserId } from '@/lib/auth'
+import { pageResult, parsePageParams } from '@/lib/pagination'
 import { logAuditEvent } from '@/lib/audit'
 import {
   parseLeaseWizardPayload,
@@ -16,31 +17,33 @@ import {
  * Erros: 401 sem sessão; 500 em falha de consulta.
  * Efeitos colaterais: apenas leitura no banco.
  */
-export async function GET() {
+export async function GET(request: Request) {
   const { userId, response } = await requireCurrentUserId()
   if (!userId) return response ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const leases = await prisma.lease.findMany({
-      where: { ownerId: userId },
-      include: {
-        property: true,
-        unit: true,
-        renter: true,
-        invoices: {
-          where: { ownerId: userId },
-          orderBy: {
-            dueDate: 'desc',
-          },
-          take: 12,
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    })
+    const { take, cursor, searchParams } = parsePageParams(request.url, { take: 25, maxTake: 100 })
+    const status = searchParams.get('status')
 
-    return NextResponse.json(leases)
+    const where: Record<string, unknown> = { ownerId: userId }
+    if (status === 'active') where.status = 'Active'
+
+    const [rows, total] = await Promise.all([
+      prisma.lease.findMany({
+        where,
+        include: {
+          property: true,
+          unit: true,
+          renter: true,
+        },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: take + 1,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      }),
+      prisma.lease.count({ where }),
+    ])
+
+    return NextResponse.json(pageResult(rows, take, total))
   } catch {
     return NextResponse.json({ error: 'Falha ao buscar contratos.' }, { status: 500 })
   }

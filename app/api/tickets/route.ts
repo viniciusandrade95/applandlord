@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { asString } from '@/lib/landlord'
 import { requireCurrentUserId } from '@/lib/auth'
+import { pageResult, parsePageParams } from '@/lib/pagination'
 import { normalizeTicketPriority, normalizeTicketStatus } from '@/lib/ticket-state-machine'
 
 function normalizeFilter(values: string[] | undefined, allowed: readonly string[]) {
@@ -21,34 +22,38 @@ export async function GET(request: Request) {
   if (!userId) return response ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const { searchParams } = new URL(request.url)
+    const { take, cursor, searchParams } = parsePageParams(request.url, { take: 25, maxTake: 100 })
     const statuses = normalizeFilter(searchParams.getAll('status'), ['New', 'Triaged', 'Waiting', 'Resolved', 'Closed'])
     const priorities = normalizeFilter(searchParams.getAll('priority'), ['Low', 'Normal', 'High', 'Urgent'])
+    const propertyId = asString(searchParams.get('propertyId')) || undefined
 
-    const tickets = await prisma.maintenanceTicket.findMany({
-      where: {
-        ownerId: userId,
-        ...(statuses ? { status: { in: statuses } } : {}),
-        ...(priorities ? { priority: { in: priorities } } : {}),
-      },
-      include: {
-        property: true,
-        unit: true,
-        lease: {
-          include: {
-            renter: true,
+    const where = {
+      ownerId: userId,
+      ...(statuses ? { status: { in: statuses } } : {}),
+      ...(priorities ? { priority: { in: priorities } } : {}),
+      ...(propertyId ? { propertyId } : {}),
+    }
+
+    const [rows, total] = await Promise.all([
+      prisma.maintenanceTicket.findMany({
+        where,
+        include: {
+          property: true,
+          unit: true,
+          renter: true,
+          events: {
+            orderBy: { createdAt: 'desc' },
+            take: 12,
           },
         },
-        renter: true,
-        events: {
-          orderBy: { createdAt: 'desc' },
-          take: 12,
-        },
-      },
-      orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }],
-    })
+        orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+        take: take + 1,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      }),
+      prisma.maintenanceTicket.count({ where }),
+    ])
 
-    return NextResponse.json(tickets)
+    return NextResponse.json(pageResult(rows, take, total))
   } catch {
     return NextResponse.json({ error: 'Failed to fetch tickets' }, { status: 500 })
   }

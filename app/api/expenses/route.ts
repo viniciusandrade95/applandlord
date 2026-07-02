@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { asDate, asNumber, asString } from '@/lib/landlord'
 import { requireCurrentUserId } from '@/lib/auth'
+import { pageResult, parsePageParams } from '@/lib/pagination'
 import { logAuditEvent } from '@/lib/audit'
 
 /**
@@ -21,32 +22,28 @@ export async function GET(request: Request) {
   if (!userId) return response ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const url = new URL(request.url)
-    const propertyId = asString(url.searchParams.get('propertyId')) || undefined
-    const leaseId = asString(url.searchParams.get('leaseId')) || undefined
+    const { take, cursor, searchParams } = parsePageParams(request.url, { take: 25, maxTake: 100 })
+    const propertyId = asString(searchParams.get('propertyId')) || undefined
+    const leaseId = asString(searchParams.get('leaseId')) || undefined
 
-    const expenses = await prisma.expense.findMany({
-      where: {
-        ownerId: userId,
-        ...(propertyId ? { propertyId } : {}),
-        ...(leaseId ? { leaseId } : {}),
-      },
-      include: {
-        property: true,
-        unit: true,
-        lease: {
-          include: {
-            renter: true,
-            property: true,
-            unit: true,
-          },
-        },
-        invoice: true,
-      },
-      orderBy: [{ incurredAt: 'desc' }, { createdAt: 'desc' }],
-    })
+    const where = {
+      ownerId: userId,
+      ...(propertyId ? { propertyId } : {}),
+      ...(leaseId ? { leaseId } : {}),
+    }
 
-    return NextResponse.json(expenses)
+    const [rows, total] = await Promise.all([
+      prisma.expense.findMany({
+        where,
+        include: { property: true },
+        orderBy: [{ incurredAt: 'desc' }, { id: 'desc' }],
+        take: take + 1,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      }),
+      prisma.expense.count({ where }),
+    ])
+
+    return NextResponse.json(pageResult(rows, take, total))
   } catch {
     return NextResponse.json({ error: 'Failed to fetch expenses' }, { status: 500 })
   }

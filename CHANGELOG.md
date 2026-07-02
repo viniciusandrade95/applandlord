@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-02 (v0.13.0 — Mercado brasileiro: Reais (R$) e contexto BR)
+- **Autor:** Vinicius + Claude
+- **Tipo:** i18n / l10n (mercado-alvo Brasil)
+- **Descrição:**
+  - **Moeda em Reais (R$):** `money()` passa a `pt-BR` / `BRL` — todos os valores da app mostram **R$** com separador de milhar brasileiro. Datas e períodos também em `pt-BR`.
+  - **Rótulos e avisos:** "Renda mensal (€)" → **"Aluguel mensal (R$)"**, "Valor (€)" → "Valor (R$)", "Morada" → **"Endereço"**, "Código postal" → **"CEP"**. Ícone de moeda deixa de ser o € (passa a nota, neutro).
+  - **Categorias e país:** IMI → **IPTU**, Eletricidade → Energia; país por omissão **Brasil**. Também nas mensagens de WhatsApp (BRL).
+  - **Dados de demonstração brasileiros:** 2 apartamentos em São Paulo (Rua Oscar Freire) e Rio (Av. Atlântica), inquilinos com telefone +55 e CPF, aluguéis realistas (R$ 3.200 e R$ 4.100), condomínio/IPTU/seguro.
+  - **Dev local:** o `seed-demo.js` passa a carregar o `.env` sozinho (para `node prisma/seed-demo.js` funcionar sem configurar nada).
+- **Pendente (próximo pass dedicado):** localização completa do texto PT→BR ("renda"→"aluguel" em todas as frases, com concordância de género; evitar falsos positivos como "arrendamento") — não feito em massa para não partir a gramática.
+- **Validação:** typecheck 0, build OK, screenshot ao vivo da home a mostrar R$ e dados BR.
+
 ## 2026-07-01 (v0.12.0 — Auditoria de design: sistema de tokens, ritmo e consistência)
 - **Autor:** Vinicius + Claude
 - **Tipo:** ui/ux (sistema de design / polish)

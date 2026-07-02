@@ -1,6 +1,21 @@
 const { PrismaClient } = require('@prisma/client')
 const { randomBytes, scryptSync } = require('crypto')
 
+// Carrega o .env local se DATABASE_URL não estiver no ambiente (para `node prisma/seed-demo.js` funcionar).
+if (!process.env.DATABASE_URL) {
+  try {
+    const fs = require('fs')
+    const path = require('path')
+    const envFile = fs.readFileSync(path.join(__dirname, '..', '.env'), 'utf8')
+    for (const line of envFile.split('\n')) {
+      const match = line.match(/^\s*([A-Z_]+)\s*=\s*"?([^"]*)"?\s*$/)
+      if (match && !process.env[match[1]]) process.env[match[1]] = match[2]
+    }
+  } catch {
+    // sem .env — assume que DATABASE_URL vem do ambiente
+  }
+}
+
 const prisma = new PrismaClient()
 
 // Mesmo algoritmo de lib/auth.hashPassword (scrypt salt:hash), para definir a password demo.
@@ -53,17 +68,17 @@ async function main() {
   // Dois apartamentos (imóvel = apartamento), inquilinos, contratos com ~3 anos.
   const apartments = [
     {
-      property: { name: 'Casa das Flores', addressLine1: 'Rua das Flores, 12, 3.º Esq.', city: 'Porto', region: 'Porto', postalCode: '4000-123' },
-      unit: { bedrooms: 2, bathrooms: 1, areaSqm: 78, monthlyRent: 650 },
-      renter: { fullName: 'Carla Mendes', email: 'carla.mendes@example.com', phone: '+351912345678', governmentId: '124876330' },
-      lease: { startDate: new Date('2023-06-01T00:00:00Z'), endDate: new Date('2027-05-31T00:00:00Z'), monthlyRent: 650, depositAmount: 1300, dueDay: 8 },
+      property: { name: 'Apto Jardins', addressLine1: 'Rua Oscar Freire, 1200, Apto 45', city: 'São Paulo', region: 'SP', postalCode: '01426-001' },
+      unit: { bedrooms: 2, bathrooms: 1, areaSqm: 78, monthlyRent: 3200 },
+      renter: { fullName: 'Carla Mendes', email: 'carla.mendes@example.com', phone: '+55 11 91234-5678', governmentId: '123.456.789-00' },
+      lease: { startDate: new Date('2023-06-01T00:00:00Z'), endDate: new Date('2027-05-31T00:00:00Z'), monthlyRent: 3200, depositAmount: 6400, dueDay: 8 },
       currentPaid: true,
     },
     {
-      property: { name: 'Av. Central, 45, 5.º Dto.', addressLine1: 'Av. Central, 45, 5.º Dto.', city: 'Lisboa', region: 'Lisboa', postalCode: '1000-200' },
-      unit: { bedrooms: 1, bathrooms: 1, areaSqm: 55, monthlyRent: 820 },
-      renter: { fullName: 'João Pereira', email: 'joao.pereira@example.com', phone: '+351934567890', governmentId: '208114552' },
-      lease: { startDate: new Date('2023-09-15T00:00:00Z'), endDate: new Date('2026-09-14T00:00:00Z'), monthlyRent: 820, depositAmount: 1640, dueDay: 1 },
+      property: { name: 'Av. Atlântica, 500, Apto 802', addressLine1: 'Av. Atlântica, 500, Apto 802', city: 'Rio de Janeiro', region: 'RJ', postalCode: '22021-001' },
+      unit: { bedrooms: 1, bathrooms: 1, areaSqm: 55, monthlyRent: 4100 },
+      renter: { fullName: 'João Pereira', email: 'joao.pereira@example.com', phone: '+55 21 99876-5432', governmentId: '987.654.321-00' },
+      lease: { startDate: new Date('2023-09-15T00:00:00Z'), endDate: new Date('2026-09-14T00:00:00Z'), monthlyRent: 4100, depositAmount: 8200, dueDay: 1 },
       currentPaid: false,
     },
   ]
@@ -71,7 +86,7 @@ async function main() {
   const summary = []
 
   for (const apt of apartments) {
-    const property = await prisma.property.create({ data: { ownerId, country: 'Portugal', ...apt.property } })
+    const property = await prisma.property.create({ data: { ownerId, country: 'Brasil', ...apt.property } })
     const unit = await prisma.unit.create({ data: { ownerId, propertyId: property.id, name: apt.property.name, status: 'Occupied', ...apt.unit } })
     const renter = await prisma.renter.create({ data: { ownerId, ...apt.renter } })
     const lease = await prisma.lease.create({
@@ -112,21 +127,22 @@ async function main() {
     }
 
     // Duas despesas por apartamento.
-    await prisma.expense.create({ data: { ownerId, propertyId: property.id, leaseId: lease.id, category: 'Condomínio', description: 'Quota mensal do condomínio', amount: apt.property.city === 'Porto' ? 45 : 60, incurredAt: dueDate(monthBack(0).period, 3) } })
-    await prisma.expense.create({ data: { ownerId, propertyId: property.id, leaseId: lease.id, category: apt.property.city === 'Porto' ? 'IMI' : 'Seguro', description: apt.property.city === 'Porto' ? 'IMI anual' : 'Seguro de recheio', amount: apt.property.city === 'Porto' ? 120 : 90, incurredAt: dueDate(monthBack(2).period, 15) } })
+    const isSaoPaulo = apt.property.city === 'São Paulo'
+    await prisma.expense.create({ data: { ownerId, propertyId: property.id, leaseId: lease.id, category: 'Condomínio', description: 'Taxa mensal do condomínio', amount: isSaoPaulo ? 650 : 780, incurredAt: dueDate(monthBack(0).period, 3) } })
+    await prisma.expense.create({ data: { ownerId, propertyId: property.id, leaseId: lease.id, category: isSaoPaulo ? 'IPTU' : 'Seguro', description: isSaoPaulo ? 'IPTU (parcela)' : 'Seguro do imóvel', amount: isSaoPaulo ? 380 : 240, incurredAt: dueDate(monthBack(2).period, 15) } })
 
     summary.push({ property: property.name, tenant: renter.fullName, rent: apt.lease.monthlyRent, currentPaid: apt.currentPaid })
   }
 
   // Uma avaria aberta no primeiro apartamento.
-  const firstProperty = await prisma.property.findFirst({ where: { ownerId, name: 'Casa das Flores' }, include: { units: true } })
+  const firstProperty = await prisma.property.findFirst({ where: { ownerId, name: 'Apto Jardins' }, include: { units: true } })
   if (firstProperty) {
     await prisma.maintenanceTicket.create({
       data: {
         ownerId,
         propertyId: firstProperty.id,
         unitId: firstProperty.units[0]?.id,
-        title: 'Torneira da cozinha a pingar',
+        title: 'Torneira da cozinha vazando',
         description: 'A torneira da cozinha está a pingar; pode precisar de vedante novo.',
         priority: 'Normal',
         status: 'Triaged',

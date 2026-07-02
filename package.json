@@ -9,6 +9,7 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "prisma db push && next start",
+    "start:prod": "prisma db push && (node prisma/seed-demo.js || true) && next start",
     "postinstall": "prisma generate",
     "db:push": "prisma db push",
     "prisma:generate": "prisma generate",

@@ -4,7 +4,7 @@
     env: node
     plan: free
     buildCommand: npm install && npm run build
-    preDeployCommand: npm run db:push
+    preDeployCommand: npm run db:push && (npm run db:seed:demo || true)
     startCommand: npm run start
     healthCheckPath: /
     envVars:

@@ -20,16 +20,18 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json()
-    const name = asString(body.name)
     const addressLine1 = asString(body.addressLine1)
+    // O identificador do apartamento é a morada. O "nome" é um título opcional; se não vier,
+    // guardamos a morada como nome (o campo é obrigatório no schema).
+    const name = asString(body.name) || addressLine1
     const city = asString(body.city)
     const postalCode = asString(body.postalCode)
     const region = asString(body.region) || city
     const monthlyRent = asNumber(body.monthlyRent)
 
-    if (!name || !addressLine1 || !city || !postalCode || !Number.isFinite(monthlyRent) || monthlyRent <= 0) {
+    if (!addressLine1 || !city || !postalCode || !Number.isFinite(monthlyRent) || monthlyRent <= 0) {
       return NextResponse.json(
-        { error: 'name, addressLine1, city, postalCode e uma renda positiva são obrigatórios' },
+        { error: 'addressLine1, city, postalCode e uma renda positiva são obrigatórios' },
         { status: 400 }
       )
     }
@@ -89,13 +91,14 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Apartment not found' }, { status: 404 })
     }
 
-    const name = asString(body.name, property.name)
     const addressLine1 = asString(body.addressLine1, property.addressLine1)
+    // Nome é título opcional. Omitido (undefined) => mantém o existente; enviado vazio => usa a morada.
+    const name = body.name === undefined ? property.name : (asString(body.name) || addressLine1)
     const city = asString(body.city, property.city)
     const postalCode = asString(body.postalCode, property.postalCode)
     const monthlyRent = body.monthlyRent === undefined ? unit.monthlyRent : asNumber(body.monthlyRent, unit.monthlyRent)
 
-    if (!name || !addressLine1 || !city || !postalCode || !Number.isFinite(monthlyRent) || monthlyRent <= 0) {
+    if (!addressLine1 || !city || !postalCode || !Number.isFinite(monthlyRent) || monthlyRent <= 0) {
       return NextResponse.json({ error: 'Dados do apartamento inválidos' }, { status: 400 })
     }
 

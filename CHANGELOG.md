@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-01 (v0.11.0 — Cards com cor e vida; morada = identificador; Imóveis visual)
+- **Autor:** Vinicius + Claude
+- **Tipo:** ui/ux (redesenho)
+- **Escopo:** ronda de design — home e página Imóveis; identificador do apartamento.
+- **Descrição:**
+  - **Identificador = morada.** O apartamento passa a ser identificado pela **morada (Rua + nº)**; o "nome" é um **título opcional** (rótulo). No formulário, morada é obrigatória e o nome é opcional; se o nome for vazio, guarda-se a morada. O endpoint atómico `/api/apartments` reflete isto (POST e PATCH) e continua a **preservar a região**.
+  - **Cards com cor e vida (home).** Estado passa a **pill sólido vívido** (Pago verde, Por pagar laranja, A confirmar azul, Vago cinza), avatar do inquilino com cor forte, rótulo opcional em destaque, morada como título e factos com ícones (💶 renda, 📅 fim do contrato, 🔧 avarias). Fundo branco, sem pastéis.
+  - **Página Imóveis, mais visual e menos texto.** Resumo em tiles com ícones (imóveis / ocupadas / livres / renda). Cada imóvel mostra a **ocupação como barra visual** (uma marca por unidade: verde ocupada, cinza livre, laranja manutenção) e contagens por ícone (🏢 ✓ 🔑 💶); editar passa a ser um botão de **lápis**. Removidas as linhas de texto por unidade.
+  - **Menos texto, mais design** em geral, com etiquetas por ícone onde o texto era dispensável.
+- **Validação:** typecheck 0, build de produção OK, verificação visual com a app a correr (screenshots da home e de Imóveis) e revisão adversarial de correção.
+- **Risco/rollback:** médio (lógica de identificador + redesenho de 2 ecrãs). Rollback por reversão. Sem alteração de schema.
+
 ## 2026-07-01 (v0.10.1 — Credenciais da conta de demonstração)
 - **Autor:** Vinicius + Claude
 - **Tipo:** chore

@@ -3159,3 +3159,112 @@ button.inline-link {
 @media (max-width: 720px) {
   .prop-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* ============================================================
+   Painel assistente (v0.14.0) — "O que fazer hoje" (ações primeiro)
+   ============================================================ */
+.assist { margin-bottom: 18px; }
+
+.assist-title {
+  margin: 0 0 12px;
+  color: #101828;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.assist-ok {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  border: 1px solid #bfe3d0;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: var(--shadow-card);
+}
+
+.assist-ok-ic {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  color: #0f7a3d;
+  background: #e6f6ec;
+}
+
+.assist-ok-ic .ui-icon { width: 25px; height: 25px; }
+.assist-ok strong { display: block; color: #101828; font-size: 1.12rem; font-weight: 780; }
+.assist-ok span { color: #5b6577; font-size: 0.98rem; }
+
+.assist-tasks { display: grid; gap: 10px; }
+
+.assist-task {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #e6e9ee;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: var(--shadow-card);
+}
+
+button.assist-task, a.assist-task {
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+button.assist-task:hover, a.assist-task:hover { border-color: #d3d9e2; box-shadow: var(--shadow-card-hover); }
+
+.assist-task-ic {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #e6e9ee;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.assist-task-ic .ui-icon { width: 20px; height: 20px; }
+.assist-ic-due { color: #c2410c; }
+.assist-ic-info { color: #1d4ed8; }
+.assist-ic-warn { color: #b45309; }
+
+.assist-task-txt { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 1px; }
+.assist-task-txt strong { color: #101828; font-size: 1.02rem; font-weight: 750; }
+.assist-task-txt span {
+  overflow: hidden;
+  color: #5b6577;
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assist-task-btn {
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 9px 16px;
+  border: 0;
+  border-radius: 12px;
+  color: #fff;
+  background: #0f7a3d;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.assist-task-btn:hover { background: #0f6b40; }
+.assist-task-btn:disabled { background: #0f6b40; cursor: default; }
+
+.assist-task-arrow { flex: 0 0 auto; color: #a0abbd; }
+.assist-task-arrow .ui-icon { width: 20px; height: 20px; }

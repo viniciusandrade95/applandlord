@@ -31,6 +31,8 @@ export async function GET() {
       dueTodayInvoices,
       urgentMaintenance,
       expiringLeasesIn7Days,
+      overdueTotal,
+      occupiedRent,
     ] = await Promise.all([
       prisma.property.count({ where: { ownerId: userId } }),
       prisma.unit.count({ where: { ownerId: userId } }),
@@ -135,6 +137,14 @@ export async function GET() {
           },
         },
       }),
+      prisma.invoice.aggregate({
+        _sum: { amount: true },
+        where: { ownerId: userId, status: 'Overdue' },
+      }),
+      prisma.unit.aggregate({
+        _sum: { monthlyRent: true },
+        where: { ownerId: userId, status: 'Occupied' },
+      }),
     ])
 
     const confirmedAmount = Number(monthlyConfirmedPayments._sum.amount ?? 0)
@@ -160,6 +170,8 @@ export async function GET() {
       monthlyNetProfit: confirmedAmount - expensesAmount,
       openInvoices: openInvoicesAmount,
       awaitingConfirmation,
+      overdueTotal: Number(overdueTotal._sum.amount ?? 0),
+      occupiedRent: Number(occupiedRent._sum.monthlyRent ?? 0),
       collectionRate: openInvoicesAmount > 0 ? Math.round((confirmedAmount / openInvoicesAmount) * 100) : 0,
     }
 

@@ -1,8 +1,24 @@
 ﻿'use client'
 
-import { FormEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { FormEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { LeaseWizard } from '@/app/components/lease-wizard'
 import { appVersion } from '@/lib/version'
+import {
+  EXPENSE_CATEGORIES,
+  type Notice,
+  type Paged,
+  type Row,
+  UiIcon,
+  apiErrorMessage,
+  avatarColor,
+  date,
+  dateTime,
+  initials,
+  money,
+  payload,
+  periodLabel,
+  todayISO,
+} from '@/app/components/shared'
 
 type Dashboard = {
   counts: {
@@ -22,6 +38,8 @@ type Dashboard = {
     monthlyNetProfit: number
     openInvoices: number
     awaitingConfirmation: number
+    overdueTotal: number
+    occupiedRent: number
     collectionRate: number
   }
   attention?: {
@@ -48,8 +66,6 @@ type Dashboard = {
   }
 }
 
-type Row = Record<string, any>
-
 type State = {
   dashboard: Dashboard | null
   properties: Row[]
@@ -62,8 +78,14 @@ type State = {
   expenses: Row[]
 }
 
-type Notice = { kind: 'success' | 'error'; text: string } | null
 type EmptyState = { title: string; hint: string; actionLabel: string; actionHref: string }
+
+/** Opções de selects (formulários) — carregadas à parte, limitadas a 500 (combobox assíncrono fica para P1). */
+type Options = { properties: Row[]; units: Row[]; renters: Row[]; awaitingPayments: Row[] }
+const emptyOptions: Options = { properties: [], units: [], renters: [], awaitingPayments: [] }
+
+/** Info de paginação por coleção ("Ver mais"). */
+type PageInfo = { nextCursor: string | null; total: number }
 
 const initialState: State = {
   dashboard: null,
@@ -75,23 +97,6 @@ const initialState: State = {
   payments: [],
   maintenance: [],
   expenses: [],
-}
-
-function money(value: number) {
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(
-    Number.isFinite(value) ? value : 0
-  )
-}
-
-function date(value?: string | Date | null) {
-  if (!value) return '—'
-  const parsed = new Date(value)
-  if (Number.isNaN(parsed.getTime())) return '—'
-  return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(parsed)
-}
-
-function todayISO() {
-  return new Date().toISOString().slice(0, 10)
 }
 
 // Estado de uma cobrança em palavra curta + tom de cor (só texto, sem pastel).
@@ -111,21 +116,6 @@ function invoiceStatusInfo(status: string): { word: string; tone: 'paid' | 'due'
     default:
       return { word: 'Por receber', tone: 'due' }
   }
-}
-
-function dateTime(value?: string | Date | null) {
-  if (!value) return '—'
-  const parsed = new Date(value)
-  if (Number.isNaN(parsed.getTime())) return '—'
-  return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }).format(parsed)
-}
-
-function periodLabel(period?: string) {
-  if (!period) return '—'
-  const [year, month] = period.split('-')
-  const parsed = new Date(Number(year), Number(month) - 1, 1)
-  if (Number.isNaN(parsed.getTime())) return period
-  return new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(parsed)
 }
 
 function chipClass(value?: string) {
@@ -175,65 +165,6 @@ function statusLabel(value?: string) {
 
 function paymentMethodLabel(value?: string) {
   return value ? PAYMENT_METHOD_LABELS[value] ?? value : '—'
-}
-
-type IconName =
-  | 'building' | 'income' | 'check' | 'tools' | 'arrow'
-  | 'wallet' | 'clock' | 'calendar' | 'user' | 'phone' | 'plus' | 'euro' | 'alert' | 'key' | 'pencil'
-
-function UiIcon({ name }: { name: IconName }) {
-  const paths: Record<IconName, ReactNode> = {
-    building: <><path d="M4 21V5l8-3v19M12 8h8v13M8 7v2M8 12v2M8 17v2M16 12v2M16 17v2M2 21h20" /></>,
-    income: <><path d="M4 19V9M10 19V5M16 19v-7M22 19V3" /><path d="M2 21h22" /></>,
-    check: <><circle cx="12" cy="12" r="9" /><path d="m8 12 2.5 2.5L16 9" /></>,
-    tools: <><path d="m14 7 3-3 3 3-3 3M5 19l9-9M4 14l6 6" /></>,
-    arrow: <><path d="M5 12h14M14 7l5 5-5 5" /></>,
-    wallet: <><path d="M4 7h13a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a1 1 0 0 1-1-1z" /><path d="M4 7V6a2 2 0 0 1 2-2h9v3" /><path d="M16 12.5h4v4h-4a2 2 0 0 1 0-4Z" /></>,
-    clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3 2" /></>,
-    calendar: <><rect x="3" y="4.5" width="18" height="16.5" rx="2.5" /><path d="M3 9.5h18M8 2.5v4M16 2.5v4" /></>,
-    user: <><circle cx="12" cy="8" r="3.6" /><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0" /></>,
-    phone: <><path d="M4 4.5h4l2 5-2.5 1.6a12.5 12.5 0 0 0 5.4 5.4L18 14l5 2v4a2 2 0 0 1-2.2 2A18.5 18.5 0 0 1 2 6.7 2 2 0 0 1 4 4.5Z" /></>,
-    plus: <><path d="M12 5v14M5 12h14" /></>,
-    euro: <><rect x="2.5" y="6" width="19" height="12" rx="2.5" /><circle cx="12" cy="12" r="2.6" /><path d="M6 9.5h.01M18 14.5h.01" /></>,
-    alert: <><path d="M12 3.2 2.2 20.5h19.6z" /><path d="M12 10v4.5M12 18h.01" /></>,
-    key: <><circle cx="8" cy="15" r="4" /><path d="m11 12 8-8 2 2M17 6l2 2" /></>,
-    pencil: <><path d="M4 20h4L19 9l-4-4L4 16z" /><path d="m13.5 6.5 4 4" /></>,
-  }
-
-  return <svg className="ui-icon" viewBox="0 0 24 24" aria-hidden="true">{paths[name]}</svg>
-}
-
-// Iniciais do inquilino para o avatar (ex.: "Carla Mendes" -> "CM").
-function initials(fullName: string) {
-  const parts = fullName.trim().split(/\s+/).filter(Boolean)
-  if (!parts.length) return '—'
-  const first = parts[0][0] ?? ''
-  const last = parts.length > 1 ? parts[parts.length - 1][0] ?? '' : ''
-  return (first + last).toUpperCase()
-}
-
-// Cor determinística (forte, não pastel) para o avatar do inquilino, a partir do nome.
-const AVATAR_COLORS = ['#0f766e', '#4f46e5', '#b45309', '#be185d', '#0369a1', '#7c3aed']
-function avatarColor(seed: string) {
-  let hash = 0
-  for (let i = 0; i < seed.length; i += 1) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0
-  return AVATAR_COLORS[hash % AVATAR_COLORS.length]
-}
-
-function payload(form: HTMLFormElement) {
-  return Object.fromEntries(new FormData(form).entries())
-}
-
-function apiErrorMessage(data: unknown, fallback: string) {
-  if (data && typeof data === 'object' && 'error' in data && typeof (data as { error?: unknown }).error === 'string') {
-    return (data as { error: string }).error
-  }
-
-  if (data && typeof data === 'object' && 'message' in data && typeof (data as { message?: unknown }).message === 'string') {
-    return (data as { message: string }).message
-  }
-
-  return fallback
 }
 
 function Panel({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
@@ -292,19 +223,6 @@ function SetupStepCard({
   if (href && status !== 'locked') return <a className={`setup-step-card setup-step-${status}`} href={href}>{content}</a>
 
   return <button className={`setup-step-card setup-step-${status}`} type="button" disabled={status === 'locked'} onClick={onSelect}>{content}</button>
-}
-
-function EmptyDashboardState() {
-  return <section className="empty-dashboard-state">
-    <div className="empty-dashboard-illustration"><UiIcon name="building" /></div>
-    <p className="screen-kicker">Vamos começar</p>
-    <h2>Ainda não existem imóveis registados</h2>
-    <p>Adicione o seu primeiro imóvel para acompanhar rendas, contratos, despesas e manutenção num só lugar.</p>
-    <a className="dashboard-primary-action" href="/portfolio">Adicionar primeiro imóvel</a>
-    <div className="empty-dashboard-benefits" aria-label="Funcionalidades disponíveis depois da configuração">
-      {['Receitas mensais', 'Pagamentos em atraso', 'Taxa de ocupação', 'Despesas', 'Contratos', 'Manutenção'].map((benefit) => <span key={benefit}><UiIcon name="check" />{benefit}</span>)}
-    </div>
-  </section>
 }
 
 function SmartEmptyState({ title, description, actionLabel, actionHref }: { title: string; description: string; actionLabel: string; actionHref: string }) {
@@ -441,287 +359,13 @@ function EditEntityForm({
   )
 }
 
-type Apartment = {
-  unit: Row
-  property: Row | null
-  lease: Row | null
-  renter: Row | null
-  currentInvoice: Row | null
-  monthStatus: 'paid' | 'confirming' | 'due' | 'vacant'
-  rent: number
-  title: string   // identificador = morada (Rua + nº)
-  label: string   // nome opcional (só quando difere da morada)
-  address: string // cidade / linha secundária
-  openTickets: number
-}
-
-const EXPENSE_CATEGORIES = ['Manutenção', 'Condomínio', 'IPTU', 'Seguro', 'Água', 'Energia', 'Gás', 'Limpeza', 'Outros'] as const
-
-const STATUS_WORD: Record<Apartment['monthStatus'], string> = {
-  paid: 'Pago',
-  confirming: 'A confirmar',
-  due: 'Por pagar',
-  vacant: 'Vago',
-}
-
-// Marca de estado à direita do cartão: cor apenas no texto e na marca (sem fundos pastel).
-function StatusMark({ status }: { status: Apartment['monthStatus'] }) {
-  return (
-    <span className={`apt-status apt-status-${status}`}>
-      {status === 'paid'
-        ? <svg className="apt-status-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 12.5 5 5L20 6.5" /></svg>
-        : <span className="apt-status-dot" aria-hidden="true" />}
-      <span>{STATUS_WORD[status]}</span>
-    </span>
-  )
-}
-
-/**
- * Cartão de um apartamento. Desenho intencional: ícone à esquerda; nome + estado no topo
- * (o estado é a âncora, à direita); inquilino e renda por baixo; e um rodapé discreto só
- * quando há contrato/avarias. Fundo branco, sem listras nem pastéis.
- */
-function ApartmentCard({ apt, onOpen, onMarkPaid, paying }: {
-  apt: Apartment
-  onOpen: (unitId: string) => void
-  onMarkPaid: (apt: Apartment) => void
-  paying: boolean
-}) {
-  const { unit, lease, renter, monthStatus, rent, title, label, openTickets } = apt
-  const tenantName = (renter?.fullName as string) || ''
-  return (
-    <div className="apt-card">
-      <button className="apt-card-main" type="button" data-apt-card={unit.id as string} aria-label={`Abrir ${title}`} onClick={() => onOpen(unit.id as string)}>
-        {renter
-          ? <span className="apt-avatar" style={{ background: avatarColor(tenantName) }}>{initials(tenantName)}</span>
-          : <span className="apt-avatar apt-avatar-vacant"><UiIcon name="key" /></span>}
-        <span className="apt-card-body">
-          <span className="apt-card-top">
-            <span className="apt-card-titles">
-              {label ? <span className="apt-card-label">{label}</span> : null}
-              <strong className="apt-card-title">{title}</strong>
-            </span>
-            <StatusMark status={monthStatus} />
-          </span>
-          <span className="apt-card-tenant">{renter ? tenantName : 'Sem inquilino'}</span>
-          <span className="apt-card-facts">
-            {renter ? <span className="apt-fact"><UiIcon name="euro" />{money(rent)}</span> : null}
-            {lease?.endDate ? <span className="apt-fact"><UiIcon name="calendar" />{date(lease.endDate)}</span> : null}
-            {openTickets > 0 ? <span className="apt-fact apt-fact-alert" aria-label={`${openTickets} ${openTickets === 1 ? 'avaria' : 'avarias'}`}><UiIcon name="tools" />{openTickets}</span> : null}
-          </span>
-        </span>
-      </button>
-      {monthStatus === 'due' || monthStatus === 'confirming' ? (
-        <button className="apt-pay" type="button" disabled={paying} aria-busy={paying} onClick={() => onMarkPaid(apt)}>
-          {paying ? 'Um momento…' : monthStatus === 'confirming' ? 'Confirmar pagamento' : 'Marcar como pago'}
-        </button>
-      ) : null}
-    </div>
-  )
-}
-
-/**
- * Detalhe de um apartamento: tudo o que interessa sobre ele num só ecrã, sem separadores.
- * Inquilino + contacto, renda, datas do contrato, estado do mês, histórico de pagamentos
- * e atalhos para as ações menos frequentes (editar dados, registar avaria).
- */
-function ApartmentDetail({ apt, payments, expenses, submitting, onMarkPaid, paying, onEdit, onAddExpense, onDeleteExpense }: {
-  apt: Apartment
-  payments: Row[]
-  expenses: Row[]
-  submitting: string | null
-  onMarkPaid: (apt: Apartment) => void
-  paying: boolean
-  onEdit: (apt: Apartment) => void
-  onAddExpense: (apt: Apartment, form: HTMLFormElement) => void
-  onDeleteExpense: (id: string) => void
-}) {
-  const { property, lease, renter, monthStatus, rent, label, address, openTickets } = apt
-  const phone = renter?.phone ? String(renter.phone) : ''
-  const leasePayments = lease
-    ? payments.filter((payment) => (payment.invoice?.lease?.id as string) === (lease.id as string))
-    : []
-  const propertyId = property?.id as string | undefined
-  const apartmentExpenses = propertyId
-    ? expenses.filter((expense) => ((expense.property?.id ?? expense.propertyId ?? expense.lease?.property?.id) as string) === propertyId)
-    : []
-  const monthTitle = monthStatus === 'paid'
-    ? 'Renda recebida'
-    : monthStatus === 'confirming'
-      ? 'Pagamento por confirmar'
-      : monthStatus === 'due'
-        ? 'Renda por receber'
-        : 'Apartamento vago'
-  return (
-    <section className="apt-detail">
-      <p className="apt-detail-address">{label ? `${label} · ${address}` : address}</p>
-
-      <div className={`apt-detail-month apt-detail-month-${monthStatus}`}>
-        <div>
-          <span>Este mês</span>
-          <strong>{monthTitle}</strong>
-        </div>
-        {monthStatus === 'due' || monthStatus === 'confirming' ? (
-          <button className="apt-pay" type="button" disabled={paying} aria-busy={paying} onClick={() => onMarkPaid(apt)}>
-            {paying ? 'Um momento…' : monthStatus === 'confirming' ? 'Confirmar pagamento' : 'Marcar como pago'}
-          </button>
-        ) : monthStatus === 'paid' ? <span className="apt-badge apt-badge-paid">✓ Pago</span> : null}
-      </div>
-
-      {lease ? (
-        <div className="apt-detail-card">
-          <h2>Inquilino e contrato</h2>
-          <dl className="apt-facts">
-            <div><dt>Nome</dt><dd>{(renter?.fullName as string) ?? '—'}</dd></div>
-            <div><dt>Telefone</dt><dd>{phone ? <a href={`tel:${phone}`}>{phone}</a> : '—'}</dd></div>
-            <div><dt>Renda</dt><dd>{money(rent)} por mês</dd></div>
-            <div><dt>Contrato desde</dt><dd>{date(lease.startDate)}</dd></div>
-            {lease.endDate ? <div><dt>Termina</dt><dd>{date(lease.endDate)}</dd></div> : null}
-            <div><dt>Avarias abertas</dt><dd>{openTickets > 0 ? `${openTickets}` : 'Nenhuma'}</dd></div>
-          </dl>
-          {phone ? <a className="apt-detail-call" href={`tel:${phone}`}>Ligar ao inquilino</a> : null}
-        </div>
-      ) : (
-        <div className="apt-detail-card apt-detail-vacant">
-          <p>Este apartamento está <strong>vago</strong>. Quando encontrar um inquilino, crie o contrato para começar a receber a renda.</p>
-          <a className="apt-detail-call" href="/leases">Criar contrato</a>
-        </div>
-      )}
-
-      {lease ? (
-        <div className="apt-detail-card">
-          <h2>Últimos pagamentos</h2>
-          {leasePayments.length ? (
-            <ul className="apt-history">
-              {leasePayments.slice(0, 6).map((payment) => (
-                <li key={payment.id as string}>
-                  <span className="apt-history-date">{date(payment.paidAt)}</span>
-                  <strong>{money(Number(payment.amount ?? 0))}</strong>
-                  <span className={payment.confirmationStatus === 'Confirmed' ? 'apt-badge apt-badge-paid' : 'apt-badge apt-badge-confirming'}>
-                    {payment.confirmationStatus === 'Confirmed' ? 'Confirmado' : 'A confirmar'}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : <p className="muted">Ainda não há pagamentos registados neste apartamento.</p>}
-        </div>
-      ) : null}
-
-      <div className="apt-detail-card">
-        <h2>Contas e despesas</h2>
-        {apartmentExpenses.length ? (
-          <ul className="apt-history">
-            {apartmentExpenses.slice(0, 8).map((expense) => (
-              <li key={expense.id as string}>
-                <span className="apt-history-date">{(expense.category as string) || 'Despesa'} · {date(expense.incurredAt)}</span>
-                <strong>{money(Number(expense.amount ?? 0))}</strong>
-                <button
-                  className="apt-mini-delete"
-                  type="button"
-                  aria-label={`Apagar despesa de ${money(Number(expense.amount ?? 0))}`}
-                  disabled={submitting === `/api/expenses/${expense.id as string}`}
-                  onClick={() => { if (window.confirm('Apagar esta conta?')) onDeleteExpense(expense.id as string) }}
-                >Apagar</button>
-              </li>
-            ))}
-          </ul>
-        ) : <p className="muted">Ainda não há contas registadas neste apartamento.</p>}
-
-        {propertyId ? (
-          <form
-            className="apt-bill-form"
-            onSubmit={(event) => { event.preventDefault(); onAddExpense(apt, event.currentTarget) }}
-          >
-            <div className="apt-bill-grid">
-              <div className="field">
-                <label htmlFor="bill-category">Tipo de conta</label>
-                <select id="bill-category" name="category" defaultValue="Condomínio">
-                  {EXPENSE_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
-                </select>
-              </div>
-              <div className="field">
-                <label htmlFor="bill-amount">Valor (R$)</label>
-                <input id="bill-amount" name="amount" type="number" step="0.01" min="0.01" required />
-              </div>
-              <div className="field">
-                <label htmlFor="bill-date">Data</label>
-                <input id="bill-date" name="incurredAt" type="date" defaultValue={todayISO()} />
-              </div>
-              <div className="field field-full">
-                <label htmlFor="bill-desc">Descrição (opcional)</label>
-                <input id="bill-desc" name="description" placeholder="Ex.: Condomínio de julho" />
-              </div>
-            </div>
-            <button className="button button-primary" type="submit" disabled={submitting === '/api/expenses'}>
-              {submitting === '/api/expenses' ? 'A registar…' : 'Adicionar conta'}
-            </button>
-          </form>
-        ) : null}
-      </div>
-
-      <div className="apt-detail-links">
-        <button type="button" onClick={() => onEdit(apt)}>Editar apartamento</button>
-        <a href="/operations">Registar uma avaria</a>
-      </div>
-    </section>
-  )
-}
-
-/**
- * Formulário único para adicionar ou editar um apartamento. Esconde o conceito de "unidade":
- * a senhora preenche nome, morada e renda, e por trás criamos/atualizamos imóvel + unidade.
- */
-function ApartmentForm({ apt, onSubmit, onCancel, submitting }: {
-  apt: Apartment | null
-  onSubmit: (form: HTMLFormElement) => void
-  onCancel: () => void
-  submitting: boolean
-}) {
-  const property = apt?.property
-  const unit = apt?.unit
-  const isEdit = !!apt
-  // O nome só é mostrado quando é um rótulo próprio (diferente da morada).
-  const aptName = property && (property.name as string) !== (property.addressLine1 as string) ? (property.name as string) : ''
-  return (
-    <section className="apt-form-card">
-      <form onSubmit={(event) => { event.preventDefault(); onSubmit(event.currentTarget) }}>
-        <div className="apt-bill-grid">
-          <div className="field field-full">
-            <label htmlFor="apt-address">Endereço <span className="apt-req">obrigatória</span></label>
-            <input id="apt-address" name="addressLine1" autoComplete="address-line1" defaultValue={(property?.addressLine1 as string) ?? ''} placeholder="Ex.: Rua das Flores, 12, 3.º Esq." required />
-          </div>
-          <div className="field field-full">
-            <label htmlFor="apt-name">Nome <span className="apt-optional">opcional</span></label>
-            <input id="apt-name" name="name" defaultValue={aptName} placeholder="Um nome à sua escolha (ex.: Casa das Flores)" />
-          </div>
-          <div className="field">
-            <label htmlFor="apt-city">Cidade</label>
-            <input id="apt-city" name="city" autoComplete="address-level2" defaultValue={(property?.city as string) ?? ''} required />
-          </div>
-          <div className="field">
-            <label htmlFor="apt-postal">CEP</label>
-            <input id="apt-postal" name="postalCode" autoComplete="postal-code" inputMode="numeric" defaultValue={(property?.postalCode as string) ?? ''} placeholder="0000-000" required />
-          </div>
-          <div className="field field-full">
-            <label htmlFor="apt-rent">Aluguel mensal (R$)</label>
-            <input id="apt-rent" name="monthlyRent" type="number" step="1" min="1" defaultValue={unit ? Number(unit.monthlyRent ?? 0) : ''} required />
-          </div>
-        </div>
-        <div className="apt-form-actions">
-          <button className="button button-primary" type="submit" disabled={submitting}>
-            {submitting ? 'A guardar…' : isEdit ? 'Guardar alterações' : 'Adicionar apartamento'}
-          </button>
-          <button className="button button-secondary" type="button" onClick={onCancel}>Cancelar</button>
-        </div>
-      </form>
-    </section>
-  )
-}
-
 type ControlCenterMode = 'all' | 'dashboard' | 'portfolio' | 'leases' | 'billing' | 'operations'
 
 export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }) {
   const [state, setState] = useState<State>(initialState)
+  const [options, setOptions] = useState<Options>(emptyOptions)
+  const [pageInfo, setPageInfo] = useState<Record<string, PageInfo>>({})
+  const [loadingMore, setLoadingMore] = useState<string | null>(null)
   const [notice, setNotice] = useState<Notice>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState<string | null>(null)
@@ -732,97 +376,135 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
   const [setupStep, setSetupStep] = useState<SetupStep | null>(null)
   const [editing, setEditing] = useState<EditingEntity | null>(null)
   const [invoiceFilter, setInvoiceFilter] = useState<'all' | 'overdue' | 'open'>('all')
-  const [openApartmentId, setOpenApartmentId] = useState<string | null>(null)
-  const [payingUnitId, setPayingUnitId] = useState<string | null>(null)
-  const [addingApartment, setAddingApartment] = useState(false)
-  const [editingApartment, setEditingApartment] = useState<Apartment | null>(null)
-  const [apartmentQuery, setApartmentQuery] = useState('')
-  const [isDemoUser, setIsDemoUser] = useState(false)
-  const currentPeriod = new Date().toISOString().slice(0, 7)
-  const headingRef = useRef<HTMLHeadingElement>(null)
-  const prevViewRef = useRef<string>('list')
 
+  const showPortfolio = mode === 'all' || mode === 'portfolio'
+  const showLeases = mode === 'all' || mode === 'leases'
+  const showBilling = mode === 'all' || mode === 'billing'
+  const showOperations = mode === 'all' || mode === 'operations'
+
+  const fetchJson = useCallback(async (endpoint: string) => {
+    const response = await fetch(endpoint)
+    const body = await response.json().catch(() => null)
+    if (!response.ok) throw new Error(apiErrorMessage(body, 'Não foi possível carregar os dados.'))
+    return body
+  }, [])
+
+  const invoicesUrl = useCallback((cursor?: string | null) => {
+    const params = new URLSearchParams({ take: '25' })
+    if (invoiceFilter !== 'all') params.set('status', invoiceFilter)
+    if (cursor) params.set('cursor', cursor)
+    return `/api/invoices?${params.toString()}`
+  }, [invoiceFilter])
+
+  const ticketsUrl = useCallback((cursor?: string | null) => {
+    const params = new URLSearchParams({ take: '25' })
+    if (ticketStatusFilter) params.set('status', ticketStatusFilter)
+    if (ticketPriorityFilter) params.set('priority', ticketPriorityFilter)
+    if (cursor) params.set('cursor', cursor)
+    return `/api/tickets?${params.toString()}`
+  }, [ticketStatusFilter, ticketPriorityFilter])
+
+  /**
+   * Carrega apenas o que a página atual precisa, sempre paginado (nunca coleções inteiras).
+   * Mudanças de filtro re-executam este load (bounded). As opções de selects vêm à parte,
+   * limitadas a 500 registos — o combobox com pesquisa assíncrona é o passo seguinte (P1).
+   */
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const endpoints = ['/api/dashboard', '/api/properties', '/api/units', '/api/renters', '/api/leases', '/api/invoices', '/api/payments', '/api/tickets', '/api/expenses']
-      const responses = await Promise.all(endpoints.map((endpoint) => fetch(endpoint)))
-      const data = await Promise.all(
-        responses.map(async (response) => {
-          const body = await response.json().catch(() => null)
-          if (!response.ok) throw new Error(apiErrorMessage(body, 'Não foi possível carregar os dados do painel.'))
-          return body
-        })
-      )
+      const nextState: Partial<State> = {}
+      const nextPages: Record<string, PageInfo> = {}
+      const nextOptions: Partial<Options> = {}
 
-      setState({ dashboard: data[0], properties: data[1], units: data[2], renters: data[3], leases: data[4], invoices: data[5], payments: data[6], maintenance: data[7], expenses: data[8] })
+      const paged = async (key: Exclude<keyof State, 'dashboard'>, url: string) => {
+        const page = (await fetchJson(url)) as Paged<Row>
+        nextState[key] = page.items
+        nextPages[key] = { nextCursor: page.nextCursor, total: page.total }
+      }
+      const optionList = async (key: keyof Options, url: string) => {
+        const page = (await fetchJson(url)) as Paged<Row>
+        nextOptions[key] = page.items
+      }
+
+      const jobs: Promise<void>[] = [
+        fetchJson('/api/dashboard').then((dashboard) => { nextState.dashboard = dashboard as Dashboard }),
+      ]
+      if (showPortfolio) {
+        jobs.push(paged('properties', '/api/properties?take=24'))
+        jobs.push(paged('renters', '/api/renters?take=24'))
+        jobs.push(optionList('properties', '/api/properties?take=500'))
+        jobs.push(optionList('units', '/api/units?take=500'))
+      }
+      if (showLeases) {
+        jobs.push(paged('leases', '/api/leases?take=25'))
+        jobs.push(optionList('properties', '/api/properties?take=500'))
+        jobs.push(optionList('units', '/api/units?take=500'))
+        jobs.push(optionList('renters', '/api/renters?take=500'))
+      }
+      if (showBilling) {
+        jobs.push(paged('invoices', invoicesUrl()))
+        jobs.push(paged('payments', '/api/payments?take=25'))
+        jobs.push(paged('expenses', '/api/expenses?take=12'))
+        jobs.push(optionList('awaitingPayments', '/api/payments?status=awaiting&take=50'))
+        jobs.push(optionList('properties', '/api/properties?take=500'))
+      }
+      if (showOperations) {
+        jobs.push(paged('maintenance', ticketsUrl()))
+        jobs.push(optionList('properties', '/api/properties?take=500'))
+      }
+      await Promise.all(jobs)
+
+      setState((current) => ({ ...current, ...nextState }))
+      setPageInfo((current) => ({ ...current, ...nextPages }))
+      setOptions((current) => ({ ...current, ...nextOptions }))
     } catch (error) {
-      setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Falha ao carregar painel do senhorio.' })
+      setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Falha ao carregar os dados.' })
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [fetchJson, invoicesUrl, ticketsUrl, showPortfolio, showLeases, showBilling, showOperations])
 
   useEffect(() => {
     void load()
   }, [load])
 
-  // Deteta a conta de demonstração para mostrar o botão "carregar dados demo".
-  useEffect(() => {
-    let active = true
-    fetch('/api/auth/session')
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data) => { if (active && data?.user?.email === 'adilson@teste.com') setIsDemoUser(true) })
-      .catch(() => {})
-    return () => { active = false }
-  }, [])
-
-  async function loadDemoData() {
-    if (submitting) return
-    if (!window.confirm('Isto carrega 2 apartamentos de exemplo (substitui o que existir nesta conta demo). Continuar?')) return
-    setSubmitting('demo')
+  /** "Ver mais": busca a página seguinte de uma coleção e acrescenta (DOM cresce só quando pedido). */
+  async function loadMore(key: Exclude<keyof State, 'dashboard'>) {
+    const info = pageInfo[key]
+    if (!info?.nextCursor || loadingMore) return
+    setLoadingMore(key)
     try {
-      await apiSend('/api/demo/seed', {})
-      setNotice({ kind: 'success', text: 'Dados de demonstração carregados.' })
-      await load()
+      let url = ''
+      switch (key) {
+        case 'properties': url = `/api/properties?take=24&cursor=${info.nextCursor}`; break
+        case 'units': url = `/api/units?take=24&cursor=${info.nextCursor}`; break
+        case 'renters': url = `/api/renters?take=24&cursor=${info.nextCursor}`; break
+        case 'leases': url = `/api/leases?take=25&cursor=${info.nextCursor}`; break
+        case 'invoices': url = invoicesUrl(info.nextCursor); break
+        case 'payments': url = `/api/payments?take=25&cursor=${info.nextCursor}`; break
+        case 'expenses': url = `/api/expenses?take=12&cursor=${info.nextCursor}`; break
+        case 'maintenance': url = ticketsUrl(info.nextCursor); break
+      }
+      const page = (await fetchJson(url)) as Paged<Row>
+      setState((current) => ({ ...current, [key]: [...(current[key] as Row[]), ...page.items] }))
+      setPageInfo((current) => ({ ...current, [key]: { nextCursor: page.nextCursor, total: page.total } }))
     } catch (error) {
-      setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível carregar os dados demo.' })
+      setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível carregar mais registos.' })
     } finally {
-      setSubmitting(null)
+      setLoadingMore(null)
     }
   }
 
-  // Reconcilia: se o apartamento aberto deixar de existir (ex.: removido noutra sessão), fecha o detalhe.
-  useEffect(() => {
-    if (openApartmentId && !loading && !state.units.some((unit) => (unit.id as string) === openApartmentId)) {
-      setOpenApartmentId(null)
-    }
-  }, [openApartmentId, loading, state.units])
-
-  // Gestão de foco ao navegar entre lista / detalhe / adicionar / editar, para quem usa teclado
-  // ou leitor de ecrã não perder o sítio: ao entrar numa subvista foca o título; ao voltar à
-  // lista devolve o foco ao cartão de onde saiu.
-  const focusViewKey = addingApartment
-    ? 'add'
-    : editingApartment
-      ? `edit:${editingApartment.unit.id as string}`
-      : openApartmentId
-        ? `detail:${openApartmentId}`
-        : 'list'
-  useEffect(() => {
-    const previous = prevViewRef.current
-    if (focusViewKey !== previous) {
-      if (focusViewKey === 'list') {
-        const originId = previous.startsWith('detail:') ? previous.slice('detail:'.length) : null
-        const card = originId ? document.querySelector<HTMLButtonElement>(`[data-apt-card="${originId}"]`) : null
-        if (card) card.focus()
-        else headingRef.current?.focus()
-      } else {
-        headingRef.current?.focus()
-      }
-    }
-    prevViewRef.current = focusViewKey
-  }, [focusViewKey])
+  function LoadMoreButton({ k }: { k: Exclude<keyof State, 'dashboard'> }) {
+    const info = pageInfo[k]
+    if (!info?.nextCursor) return null
+    const shown = (state[k] as Row[]).length
+    return (
+      <button className="apt-load-more" type="button" disabled={loadingMore === k} aria-busy={loadingMore === k} onClick={() => void loadMore(k)}>
+        {loadingMore === k ? 'A carregar…' : `Ver mais (${shown} de ${info.total})`}
+      </button>
+    )
+  }
 
   async function postJson(endpoint: string, body: Record<string, unknown>, message: string, method = 'POST') {
     if (submitting) return
@@ -876,257 +558,34 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
     }
   }
 
-  async function apiSend(endpoint: string, body: Record<string, unknown>, method = 'POST') {
-    const response = await fetch(endpoint, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-    const data = await response.json().catch(() => null)
-    if (!response.ok) throw new Error(apiErrorMessage(data, 'Não foi possível concluir o pedido.'))
-    return data
-  }
-
-  async function apiGet(endpoint: string) {
-    const response = await fetch(endpoint)
-    const data = await response.json().catch(() => null)
-    if (!response.ok) throw new Error(apiErrorMessage(data, 'Não foi possível carregar os dados.'))
-    return data
-  }
-
-  // Um só toque para a senhora: garante a cobrança do mês, regista o pagamento em falta e confirma-o.
-  // Passa pelo fluxo de pagamento (em vez de mudar o estado da fatura diretamente) para que
-  // o valor entre no resumo financeiro "Recebido este mês".
-  async function markApartmentPaid(apt: Apartment) {
-    if (!apt.lease || payingUnitId) return
-    const unitId = apt.unit.id as string
-    const leaseId = apt.lease.id as string
-    setPayingUnitId(unitId)
-    try {
-      let invoice = apt.currentInvoice
-      if (invoice && invoice.status === 'Paid') {
-        setNotice({ kind: 'success', text: 'Este aluguel já foi marcado como pago.' })
-        return
-      }
-      if (!invoice) {
-        invoice = await apiSend('/api/invoices', { leaseId, period: currentPeriod })
-      }
-      const invoiceId = invoice?.id as string
-      const invoiceAmount = Number(invoice?.amount ?? apt.rent ?? 0)
-
-      // Vamos buscar os pagamentos frescos (o state pode estar desatualizado após uma tentativa
-      // falhada), para não criar um segundo pagamento e para pagar apenas o que falta.
-      const freshPayments = await apiGet('/api/payments')
-      const forInvoice: Row[] = (Array.isArray(freshPayments) ? (freshPayments as Row[]) : []).filter(
-        (payment) => (payment.invoice?.id as string) === invoiceId
-      )
-      const pending = forInvoice.find((payment) => payment.confirmationStatus !== 'Confirmed')
-      const confirmedSum = forInvoice
-        .filter((payment) => payment.confirmationStatus === 'Confirmed')
-        .reduce((sum, payment) => sum + Number(payment.amount ?? 0), 0)
-
-      let paymentId = pending?.id as string | undefined
-      if (!paymentId) {
-        const remaining = invoiceAmount - confirmedSum
-        const amountToPay = remaining > 0 ? remaining : invoiceAmount
-        paymentId = (await apiSend('/api/payments', { invoiceId, amount: amountToPay }))?.id as string
-      }
-      await apiSend(`/api/payments/${paymentId}/confirm`, {})
-      setNotice({ kind: 'success', text: `Aluguel de ${(apt.renter?.fullName as string) ?? 'inquilino'} marcada como paga.` })
-      await load()
-    } catch (error) {
-      setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível marcar como pago.' })
-    } finally {
-      setPayingUnitId(null)
-    }
-  }
-
-  // Esconde o conceito de "unidade": um apartamento = imóvel + a sua unidade, criados/atualizados
-  // atomicamente por /api/apartments (transação) — sem imóvel órfão nem escrita parcial.
-  async function addApartment(form: HTMLFormElement) {
-    if (submitting) return
-    const data = payload(form)
-    setSubmitting('add-apartment')
-    try {
-      await apiSend('/api/apartments', {
-        name: data.name,
-        addressLine1: data.addressLine1,
-        city: data.city,
-        postalCode: data.postalCode,
-        monthlyRent: Number(data.monthlyRent),
-      })
-      setNotice({ kind: 'success', text: 'Apartamento adicionado.' })
-      setAddingApartment(false)
-      await load()
-    } catch (error) {
-      setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível adicionar o apartamento.' })
-    } finally {
-      setSubmitting(null)
-    }
-  }
-
-  async function updateApartment(apt: Apartment, form: HTMLFormElement) {
-    if (submitting || !apt.property) return
-    const data = payload(form)
-    setSubmitting('edit-apartment')
-    try {
-      await apiSend('/api/apartments', {
-        propertyId: apt.property.id,
-        unitId: apt.unit.id,
-        name: data.name,
-        addressLine1: data.addressLine1,
-        city: data.city,
-        postalCode: data.postalCode,
-        monthlyRent: Number(data.monthlyRent),
-      }, 'PATCH')
-      setNotice({ kind: 'success', text: 'Apartamento atualizado.' })
-      setEditingApartment(null)
-      await load()
-    } catch (error) {
-      setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível guardar as alterações.' })
-    } finally {
-      setSubmitting(null)
-    }
-  }
-
-  async function addApartmentExpense(apt: Apartment, form: HTMLFormElement) {
-    if (!apt.property || submitting) return
-    const data = payload(form)
-    try {
-      await postJson('/api/expenses', { ...data, propertyId: apt.property.id }, 'Conta registada.')
-      form.reset() // só limpa após sucesso real (o guard acima evita limpar quando outra ação está a decorrer)
-    } catch {
-      // erro já mostrado por postJson
-    }
-  }
-
-  function deleteApartmentExpense(id: string) {
-    void postJson(`/api/expenses/${id}`, {}, 'Conta apagada.', 'DELETE')
-  }
-
   const dashboard = state.dashboard
   const counts = dashboard?.counts
   const finances = dashboard?.finances
-  const activeLeaseCount = counts?.activeLeases ?? state.leases.filter((lease) => lease.status === 'Active').length
-  const propertyOptions = useMemo(() => state.properties.map((property) => ({ id: property.id as string, label: property.name as string })), [state.properties])
+  const activeLeaseCount = counts?.activeLeases ?? 0
+  const propertyOptions = useMemo(
+    () => options.properties.map((property) => ({ id: property.id as string, label: (property.addressLine1 as string) || (property.name as string) })),
+    [options.properties]
+  )
   const unitOptions = useMemo(
-    () => state.units.map((unit) => ({ id: unit.id as string, propertyId: unit.propertyId as string, label: `${unit.name as string} · ${(unit.property?.name as string) ?? 'Imóvel'}` })),
-    [state.units]
+    () => options.units.map((unit) => ({ id: unit.id as string, propertyId: unit.propertyId as string, label: `${unit.name as string} · ${(unit.property?.addressLine1 as string) ?? (unit.property?.name as string) ?? 'Imóvel'}` })),
+    [options.units]
   )
-  const renterOptions = useMemo(() => state.renters.map((renter) => ({ id: renter.id as string, label: renter.fullName as string })), [state.renters])
-  const invoiceOptions = useMemo(
-    () => state.invoices.filter((invoice) => invoice.status !== 'Paid').map((invoice) => ({
-      id: invoice.id as string,
-      label: `${periodLabel(invoice.period as string)} · ${(invoice.lease?.renter?.fullName as string) ?? 'Inquilino'} · ${money(Number(invoice.amount ?? 0))}`,
-    })),
-    [state.invoices]
-  )
-  const filteredTickets = useMemo(() => state.maintenance.filter((ticket) => {
-    const byStatus = ticketStatusFilter ? (ticket.status as string) === ticketStatusFilter : true
-    const byPriority = ticketPriorityFilter ? (ticket.priority as string) === ticketPriorityFilter : true
-    return byStatus && byPriority
-  }), [state.maintenance, ticketStatusFilter, ticketPriorityFilter])
+  const renterOptions = useMemo(() => options.renters.map((renter) => ({ id: renter.id as string, label: renter.fullName as string })), [options.renters])
 
-  // Um "apartamento" = uma unidade + o seu contrato ativo (se existir). É o objeto que a
-  // senhora reconhece. Ordenamos com "falta pagar" primeiro, para o que precisa de ação ficar em cima.
-  const apartments = useMemo<Apartment[]>(() => {
-    const order: Record<Apartment['monthStatus'], number> = { due: 0, confirming: 1, paid: 2, vacant: 3 }
-    return state.units
-      .map((unit) => {
-        const property = (unit.property as Row) ?? state.properties.find((item) => item.id === unit.propertyId) ?? null
-        const lease = state.leases.find((item) => ((item.unit?.id ?? item.unitId) as string) === (unit.id as string) && item.status === 'Active') ?? null
-        const renter = (lease?.renter as Row) ?? null
-        // Usamos a lista completa de faturas (state.invoices), não lease.invoices (limitada a 12),
-        // para não perder a fatura do mês e evitar criar uma duplicada ao marcar como pago.
-        const currentInvoice = lease
-          ? state.invoices.find((invoice) =>
-              ((invoice.lease?.id ?? invoice.leaseId) as string) === (lease.id as string) &&
-              invoice.period === currentPeriod &&
-              invoice.status !== 'Canceled' && invoice.status !== 'Cancelled'
-            ) ?? null
-          : null
-        const monthStatus: Apartment['monthStatus'] = !lease
-          ? 'vacant'
-          : currentInvoice?.status === 'Paid'
-            ? 'paid'
-            : currentInvoice?.status === 'AwaitingConfirmation'
-              ? 'confirming'
-              : 'due'
-        const rent = lease ? Number(lease.monthlyRent ?? 0) : Number(unit.monthlyRent ?? 0)
-        // O identificador é a morada (Rua + nº). O nome é um rótulo opcional (só se diferir da morada).
-        // Se o imóvel tiver mais que uma unidade, juntamos o nome da unidade para desambiguar.
-        const addressLine = (property?.addressLine1 as string) || (unit.name as string) || 'Apartamento'
-        const propertyUnitCount = state.units.filter((item) => (item.propertyId as string) === (unit.propertyId as string)).length
-        const title = propertyUnitCount > 1 ? `${addressLine} · ${unit.name as string}` : addressLine
-        const customName = (property?.name as string) || ''
-        const label = customName && customName !== addressLine ? customName : ''
-        const address = (property?.city as string) || ''
-        const openTickets = state.maintenance.filter((ticket) => {
-          // Ticket com unidade específica conta só nessa unidade; sem unidade, conta no imóvel.
-          const matches = ticket.unitId
-            ? (ticket.unitId as string) === (unit.id as string)
-            : (!!property && (ticket.propertyId as string) === (property.id as string))
-          return matches && ticket.status !== 'Resolved' && ticket.status !== 'Closed'
-        }).length
-        return { unit, property, lease, renter, currentInvoice, monthStatus, rent, title, label, address, openTickets }
-      })
-      .sort((a, b) => order[a.monthStatus] - order[b.monthStatus])
-  }, [state.units, state.leases, state.properties, state.invoices, state.maintenance, currentPeriod])
+  // Filtros aplicados no servidor: as listas chegam prontas.
+  const filteredTickets = state.maintenance
+  const visibleInvoices = state.invoices
+  const awaitingPayments = options.awaitingPayments
+  const currentPeriod = new Date().toISOString().slice(0, 7)
 
-  const openApartment = openApartmentId ? apartments.find((apt) => (apt.unit.id as string) === openApartmentId) ?? null : null
-  const occupiedApartments = apartments.filter((apt) => apt.lease)
-  const paidThisMonth = occupiedApartments.filter((apt) => apt.monthStatus === 'paid').length
-  const dueThisMonth = occupiedApartments.filter((apt) => apt.monthStatus === 'due').length
-  const confirmingThisMonth = occupiedApartments.filter((apt) => apt.monthStatus === 'confirming').length
-  const expectedThisMonth = occupiedApartments.reduce((sum, apt) => sum + apt.rent, 0)
-  // Recebido = soma dos pagamentos confirmados das faturas deste mês (dinheiro real, não renda nominal).
-  const receivedThisMonth = state.payments
-    .filter((payment) => payment.confirmationStatus === 'Confirmed' && ((payment.invoice?.period) as string) === currentPeriod)
-    .reduce((sum, payment) => sum + Number(payment.amount ?? 0), 0)
-  const openTicketsTotal = state.maintenance.filter((ticket) => ticket.status !== 'Resolved' && ticket.status !== 'Closed').length
-  const awaitingPayments = state.payments.filter((payment) => payment.confirmationStatus !== 'Confirmed')
-  // "O que fazer hoje" — o Painel lidera com AÇÕES, não com números (assistente do senhorio).
-  const daysUntil = (value?: string | Date | null) => {
-    if (!value) return null
-    const parsed = new Date(value)
-    if (Number.isNaN(parsed.getTime())) return null
-    return Math.ceil((parsed.getTime() - new Date().getTime()) / 86400000)
-  }
-  const dueTasks = occupiedApartments.filter((apt) => apt.monthStatus === 'due')
-  const confirmTasks = occupiedApartments.filter((apt) => apt.monthStatus === 'confirming')
-  const endingSoon = occupiedApartments
-    .map((apt) => ({ apt, days: daysUntil(apt.lease?.endDate as string) }))
-    .filter((item) => item.days !== null && item.days >= 0 && item.days <= 60)
-    .sort((a, b) => (a.days ?? 0) - (b.days ?? 0))
-  const attentionCount = dueTasks.length + confirmTasks.length + endingSoon.length + openTicketsTotal
-  const apartmentSearch = apartmentQuery.trim().toLowerCase()
-  const visibleApartments = apartmentSearch
-    ? apartments.filter((apt) =>
-        apt.title.toLowerCase().includes(apartmentSearch) ||
-        apt.label.toLowerCase().includes(apartmentSearch) ||
-        apt.address.toLowerCase().includes(apartmentSearch) ||
-        ((apt.renter?.fullName as string) ?? '').toLowerCase().includes(apartmentSearch)
-      )
-    : apartments
-
-  const showDashboard = mode === 'all' || mode === 'dashboard'
-  const showPortfolio = mode === 'all' || mode === 'portfolio'
-  const showLeases = mode === 'all' || mode === 'leases'
-  const showBilling = mode === 'all' || mode === 'billing'
-  const showOperations = mode === 'all' || mode === 'operations'
-  // Em páginas de modo único o título da secção é o h1 da página; no painel combinado fica h2 sob o h1 do dashboard.
-  const SectionHeading = mode === 'all' || mode === 'dashboard' ? 'h2' : 'h1'
-  const overdueInvoices = state.invoices.filter((invoice) => invoice.status === 'Overdue')
-  const overdueTotal = overdueInvoices.reduce((sum, invoice) => sum + Number(invoice.amount ?? 0), 0)
-  const visibleInvoices = state.invoices.filter((invoice) =>
-    invoiceFilter === 'all'
-      ? true
-      : invoiceFilter === 'overdue'
-        ? invoice.status === 'Overdue'
-        : invoice.status !== 'Paid' && invoice.status !== 'Canceled' && invoice.status !== 'Cancelled'
-  )
-  const setupComplete = propertyOptions.length > 0 && unitOptions.length > 0 && renterOptions.length > 0
+  const SectionHeading = mode === 'all' ? 'h2' : 'h1'
+  const overdueTotal = finances?.overdueTotal ?? 0
+  const setupComplete = !!counts && counts.properties > 0 && counts.units > 0 && counts.renters > 0
   // Durante o onboarding, guia automaticamente até ao próximo passo em falta.
   // Com o portfólio já configurado, só abre um formulário quando o utilizador escolhe adicionar algo.
   const currentSetupStep: SetupStep | null = setupComplete
     ? setupStep
-    : (setupStep ?? (!propertyOptions.length ? 'property' : !unitOptions.length ? 'unit' : !renterOptions.length ? 'renter' : null))
+    : (setupStep ?? (!(counts?.properties ?? 0) ? 'property' : !(counts?.units ?? 0) ? 'unit' : !(counts?.renters ?? 0) ? 'renter' : null))
 
   return (
     <main className="app-shell" id="conteudo-principal" tabIndex={-1}>
@@ -1139,192 +598,6 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
           {notice?.kind === 'error' ? <div className="notice notice-error">{notice.text}</div> : null}
         </div>
       </div>
-      {showDashboard ? <>
-        <header className="mobile-dashboard-header">
-          <div>
-            {addingApartment || editingApartment || openApartment
-              ? <button className="apt-back" type="button" onClick={() => {
-                  if (addingApartment) setAddingApartment(false)
-                  else if (editingApartment) setEditingApartment(null)
-                  else setOpenApartmentId(null)
-                }}>{editingApartment ? '‹ Voltar' : '‹ Os meus apartamentos'}</button>
-              : <p className="screen-kicker">A sua gestão, simples e clara</p>}
-            <h1 ref={headingRef} tabIndex={-1}>
-              {addingApartment ? 'Adicionar apartamento' : editingApartment ? 'Editar apartamento' : openApartment ? openApartment.title : 'Os meus apartamentos'}
-            </h1>
-          </div>
-          <button
-            className="session-button"
-            type="button"
-            aria-label="Terminar sessão"
-            title="Terminar sessão"
-            onClick={async () => {
-              await fetch('/api/auth/logout', { method: 'POST' })
-              window.location.href = '/login'
-            }}
-          >
-            Sair
-          </button>
-        </header>
-
-        {loading && apartments.length === 0 ? (
-          <p className="muted" style={{ padding: '8px 2px' }}>A carregar os seus apartamentos…</p>
-        ) : addingApartment ? (
-          <ApartmentForm apt={null} onSubmit={addApartment} onCancel={() => setAddingApartment(false)} submitting={submitting === 'add-apartment'} />
-        ) : editingApartment ? (
-          <ApartmentForm apt={editingApartment} onSubmit={(form) => { if (editingApartment) updateApartment(editingApartment, form) }} onCancel={() => setEditingApartment(null)} submitting={submitting === 'edit-apartment'} />
-        ) : apartments.length === 0 ? (
-          <div className="apt-empty-home">
-            <span className="apt-empty-avatar"><UiIcon name="building" /></span>
-            <h2>Ainda não tem apartamentos</h2>
-            <p>Adicione o seu primeiro apartamento para começar a acompanhar rendas e contas.</p>
-            <button className="button button-primary" type="button" onClick={() => setAddingApartment(true)}>Adicionar apartamento</button>
-            {isDemoUser ? (
-              <button className="apt-demo-link" type="button" disabled={submitting === 'demo'} onClick={loadDemoData}>
-                {submitting === 'demo' ? 'A carregar…' : 'Carregar dados de demonstração'}
-              </button>
-            ) : null}
-          </div>
-        ) : openApartment ? (
-          <ApartmentDetail
-            apt={openApartment}
-            payments={state.payments}
-            expenses={state.expenses}
-            submitting={submitting}
-            onMarkPaid={markApartmentPaid}
-            paying={payingUnitId === (openApartment.unit.id as string)}
-            onEdit={(apt) => setEditingApartment(apt)}
-            onAddExpense={addApartmentExpense}
-            onDeleteExpense={deleteApartmentExpense}
-          />
-        ) : (
-          <>
-            <section className="assist" aria-label="O que precisa da sua atenção">
-              {attentionCount === 0 ? (
-                <div className="assist-ok">
-                  <span className="assist-ok-ic"><UiIcon name="check" /></span>
-                  <div>
-                    <strong>Está tudo em dia</strong>
-                    <span>Não há nada pendente hoje.</span>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <p className="assist-title">O que fazer hoje</p>
-                  <div className="assist-tasks">
-                    {dueTasks.map((apt) => (
-                      <div className="assist-task" key={`due-${apt.unit.id as string}`}>
-                        <span className="assist-task-ic assist-ic-due"><UiIcon name="alert" /></span>
-                        <span className="assist-task-txt">
-                          <strong>{money(apt.rent)}</strong>
-                          <span>{(apt.renter?.fullName as string) ?? 'Inquilino'}</span>
-                        </span>
-                        <button className="assist-task-btn" type="button" disabled={payingUnitId === (apt.unit.id as string)} aria-busy={payingUnitId === (apt.unit.id as string)} onClick={() => markApartmentPaid(apt)}>
-                          {payingUnitId === (apt.unit.id as string) ? '…' : 'Marcar como pago'}
-                        </button>
-                      </div>
-                    ))}
-                    {confirmTasks.map((apt) => (
-                      <div className="assist-task" key={`conf-${apt.unit.id as string}`}>
-                        <span className="assist-task-ic assist-ic-info"><UiIcon name="clock" /></span>
-                        <span className="assist-task-txt">
-                          <strong>{money(apt.rent)}</strong>
-                          <span>{(apt.renter?.fullName as string) ?? 'Inquilino'} — confirmar</span>
-                        </span>
-                        <button className="assist-task-btn" type="button" disabled={payingUnitId === (apt.unit.id as string)} aria-busy={payingUnitId === (apt.unit.id as string)} onClick={() => markApartmentPaid(apt)}>
-                          {payingUnitId === (apt.unit.id as string) ? '…' : 'Confirmar'}
-                        </button>
-                      </div>
-                    ))}
-                    {endingSoon.map(({ apt, days }) => (
-                      <button className="assist-task assist-task-link" type="button" key={`end-${apt.unit.id as string}`} onClick={() => setOpenApartmentId(apt.unit.id as string)}>
-                        <span className="assist-task-ic assist-ic-info"><UiIcon name="calendar" /></span>
-                        <span className="assist-task-txt">
-                          <strong>Contrato {days === 0 ? 'termina hoje' : `termina em ${days} ${days === 1 ? 'dia' : 'dias'}`}</strong>
-                          <span>{(apt.renter?.fullName as string) ?? ''} · {apt.title}</span>
-                        </span>
-                        <span className="assist-task-arrow"><UiIcon name="arrow" /></span>
-                      </button>
-                    ))}
-                    {openTicketsTotal > 0 ? (
-                      <a className="assist-task assist-task-link" href="/operations">
-                        <span className="assist-task-ic assist-ic-warn"><UiIcon name="tools" /></span>
-                        <span className="assist-task-txt">
-                          <strong>{openTicketsTotal} {openTicketsTotal === 1 ? 'avaria pendente' : 'avarias pendentes'}</strong>
-                          <span>Ver manutenção</span>
-                        </span>
-                        <span className="assist-task-arrow"><UiIcon name="arrow" /></span>
-                      </a>
-                    ) : null}
-                  </div>
-                </>
-              )}
-            </section>
-
-            <section className="apt-hero" aria-label="Resumo deste mês">
-              <p className="apt-hero-kicker"><UiIcon name="calendar" />Este mês</p>
-              <p className="apt-hero-amount">
-                <strong>{money(receivedThisMonth)}</strong>
-                <span>de {money(expectedThisMonth)}</span>
-              </p>
-              <div className="apt-progress" role="img" aria-label={`Recebido ${money(receivedThisMonth)} de ${money(expectedThisMonth)} previstos`}>
-                <span className="apt-progress-fill" style={{ width: `${expectedThisMonth > 0 ? Math.min(100, Math.round((receivedThisMonth / expectedThisMonth) * 100)) : 0}%` }} />
-              </div>
-              <div className="apt-hero-chips">
-                <span className="apt-hero-chip apt-hero-chip-paid"><UiIcon name="check" />{paidThisMonth} {paidThisMonth === 1 ? 'pago' : 'pagos'}</span>
-                <span className="apt-hero-chip apt-hero-chip-due"><UiIcon name="clock" />{dueThisMonth} por pagar</span>
-                {confirmingThisMonth > 0 ? <span className="apt-hero-chip apt-hero-chip-confirm"><UiIcon name="clock" />{confirmingThisMonth} a confirmar</span> : null}
-              </div>
-            </section>
-
-            <div className="apt-stats" role="group" aria-label="Resumo do portfólio">
-              <div className="apt-stat" role="img" aria-label={`${apartments.length} ${apartments.length === 1 ? 'apartamento' : 'apartamentos'}`}>
-                <span className="apt-stat-ic"><UiIcon name="building" /></span>
-                <strong aria-hidden="true">{apartments.length}</strong>
-              </div>
-              <div className={`apt-stat ${dueThisMonth > 0 ? 'apt-stat-warn' : ''}`} role="img" aria-label={`${dueThisMonth} em atraso`}>
-                <span className="apt-stat-ic"><UiIcon name="alert" /></span>
-                <strong aria-hidden="true">{dueThisMonth}</strong>
-              </div>
-              <div className={`apt-stat ${openTicketsTotal > 0 ? 'apt-stat-warn' : ''}`} role="img" aria-label={`${openTicketsTotal} ${openTicketsTotal === 1 ? 'avaria' : 'avarias'}`}>
-                <span className="apt-stat-ic"><UiIcon name="tools" /></span>
-                <strong aria-hidden="true">{openTicketsTotal}</strong>
-              </div>
-            </div>
-
-            <div className="apt-search">
-              <span className="apt-search-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.2-3.2" /></svg>
-              </span>
-              <input
-                type="search"
-                value={apartmentQuery}
-                onChange={(event) => setApartmentQuery(event.target.value)}
-                placeholder="Procurar apartamento ou inquilino…"
-                aria-label="Procurar apartamento"
-              />
-              <p className="sr-only" role="status" aria-live="polite">
-                {apartmentQuery ? `${visibleApartments.length} ${visibleApartments.length === 1 ? 'apartamento encontrado' : 'apartamentos encontrados'}` : ''}
-              </p>
-            </div>
-
-            <section className="apt-list" aria-label="Os meus apartamentos">
-              {visibleApartments.length ? visibleApartments.map((apt) => (
-                <ApartmentCard
-                  key={apt.unit.id as string}
-                  apt={apt}
-                  onOpen={setOpenApartmentId}
-                  onMarkPaid={markApartmentPaid}
-                  paying={payingUnitId === (apt.unit.id as string)}
-                />
-              )) : <p className="muted" style={{ padding: '8px 2px' }}>Nenhum apartamento corresponde à pesquisa.</p>}
-            </section>
-
-            <button className="apt-add" type="button" onClick={() => setAddingApartment(true)}>+ Adicionar apartamento</button>
-          </>
-        )}
-      </> : null}
-
       {showPortfolio ? <section className="section" id="cadastros">
         <div className="section-header">
           <div>
@@ -1341,7 +614,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
           <SetupStepCard number={1} title="Registar imóvel" description="Morada e dados principais." status={propertyOptions.length ? 'completed' : currentSetupStep === 'property' ? 'active' : 'available'} onSelect={() => setSetupStep('property')} />
           <SetupStepCard number={2} title="Criar unidade" description={propertyOptions.length ? 'Defina renda e ocupação.' : 'Disponível depois do primeiro imóvel.'} status={!propertyOptions.length ? 'locked' : unitOptions.length ? 'completed' : currentSetupStep === 'unit' ? 'active' : 'available'} onSelect={() => setSetupStep('unit')} />
           <SetupStepCard number={3} title="Adicionar inquilino" description={unitOptions.length ? 'Registe os dados de contacto.' : 'Disponível depois da primeira unidade.'} status={!unitOptions.length ? 'locked' : renterOptions.length ? 'completed' : currentSetupStep === 'renter' ? 'active' : 'available'} onSelect={() => setSetupStep('renter')} />
-          <SetupStepCard number={4} title="Criar contrato" description={renterOptions.length ? 'Associe imóvel, unidade e inquilino.' : 'Disponível depois do primeiro inquilino.'} status={!renterOptions.length ? 'locked' : state.leases.length ? 'completed' : 'available'} href="/leases" />
+          <SetupStepCard number={4} title="Criar contrato" description={renterOptions.length ? 'Associe imóvel, unidade e inquilino.' : 'Disponível depois do primeiro inquilino.'} status={!renterOptions.length ? 'locked' : (counts?.leases ?? 0) > 0 ? 'completed' : 'available'} href="/leases" />
         </div>
         ) : null}
 
@@ -1352,17 +625,18 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
         {setupComplete && !currentSetupStep && !editing ? (
         <>
           <div className="prop-summary">
-            <div className="prop-sum-tile" aria-label={`${state.properties.length} imóveis`}><UiIcon name="building" /><strong>{state.properties.length}</strong><span>imóveis</span></div>
-            <div className="prop-sum-tile prop-sum-occ" aria-label={`${state.units.filter((unit) => unit.status === 'Occupied').length} ocupadas`}><UiIcon name="check" /><strong>{state.units.filter((unit) => unit.status === 'Occupied').length}</strong><span>ocupadas</span></div>
-            <div className="prop-sum-tile prop-sum-free" aria-label={`${state.units.filter((unit) => unit.status === 'Vacant').length} livres`}><UiIcon name="key" /><strong>{state.units.filter((unit) => unit.status === 'Vacant').length}</strong><span>livres</span></div>
-            <div className="prop-sum-tile prop-sum-rent" aria-label="renda mensal ocupada"><UiIcon name="euro" /><strong>{money(state.units.reduce((sum, unit) => sum + (unit.status === 'Occupied' ? Number(unit.monthlyRent ?? 0) : 0), 0))}</strong><span>por mês</span></div>
+            <div className="prop-sum-tile" aria-label={`${counts?.properties ?? 0} imóveis`}><UiIcon name="building" /><strong>{counts?.properties ?? 0}</strong><span>imóveis</span></div>
+            <div className="prop-sum-tile prop-sum-occ" aria-label={`${counts?.occupiedUnits ?? 0} ocupadas`}><UiIcon name="check" /><strong>{counts?.occupiedUnits ?? 0}</strong><span>ocupadas</span></div>
+            <div className="prop-sum-tile prop-sum-free" aria-label={`${counts?.vacantUnits ?? 0} livres`}><UiIcon name="key" /><strong>{counts?.vacantUnits ?? 0}</strong><span>livres</span></div>
+            <div className="prop-sum-tile prop-sum-rent" aria-label="aluguel mensal ocupado"><UiIcon name="euro" /><strong>{money(finances?.occupiedRent ?? 0)}</strong><span>por mês</span></div>
           </div>
           <div className="prop-grid">
             {state.properties.map((property) => <PropertyCard key={property.id as string} property={property} onEditProperty={(p) => setEditing({ type: 'property', data: p })} />)}
           </div>
+          <LoadMoreButton k="properties" />
           {state.renters.length ? (
             <article className="card">
-              <div className="card-header"><h2>Inquilinos</h2><span>{state.renters.length} {state.renters.length === 1 ? 'registado' : 'registados'}</span></div>
+              <div className="card-header"><h2>Inquilinos</h2><span>{pageInfo.renters?.total ?? state.renters.length} {(pageInfo.renters?.total ?? state.renters.length) === 1 ? 'registado' : 'registados'}</span></div>
               <div className="card-body"><div className="stack">
                 {state.renters.map((renter) => (
                   <div key={renter.id as string} className="unit-row">
@@ -1373,7 +647,9 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
                     <button className="small-button" type="button" onClick={() => setEditing({ type: 'renter', data: renter })}>Editar</button>
                   </div>
                 ))}
-              </div></div>
+              </div>
+              <LoadMoreButton k="renters" />
+              </div>
             </article>
           ) : null}
           <p className="meta">Quer registar uma unidade num imóvel existente? <button className="inline-link" type="button" onClick={() => setSetupStep('unit')}>Adicionar unidade</button></p>
@@ -1419,7 +695,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
               </div>
               <div className="form-actions"><button className="button button-primary" type="submit" disabled={propertyOptions.length === 0 || submitting === '/api/units'}>{submitting === '/api/units' ? 'A criar...' : 'Criar unidade'}</button></div>
             </form>
-            <RecordList items={state.units} empty={{ title: 'Ainda não existem unidades registadas.', hint: 'Depois de criar o imóvel, registe cada unidade para permitir contratos e cobrança mensal.', actionLabel: 'Registar unidade', actionHref: '#unit-property' }} render={(unit) => (
+            <RecordList items={options.units} empty={{ title: 'Ainda não existem unidades registadas.', hint: 'Depois de criar o imóvel, registe cada unidade para permitir contratos e cobrança mensal.', actionLabel: 'Registar unidade', actionHref: '#unit-property' }} render={(unit) => (
               <div key={unit.id} className="empty">
                 <strong>{unit.name as string}</strong><br />
                 <span className="muted">{unit.property?.name ?? '—'} · {money(Number(unit.monthlyRent ?? 0))}</span><br />
@@ -1504,6 +780,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
                 })}
               </ul>
             ) : <p className="muted">Ainda não há contratos. Use o assistente ao lado para criar o primeiro.</p>}
+            <LoadMoreButton k="leases" />
           </div>
         </div>
       </section> : null}
@@ -1581,6 +858,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
               })}
             </ul>
           ) : <p className="muted">{state.invoices.length ? 'Nenhuma cobrança com este filtro.' : 'Ainda não há cobranças. Gere as cobranças do mês no botão acima.'}</p>}
+          <LoadMoreButton k="invoices" />
         </div>
 
         {awaitingPayments.length ? (
@@ -1610,7 +888,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
           <h2>Despesas</h2>
           {state.expenses.length ? (
             <ul className="fin-list">
-              {state.expenses.slice(0, 12).map((expense) => (
+              {state.expenses.map((expense) => (
                 <li key={expense.id as string} className="fin-item">
                   <span className="fin-ic fin-ic-plain"><UiIcon name="euro" /></span>
                   <span className="fin-item-body">
@@ -1623,6 +901,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
               ))}
             </ul>
           ) : <p className="muted">Ainda não há despesas registadas.</p>}
+          <LoadMoreButton k="expenses" />
 
           {propertyOptions.length ? (
             <form className="apt-bill-form" onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/expenses', payload(form), 'Despesa registada.'); form.reset() } catch { /* erro já mostrado */ } }}>
@@ -1645,7 +924,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
             <SectionHeading className="section-title">Manutenção</SectionHeading>
             <p>Crie e acompanhe pedidos de reparação dos seus apartamentos.</p>
           </div>
-          <span className="pill pill-soft">Pedidos: {filteredTickets.length}/{state.maintenance.length}</span>
+          <span className="pill pill-soft">Pedidos: {pageInfo.maintenance?.total ?? filteredTickets.length}</span>
         </div>
         <div className="grid-2">
           <Panel title="Novo pedido de manutenção" subtitle="Descreva o problema">
@@ -1668,7 +947,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
           </Panel>
 
           <Panel title="Pedidos de manutenção" subtitle="Acompanhamento diário">
-            {state.maintenance.length > 0 ? <div className="form-grid" style={{ marginBottom: 12 }}>
+            {(pageInfo.maintenance?.total ?? 0) > 0 || ticketStatusFilter || ticketPriorityFilter ? <div className="form-grid" style={{ marginBottom: 12 }}>
               <div className="field"><label htmlFor="ticket-filter-status">Estado</label><select id="ticket-filter-status" value={ticketStatusFilter} onChange={(event) => setTicketStatusFilter(event.target.value)}><option value="">Todos</option><option value="New">Novo</option><option value="Triaged">Em análise</option><option value="Waiting">A aguardar</option><option value="Resolved">Resolvido</option><option value="Closed">Fechado</option></select></div>
               <div className="field"><label htmlFor="ticket-filter-priority">Urgência</label><select id="ticket-filter-priority" value={ticketPriorityFilter} onChange={(event) => setTicketPriorityFilter(event.target.value)}><option value="">Todas</option><option value="Low">Baixa</option><option value="Normal">Normal</option><option value="High">Alta</option><option value="Urgent">Urgente</option></select></div>
             </div> : null}
@@ -1697,6 +976,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
                 })}
               </ul>
             ) : <p className="muted">{state.maintenance.length ? 'Não há pedidos com estes filtros.' : 'Ainda não há pedidos de manutenção.'}</p>}
+            <LoadMoreButton k="maintenance" />
           </Panel>
         </div>
       </section> : null}

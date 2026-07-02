@@ -2,31 +2,30 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { asString } from '@/lib/landlord'
 import { requireCurrentUserId } from '@/lib/auth'
+import { pageResult, parsePageParams } from '@/lib/pagination'
 
-export async function GET() {
+/** GET /api/renters?take=&cursor=&q= — lista paginada, sem relações pesadas. */
+export async function GET(request: Request) {
   const { userId, response } = await requireCurrentUserId()
   if (!userId) return response ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const renters = await prisma.renter.findMany({
-      where: { ownerId: userId },
-      include: {
-        leases: {
-          where: { ownerId: userId },
-          include: {
-            property: true,
-            unit: true,
-            invoices: true,
-          },
-          orderBy: { createdAt: 'desc' },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    })
+    const { take, cursor, q } = parsePageParams(request.url, { take: 24, maxTake: 500 })
 
-    return NextResponse.json(renters)
+    const where: Record<string, unknown> = { ownerId: userId }
+    if (q) where.fullName = { contains: q, mode: 'insensitive' }
+
+    const [rows, total] = await Promise.all([
+      prisma.renter.findMany({
+        where,
+        orderBy: [{ fullName: 'asc' }, { id: 'asc' }],
+        take: take + 1,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      }),
+      prisma.renter.count({ where }),
+    ])
+
+    return NextResponse.json(pageResult(rows, take, total))
   } catch {
     return NextResponse.json({ error: 'Failed to fetch renters' }, { status: 500 })
   }

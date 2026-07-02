@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { asDate, asString } from '@/lib/landlord'
 import { requireCurrentUserId } from '@/lib/auth'
+import { pageResult, parsePageParams } from '@/lib/pagination'
 import { logAuditEvent } from '@/lib/audit'
 import { validatePaymentDraft } from '@/lib/finance'
 
@@ -17,32 +18,42 @@ import { validatePaymentDraft } from '@/lib/finance'
  * - 401: não autenticado.
  * - 500: erro interno.
  */
-export async function GET() {
+export async function GET(request: Request) {
   const { userId, response } = await requireCurrentUserId()
   if (!userId) return response ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const payments = await prisma.payment.findMany({
-      where: { ownerId: userId },
-      include: {
-        invoice: {
-          include: {
-            lease: {
-              include: {
-                property: true,
-                unit: true,
-                renter: true,
+    const { take, cursor, searchParams } = parsePageParams(request.url, { take: 25, maxTake: 100 })
+    const status = searchParams.get('status')
+
+    const where: Record<string, unknown> = { ownerId: userId }
+    if (status === 'awaiting') where.confirmationStatus = 'AwaitingConfirmation'
+    else if (status === 'confirmed') where.confirmationStatus = 'Confirmed'
+
+    const [rows, total] = await Promise.all([
+      prisma.payment.findMany({
+        where,
+        include: {
+          invoice: {
+            include: {
+              lease: {
+                include: {
+                  property: true,
+                  unit: true,
+                  renter: true,
+                },
               },
             },
           },
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    })
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: take + 1,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      }),
+      prisma.payment.count({ where }),
+    ])
 
-    return NextResponse.json(payments)
+    return NextResponse.json(pageResult(rows, take, total))
   } catch {
     return NextResponse.json({ error: 'Failed to fetch payments' }, { status: 500 })
   }

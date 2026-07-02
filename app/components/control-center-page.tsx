@@ -94,6 +94,25 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10)
 }
 
+// Estado de uma cobrança em palavra curta + tom de cor (só texto, sem pastel).
+function invoiceStatusInfo(status: string): { word: string; tone: 'paid' | 'due' | 'overdue' | 'confirming' | 'muted' } {
+  switch (status) {
+    case 'Paid':
+      return { word: 'Pago', tone: 'paid' }
+    case 'Overdue':
+      return { word: 'Em atraso', tone: 'overdue' }
+    case 'AwaitingConfirmation':
+      return { word: 'A confirmar', tone: 'confirming' }
+    case 'Partial':
+      return { word: 'Parcial', tone: 'due' }
+    case 'Canceled':
+    case 'Cancelled':
+      return { word: 'Cancelada', tone: 'muted' }
+    default:
+      return { word: 'Por receber', tone: 'due' }
+  }
+}
+
 function dateTime(value?: string | Date | null) {
   if (!value) return '—'
   const parsed = new Date(value)
@@ -158,16 +177,46 @@ function paymentMethodLabel(value?: string) {
   return value ? PAYMENT_METHOD_LABELS[value] ?? value : '—'
 }
 
-function UiIcon({ name }: { name: 'building' | 'income' | 'check' | 'tools' | 'arrow' }) {
-  const paths: Record<string, ReactNode> = {
+type IconName =
+  | 'building' | 'income' | 'check' | 'tools' | 'arrow'
+  | 'wallet' | 'clock' | 'calendar' | 'user' | 'phone' | 'plus' | 'euro' | 'alert' | 'key'
+
+function UiIcon({ name }: { name: IconName }) {
+  const paths: Record<IconName, ReactNode> = {
     building: <><path d="M4 21V5l8-3v19M12 8h8v13M8 7v2M8 12v2M8 17v2M16 12v2M16 17v2M2 21h20" /></>,
     income: <><path d="M4 19V9M10 19V5M16 19v-7M22 19V3" /><path d="M2 21h22" /></>,
     check: <><circle cx="12" cy="12" r="9" /><path d="m8 12 2.5 2.5L16 9" /></>,
     tools: <><path d="m14 7 3-3 3 3-3 3M5 19l9-9M4 14l6 6" /></>,
     arrow: <><path d="M5 12h14M14 7l5 5-5 5" /></>,
+    wallet: <><path d="M4 7h13a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a1 1 0 0 1-1-1z" /><path d="M4 7V6a2 2 0 0 1 2-2h9v3" /><path d="M16 12.5h4v4h-4a2 2 0 0 1 0-4Z" /></>,
+    clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7.5V12l3 2" /></>,
+    calendar: <><rect x="3" y="4.5" width="18" height="16.5" rx="2.5" /><path d="M3 9.5h18M8 2.5v4M16 2.5v4" /></>,
+    user: <><circle cx="12" cy="8" r="3.6" /><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0" /></>,
+    phone: <><path d="M4 4.5h4l2 5-2.5 1.6a12.5 12.5 0 0 0 5.4 5.4L18 14l5 2v4a2 2 0 0 1-2.2 2A18.5 18.5 0 0 1 2 6.7 2 2 0 0 1 4 4.5Z" /></>,
+    plus: <><path d="M12 5v14M5 12h14" /></>,
+    euro: <><path d="M18.5 6.2a7 7 0 1 0 0 11.6" /><path d="M4 10h9.5M4 14h8" /></>,
+    alert: <><path d="M12 3.2 2.2 20.5h19.6z" /><path d="M12 10v4.5M12 18h.01" /></>,
+    key: <><circle cx="8" cy="15" r="4" /><path d="m11 12 8-8 2 2M17 6l2 2" /></>,
   }
 
   return <svg className="ui-icon" viewBox="0 0 24 24" aria-hidden="true">{paths[name]}</svg>
+}
+
+// Iniciais do inquilino para o avatar (ex.: "Carla Mendes" -> "CM").
+function initials(fullName: string) {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean)
+  if (!parts.length) return '—'
+  const first = parts[0][0] ?? ''
+  const last = parts.length > 1 ? parts[parts.length - 1][0] ?? '' : ''
+  return (first + last).toUpperCase()
+}
+
+// Cor determinística (forte, não pastel) para o avatar do inquilino, a partir do nome.
+const AVATAR_COLORS = ['#0f766e', '#4f46e5', '#b45309', '#be185d', '#0369a1', '#7c3aed']
+function avatarColor(seed: string) {
+  let hash = 0
+  for (let i = 0; i < seed.length; i += 1) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length]
 }
 
 function payload(form: HTMLFormElement) {
@@ -444,22 +493,24 @@ function ApartmentCard({ apt, onOpen, onMarkPaid, paying }: {
   paying: boolean
 }) {
   const { unit, lease, renter, monthStatus, rent, title, openTickets } = apt
+  const tenantName = (renter?.fullName as string) || ''
   return (
     <div className="apt-card">
       <button className="apt-card-main" type="button" data-apt-card={unit.id as string} aria-label={`Abrir ${title}`} onClick={() => onOpen(unit.id as string)}>
-        <span className="apt-card-icon"><UiIcon name="building" /></span>
+        {renter
+          ? <span className="apt-avatar" style={{ background: avatarColor(tenantName) }}>{initials(tenantName)}</span>
+          : <span className="apt-avatar apt-avatar-vacant"><UiIcon name="key" /></span>}
         <span className="apt-card-body">
           <span className="apt-card-top">
             <strong className="apt-card-title">{title}</strong>
             <StatusMark status={monthStatus} />
           </span>
-          <span className="apt-card-tenant">{renter ? `${renter.fullName as string} · ${money(rent)}` : 'Sem inquilino'}</span>
-          {lease?.endDate || openTickets > 0 ? (
-            <span className="apt-card-foot">
-              {lease?.endDate ? <span className="apt-foot-item">Contrato até {date(lease.endDate)}</span> : null}
-              {openTickets > 0 ? <span className="apt-foot-item apt-foot-alert">{openTickets} {openTickets === 1 ? 'avaria' : 'avarias'}</span> : null}
-            </span>
-          ) : null}
+          <span className="apt-card-tenant">{renter ? tenantName : 'Sem inquilino'}</span>
+          <span className="apt-card-facts">
+            {renter ? <span className="apt-fact"><UiIcon name="euro" />{money(rent)}</span> : null}
+            {lease?.endDate ? <span className="apt-fact"><UiIcon name="calendar" />{date(lease.endDate)}</span> : null}
+            {openTickets > 0 ? <span className="apt-fact apt-fact-alert" aria-label={`${openTickets} ${openTickets === 1 ? 'avaria' : 'avarias'}`}><UiIcon name="tools" />{openTickets}</span> : null}
+          </span>
         </span>
       </button>
       {monthStatus === 'due' || monthStatus === 'confirming' ? (
@@ -686,6 +737,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
   const [addingApartment, setAddingApartment] = useState(false)
   const [editingApartment, setEditingApartment] = useState<Apartment | null>(null)
   const [apartmentQuery, setApartmentQuery] = useState('')
+  const [isDemoUser, setIsDemoUser] = useState(false)
   const currentPeriod = new Date().toISOString().slice(0, 7)
   const headingRef = useRef<HTMLHeadingElement>(null)
   const prevViewRef = useRef<string>('list')
@@ -714,6 +766,31 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
   useEffect(() => {
     void load()
   }, [load])
+
+  // Deteta a conta de demonstração para mostrar o botão "carregar dados demo".
+  useEffect(() => {
+    let active = true
+    fetch('/api/auth/session')
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => { if (active && data?.user?.email === 'demo@applandlord.local') setIsDemoUser(true) })
+      .catch(() => {})
+    return () => { active = false }
+  }, [])
+
+  async function loadDemoData() {
+    if (submitting) return
+    if (!window.confirm('Isto carrega 2 apartamentos de exemplo (substitui o que existir nesta conta demo). Continuar?')) return
+    setSubmitting('demo')
+    try {
+      await apiSend('/api/demo/seed', {})
+      setNotice({ kind: 'success', text: 'Dados de demonstração carregados.' })
+      await load()
+    } catch (error) {
+      setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível carregar os dados demo.' })
+    } finally {
+      setSubmitting(null)
+    }
+  }
 
   // Reconcilia: se o apartamento aberto deixar de existir (ex.: removido noutra sessão), fecha o detalhe.
   useEffect(() => {
@@ -1000,6 +1077,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
     .filter((payment) => payment.confirmationStatus === 'Confirmed' && ((payment.invoice?.period) as string) === currentPeriod)
     .reduce((sum, payment) => sum + Number(payment.amount ?? 0), 0)
   const openTicketsTotal = state.maintenance.filter((ticket) => ticket.status !== 'Resolved' && ticket.status !== 'Closed').length
+  const awaitingPayments = state.payments.filter((payment) => payment.confirmationStatus !== 'Confirmed')
   const apartmentSearch = apartmentQuery.trim().toLowerCase()
   const visibleApartments = apartmentSearch
     ? apartments.filter((apt) =>
@@ -1079,10 +1157,15 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
           <ApartmentForm apt={editingApartment} onSubmit={(form) => { if (editingApartment) updateApartment(editingApartment, form) }} onCancel={() => setEditingApartment(null)} submitting={submitting === 'edit-apartment'} />
         ) : apartments.length === 0 ? (
           <div className="apt-empty-home">
-            <span className="apt-card-avatar apt-empty-avatar"><UiIcon name="building" /></span>
+            <span className="apt-empty-avatar"><UiIcon name="building" /></span>
             <h2>Ainda não tem apartamentos</h2>
             <p>Adicione o seu primeiro apartamento para começar a acompanhar rendas e contas.</p>
             <button className="button button-primary" type="button" onClick={() => setAddingApartment(true)}>Adicionar apartamento</button>
+            {isDemoUser ? (
+              <button className="apt-demo-link" type="button" disabled={submitting === 'demo'} onClick={loadDemoData}>
+                {submitting === 'demo' ? 'A carregar…' : 'Carregar dados de demonstração'}
+              </button>
+            ) : null}
           </div>
         ) : openApartment ? (
           <ApartmentDetail
@@ -1098,39 +1181,34 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
           />
         ) : (
           <>
-            <section className="apt-month" aria-label="Resumo deste mês">
-              <p className="apt-month-title">Este mês</p>
-              <div className="apt-month-stats">
-                <div className="apt-month-stat apt-month-stat-paid">
-                  <strong>{paidThisMonth}</strong>
-                  <span>{paidThisMonth === 1 ? 'já pagou' : 'já pagaram'}</span>
-                </div>
-                <div className="apt-month-stat apt-month-stat-due">
-                  <strong>{dueThisMonth}</strong>
-                  <span>{dueThisMonth === 1 ? 'ainda falta' : 'ainda faltam'}</span>
-                </div>
-                {confirmingThisMonth > 0 ? (
-                  <div className="apt-month-stat apt-month-stat-confirm">
-                    <strong>{confirmingThisMonth}</strong>
-                    <span>a confirmar</span>
-                  </div>
-                ) : null}
+            <section className="apt-hero" aria-label="Resumo deste mês">
+              <p className="apt-hero-kicker"><UiIcon name="calendar" />Este mês</p>
+              <p className="apt-hero-amount">
+                <strong>{money(receivedThisMonth)}</strong>
+                <span>de {money(expectedThisMonth)}</span>
+              </p>
+              <div className="apt-progress" role="img" aria-label={`Recebido ${money(receivedThisMonth)} de ${money(expectedThisMonth)} previstos`}>
+                <span className="apt-progress-fill" style={{ width: `${expectedThisMonth > 0 ? Math.min(100, Math.round((receivedThisMonth / expectedThisMonth) * 100)) : 0}%` }} />
               </div>
-              <p className="apt-month-money">Recebido <strong>{money(receivedThisMonth)}</strong> de {money(expectedThisMonth)} este mês</p>
+              <div className="apt-hero-chips">
+                <span className="apt-hero-chip apt-hero-chip-paid"><UiIcon name="check" />{paidThisMonth} {paidThisMonth === 1 ? 'pago' : 'pagos'}</span>
+                <span className="apt-hero-chip apt-hero-chip-due"><UiIcon name="clock" />{dueThisMonth} por pagar</span>
+                {confirmingThisMonth > 0 ? <span className="apt-hero-chip apt-hero-chip-confirm"><UiIcon name="clock" />{confirmingThisMonth} a confirmar</span> : null}
+              </div>
             </section>
 
             <div className="apt-stats" role="group" aria-label="Resumo do portfólio">
               <div className="apt-stat" role="img" aria-label={`${apartments.length} ${apartments.length === 1 ? 'apartamento' : 'apartamentos'}`}>
+                <span className="apt-stat-ic"><UiIcon name="building" /></span>
                 <strong aria-hidden="true">{apartments.length}</strong>
-                <span aria-hidden="true">{apartments.length === 1 ? 'apartamento' : 'apartamentos'}</span>
               </div>
-              <div className={`apt-stat ${dueThisMonth > 0 ? 'apt-stat-warn' : ''}`} role="img" aria-label={`${dueThisMonth} em atraso${dueThisMonth > 0 ? ', a precisar de atenção' : ''}`}>
+              <div className={`apt-stat ${dueThisMonth > 0 ? 'apt-stat-warn' : ''}`} role="img" aria-label={`${dueThisMonth} em atraso`}>
+                <span className="apt-stat-ic"><UiIcon name="alert" /></span>
                 <strong aria-hidden="true">{dueThisMonth}</strong>
-                <span aria-hidden="true">em atraso</span>
               </div>
-              <div className={`apt-stat ${openTicketsTotal > 0 ? 'apt-stat-warn' : ''}`} role="img" aria-label={`${openTicketsTotal} ${openTicketsTotal === 1 ? 'avaria aberta' : 'avarias abertas'}${openTicketsTotal > 0 ? ', a precisar de atenção' : ''}`}>
+              <div className={`apt-stat ${openTicketsTotal > 0 ? 'apt-stat-warn' : ''}`} role="img" aria-label={`${openTicketsTotal} ${openTicketsTotal === 1 ? 'avaria' : 'avarias'}`}>
+                <span className="apt-stat-ic"><UiIcon name="tools" /></span>
                 <strong aria-hidden="true">{openTicketsTotal}</strong>
-                <span aria-hidden="true">{openTicketsTotal === 1 ? 'avaria' : 'avarias'}</span>
               </div>
             </div>
 
@@ -1298,8 +1376,8 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
       {showLeases ? <section className="section" id="contratos">
         <div className="section-header">
           <div>
-            <SectionHeading className="section-title">Contratos de arrendamento</SectionHeading>
-            <p>Ligue imóvel, unidade e inquilino com validações guiadas para reduzir erros de operação.</p>
+            <SectionHeading className="section-title">Contratos</SectionHeading>
+            <p>Os contratos de arrendamento dos seus apartamentos.</p>
           </div>
           <span className="pill pill-soft">Ativos: {activeLeaseCount}</span>
         </div>
@@ -1315,163 +1393,170 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
             />
           </Panel>
 
-          <Panel title="Contratos ativos" subtitle="Visão rápida do portfólio">
-            <RecordList items={state.leases} empty={{ title: 'Ainda não existem contratos ativos.', hint: 'Use o wizard ao lado para fechar o primeiro contrato e iniciar a cobrança mensal.', actionLabel: 'Abrir wizard de contrato', actionHref: '#contratos' }} render={(lease) => (
-              <div key={lease.id} className="empty">
-                <strong>{lease.renter?.fullName ?? '—'}</strong><br />
-                <span className="muted">{lease.property?.name ?? '—'} · {lease.unit?.name ?? '—'} · {money(Number(lease.monthlyRent ?? 0))}</span><br />
-                <span className={chipClass(lease.status as string)}>{statusLabel(lease.status as string)}</span>
-                {lease.status === 'Active' ? (
-                  <div className="form-actions" style={{ marginTop: 10 }}>
-                    <button
-                      className="small-button small-button-danger"
-                      type="button"
-                      disabled={submitting === '/api/leases'}
-                      onClick={() => {
-                        if (window.confirm('Terminar este contrato? A unidade fica livre para um novo arrendamento.')) {
-                          void postJson('/api/leases', { leaseId: lease.id, status: 'Ended' }, 'Contrato terminado. A unidade ficou livre.', 'PATCH')
-                        }
-                      }}
-                    >
-                      {submitting === '/api/leases' ? 'A terminar...' : 'Terminar contrato'}
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-            )} />
-          </Panel>
+          <div className="fin-block fin-block-flush">
+            <h2>Contratos ativos</h2>
+            {state.leases.length ? (
+              <ul className="fin-list">
+                {state.leases.map((lease) => {
+                  const name = (lease.renter?.fullName as string) || '—'
+                  const active = lease.status === 'Active'
+                  return (
+                    <li key={lease.id as string} className="fin-item">
+                      <span className="apt-avatar fin-avatar" style={{ background: avatarColor(name) }}>{initials(name)}</span>
+                      <span className="fin-item-body">
+                        <strong>{name}</strong>
+                        <span className="fin-item-sub">{(lease.property?.name as string) ?? '—'} · {money(Number(lease.monthlyRent ?? 0))}/mês</span>
+                      </span>
+                      <span className="fin-item-right">
+                        <span className={`fin-status ${active ? 'fin-status-paid' : 'fin-status-muted'}`}>{active ? 'Ativo' : 'Terminado'}</span>
+                      </span>
+                      {active ? (
+                        <button
+                          className="apt-mini-delete"
+                          type="button"
+                          disabled={submitting === '/api/leases'}
+                          onClick={() => { if (window.confirm('Terminar este contrato? O apartamento fica livre para um novo arrendamento.')) void postJson('/api/leases', { leaseId: lease.id, status: 'Ended' }, 'Contrato terminado. O apartamento ficou livre.', 'PATCH') }}
+                        >
+                          {submitting === '/api/leases' ? 'A terminar…' : 'Terminar'}
+                        </button>
+                      ) : null}
+                    </li>
+                  )
+                })}
+              </ul>
+            ) : <p className="muted">Ainda não há contratos. Use o assistente ao lado para criar o primeiro.</p>}
+          </div>
         </div>
       </section> : null}
       {showBilling ? <section className="section" id="financeiro">
         <div className="section-header">
           <div>
-            <SectionHeading className="section-title">Cobrança e pagamentos</SectionHeading>
-            <p>Emita cobranças mensais e confirme pagamentos com uma linguagem clara para o dia a dia do senhorio.</p>
+            <SectionHeading className="section-title">Finanças</SectionHeading>
+            <p>O dinheiro do mês, as cobranças e as despesas — num só sítio.</p>
           </div>
-          <span className="pill pill-soft">A receber: {finances ? money(finances.openInvoices) : '€0'}</span>
         </div>
-        {state.invoices.length > 0 ? (
-          <div className="stat-tiles">
-            <div className="stat-tile stat-tile-danger"><span className="stat-label">Em atraso</span><strong className="stat-value">{overdueInvoices.length}</strong></div>
-            <div className="stat-tile stat-tile-warning"><span className="stat-label">Por receber</span><strong className="stat-value">{state.invoices.filter((invoice) => invoice.status === 'Pending' || invoice.status === 'Partial' || invoice.status === 'AwaitingConfirmation').length}</strong></div>
-            <div className="stat-tile stat-tile-positive"><span className="stat-label">Recebidas</span><strong className="stat-value">{state.invoices.filter((invoice) => invoice.status === 'Paid').length}</strong></div>
-            <div className="stat-tile stat-tile-danger"><span className="stat-label">Total em atraso</span><strong className="stat-value">{money(overdueTotal)}</strong></div>
+
+        <div className="fin-summary">
+          <div className="fin-card">
+            <span className="fin-ic fin-ic-green"><UiIcon name="wallet" /></span>
+            <span className="fin-card-text"><small>Recebido este mês</small><strong>{finances ? money(finances.monthlyConfirmedPayments) : '€0'}</strong></span>
+          </div>
+          <div className="fin-card">
+            <span className="fin-ic fin-ic-amber"><UiIcon name="clock" /></span>
+            <span className="fin-card-text"><small>Por receber</small><strong>{finances ? money(finances.openInvoices) : '€0'}</strong></span>
+          </div>
+          <div className="fin-card">
+            <span className="fin-ic fin-ic-red"><UiIcon name="alert" /></span>
+            <span className="fin-card-text"><small>Em atraso</small><strong>{money(overdueTotal)}</strong></span>
+          </div>
+          <div className="fin-card">
+            <span className="fin-ic"><UiIcon name="euro" /></span>
+            <span className="fin-card-text"><small>Despesas do mês</small><strong>{finances ? money(finances.monthlyExpenses) : '€0'}</strong></span>
+          </div>
+        </div>
+
+        {activeLeaseCount > 0 ? (
+          <form
+            className="fin-generate"
+            onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); try { await postJson('/api/invoices/generate', { period: currentPeriod }, 'Cobranças do mês criadas.') } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível gerar as cobranças.' }) } }}
+          >
+            <button className="apt-add" type="submit" disabled={submitting === '/api/invoices/generate'}>
+              <UiIcon name="plus" />{submitting === '/api/invoices/generate' ? 'A gerar…' : `Gerar cobranças de ${periodLabel(currentPeriod)}`}
+            </button>
+          </form>
+        ) : null}
+
+        <div className="fin-block">
+          <div className="fin-block-head">
+            <h2>Cobranças</h2>
+            <div className="fin-filter" role="group" aria-label="Filtrar cobranças">
+              {([['all', 'Todas'], ['overdue', 'Em atraso'], ['open', 'Por receber']] as const).map(([value, label]) => (
+                <button key={value} type="button" className={`fin-filter-item ${invoiceFilter === value ? 'fin-filter-item-active' : ''}`} aria-pressed={invoiceFilter === value} onClick={() => setInvoiceFilter(value)}>{label}</button>
+              ))}
+            </div>
+          </div>
+          {visibleInvoices.length ? (
+            <ul className="fin-list">
+              {visibleInvoices.map((invoice) => {
+                const st = invoiceStatusInfo(invoice.status as string)
+                const name = (invoice.lease?.renter?.fullName as string) || '—'
+                const phone = invoice.lease?.renter?.phone as string | undefined
+                return (
+                  <li key={invoice.id as string} className="fin-item">
+                    <span className="apt-avatar fin-avatar" style={{ background: avatarColor(name) }}>{initials(name)}</span>
+                    <span className="fin-item-body">
+                      <strong>{name}</strong>
+                      <span className="fin-item-sub">{periodLabel(invoice.period as string)} · vence {date(invoice.dueDate)}</span>
+                    </span>
+                    <span className="fin-item-right">
+                      <strong className="fin-amount">{money(Number(invoice.amount ?? 0))}</strong>
+                      <span className={`fin-status fin-status-${st.tone}`}>{st.word}</span>
+                    </span>
+                    {phone && st.tone !== 'paid' ? (
+                      <button className="fin-remind" type="button" aria-label={`Enviar lembrete a ${name} por WhatsApp`} disabled={sendingInvoiceId === invoice.id} onClick={() => { if (window.confirm('Enviar lembrete por WhatsApp?')) void sendInvoiceViaWhatsApp(invoice) }}>
+                        <UiIcon name="phone" />
+                      </button>
+                    ) : null}
+                  </li>
+                )
+              })}
+            </ul>
+          ) : <p className="muted">{state.invoices.length ? 'Nenhuma cobrança com este filtro.' : 'Ainda não há cobranças. Gere as cobranças do mês no botão acima.'}</p>}
+        </div>
+
+        {awaitingPayments.length ? (
+          <div className="fin-block">
+            <h2>Pagamentos por confirmar</h2>
+            <ul className="fin-list">
+              {awaitingPayments.map((payment) => {
+                const name = (payment.invoice?.lease?.renter?.fullName as string) || '—'
+                return (
+                  <li key={payment.id as string} className="fin-item">
+                    <span className="apt-avatar fin-avatar" style={{ background: avatarColor(name) }}>{initials(name)}</span>
+                    <span className="fin-item-body">
+                      <strong>{name}</strong>
+                      <span className="fin-item-sub">{dateTime(payment.paidAt)} · {money(Number(payment.amount ?? 0))}</span>
+                    </span>
+                    <button className="fin-confirm" type="button" disabled={submitting === `/api/payments/${payment.id as string}/confirm`} onClick={() => void postJson(`/api/payments/${payment.id as string}/confirm`, {}, 'Pagamento confirmado.')}>
+                      {submitting === `/api/payments/${payment.id as string}/confirm` ? 'A confirmar…' : 'Confirmar'}
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
           </div>
         ) : null}
-        <div className="grid-2">
-          <Panel title="Gerar cobranças" subtitle="Cobrança mensal automática">
-            {activeLeaseCount === 0 ? <SmartEmptyState title="Ainda não existem contratos ativos" description="Crie um contrato antes de gerar as cobranças mensais." actionLabel="Criar contrato" actionHref="/leases" /> : <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/invoices/generate', payload(form), 'Cobranças criadas. Já pode acompanhar e enviar lembretes aos inquilinos.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível gerar as cobranças.' }) } }}>
-              <div className="form-grid">
-                <div className="field"><label htmlFor="invoice-period">Período</label><input id="invoice-period" name="period" type="month" defaultValue={new Date().toISOString().slice(0, 7)} /></div>
-                <div className="information-tile"><span>Contratos ativos</span><strong>{activeLeaseCount}</strong><small>Disponíveis para cobrança</small></div>
-              </div>
-              <div className="form-actions"><button className="button button-primary" type="submit" disabled={submitting === '/api/invoices/generate'}>{submitting === '/api/invoices/generate' ? 'A gerar...' : `Gerar cobranças de ${periodLabel(new Date().toISOString().slice(0, 7))}`}</button></div>
-            </form>}
-            {state.invoices.length > 0 ? (
-              <div style={{ marginTop: 12 }}>
-                <div className="chips portfolio-summary" style={{ marginBottom: 10 }}>
-                  {overdueInvoices.length
-                    ? <span className="chip chip-danger">{overdueInvoices.length} em atraso · {money(overdueTotal)}</span>
-                    : <span className="chip chip-positive">Sem rendas em atraso</span>}
-                </div>
-                <div className="field" style={{ marginBottom: 12 }}>
-                  <label htmlFor="invoice-filter">Mostrar</label>
-                  <select id="invoice-filter" value={invoiceFilter} onChange={(event) => setInvoiceFilter(event.target.value as 'all' | 'overdue' | 'open')}>
-                    <option value="all">Todas as cobranças</option>
-                    <option value="overdue">Só em atraso</option>
-                    <option value="open">Por receber</option>
-                  </select>
-                </div>
-              </div>
-            ) : null}
-            {activeLeaseCount > 0 || state.invoices.length > 0 ? <RecordList items={visibleInvoices} empty={{ title: invoiceFilter === 'all' ? 'Ainda não existem cobranças.' : 'Nenhuma cobrança com este filtro.', hint: invoiceFilter === 'all' ? 'Escolha o período e gere as cobranças para os contratos ativos.' : 'Experimente mudar o filtro acima.', actionLabel: 'Gerar cobranças agora', actionHref: '#invoice-period' }} render={(invoice) => (
-              <div key={invoice.id} className="empty">
-                <strong>{invoice.lease?.renter?.fullName ?? '—'}</strong><br />
-                <span className="muted">{periodLabel(invoice.period as string)} · {money(Number(invoice.amount ?? 0))} · vence {date(invoice.dueDate)}</span><br />
-                <span className={chipClass(invoice.status as string)}>{statusLabel(invoice.status as string)}</span>
-                <div className="table-actions" style={{ marginTop: 10 }}>
-                  <button
-                    className="small-button"
-                    type="button"
-                    disabled={!invoice.lease?.renter?.phone || sendingInvoiceId === invoice.id}
-                    onClick={() => {
-                      if (window.confirm('Enviar lembrete por WhatsApp? O inquilino receberá os dados desta cobrança.')) {
-                        void sendInvoiceViaWhatsApp(invoice)
-                      }
-                    }}
-                  >
-                    {sendingInvoiceId === invoice.id
-                      ? 'A enviar...'
-                      : invoice.lease?.renter?.phone
-                        ? 'Enviar por WhatsApp'
-                        : 'Sem telefone'}
-                  </button>
-                </div>
-              </div>
-            )} /> : null}
-          </Panel>
 
-          <Panel title="Registar pagamento" subtitle="Confirme uma renda recebida">
-            {invoiceOptions.length === 0 ? <SmartEmptyState title="Não existem cobranças por receber" description="Quando existir uma cobrança em aberto, poderá registar o pagamento aqui." actionLabel="Ver contratos" actionHref="/leases" /> : <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/payments', payload(form), 'Pagamento registado. Falta apenas confirmar para entrar no resumo financeiro.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível registar o pagamento.' }) } }}>
-              <div className="form-grid">
-                <div className="field field-full"><label htmlFor="payment-invoice">Cobrança</label><select id="payment-invoice" name="invoiceId" required defaultValue=""><option value="" disabled>Selecionar cobrança</option>{invoiceOptions.map((invoice) => <option key={invoice.id} value={invoice.id}>{invoice.label}</option>)}</select></div>
-                <div className="field"><label htmlFor="payment-amount">Valor</label><input id="payment-amount" name="amount" type="number" step="0.01" /></div>
-                <div className="field"><label htmlFor="payment-method">Método</label><select id="payment-method" name="method" defaultValue="Bank transfer"><option value="Bank transfer">Transferência bancária</option><option value="Cash">Dinheiro</option><option value="Card">Cartão</option><option value="MB Way">MB Way</option><option value="Stripe">Stripe</option></select></div>
-                <div className="field field-full"><label htmlFor="payment-reference">Referência</label><input id="payment-reference" name="reference" /></div>
-                <div className="field field-full"><label htmlFor="payment-notes">Notas</label><textarea id="payment-notes" name="notes" /></div>
-              </div>
-              <div className="form-actions"><button className="button button-primary" type="submit" disabled={submitting === '/api/payments'}>{submitting === '/api/payments' ? 'A registar...' : 'Registar pagamento'}</button></div>
-            </form>}
-            {state.payments.length > 0 ? <RecordList items={state.payments} empty={{ title: 'Ainda não existem pagamentos registados.', hint: 'Quando uma cobrança for paga, poderá registar o pagamento aqui.', actionLabel: 'Ver cobranças', actionHref: '#invoice-period' }} render={(payment) => {
-              const confirmed = payment.confirmationStatus === 'Confirmed'
-              return (
-              <div key={payment.id} className="empty">
-                <strong>{payment.invoice?.lease?.renter?.fullName ?? '—'}</strong><br />
-                <span className="muted">{dateTime(payment.paidAt)} · {money(Number(payment.amount ?? 0))} · {paymentMethodLabel(payment.method as string)}</span><br />
-                <span className={confirmed ? 'chip chip-positive' : 'chip chip-warning'}>{confirmed ? 'Confirmado' : 'A aguardar confirmação'}</span>
-                {!confirmed ? (
-                  <div className="form-actions" style={{ marginTop: 10 }}>
-                    <button
-                      className="small-button"
-                      type="button"
-                      disabled={submitting === `/api/payments/${payment.id as string}/confirm`}
-                      onClick={() => void postJson(`/api/payments/${payment.id as string}/confirm`, {}, 'Pagamento confirmado. Já entra no resumo financeiro.')}
-                    >
-                      {submitting === `/api/payments/${payment.id as string}/confirm` ? 'A confirmar...' : 'Confirmar pagamento'}
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-              )
-            }} /> : null}
-          </Panel>
-        </div>
-        <div className="grid-2" style={{ marginTop: 16 }}>
-          <Panel title="Registar despesa" subtitle="Custos por imóvel para o lucro líquido">
-            {propertyOptions.length === 0 ? <SmartEmptyState title="Ainda não existem imóveis" description="Adicione um imóvel antes de registar despesas." actionLabel="Adicionar imóvel" actionHref="/portfolio" /> : <form onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/expenses', payload(form), 'Despesa registada.') ; form.reset() } catch (error) { setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível registar a despesa.' }) } }}>
-              <div className="form-grid">
-                <div className="field"><label htmlFor="expense-category">Categoria</label><select id="expense-category" name="category" defaultValue="Manutenção"><option value="Manutenção">Manutenção</option><option value="Condomínio">Condomínio</option><option value="IMI">IMI</option><option value="Seguro">Seguro</option><option value="Água">Água</option><option value="Eletricidade">Eletricidade</option><option value="Gás">Gás</option><option value="Limpeza">Limpeza</option><option value="Outros">Outros</option></select></div>
-                <div className="field"><label htmlFor="expense-amount">Valor</label><input id="expense-amount" name="amount" type="number" step="0.01" required /></div>
-                <div className="field"><label htmlFor="expense-property">Imóvel</label><select id="expense-property" name="propertyId" required defaultValue=""><option value="" disabled>Selecionar imóvel</option>{propertyOptions.map((property) => <option key={property.id} value={property.id}>{property.label}</option>)}</select></div>
-                <div className="field"><label htmlFor="expense-date">Data</label><input id="expense-date" name="incurredAt" type="date" defaultValue={new Date().toISOString().slice(0, 10)} /></div>
-                <div className="field field-full"><label htmlFor="expense-description">Descrição</label><input id="expense-description" name="description" placeholder="Ex.: Reparação de canalização" /></div>
-              </div>
-              <div className="form-actions"><button className="button button-primary" type="submit" disabled={submitting === '/api/expenses'}>{submitting === '/api/expenses' ? 'A registar...' : 'Registar despesa'}</button></div>
-            </form>}
-          </Panel>
+        <div className="fin-block">
+          <h2>Despesas</h2>
+          {state.expenses.length ? (
+            <ul className="fin-list">
+              {state.expenses.slice(0, 12).map((expense) => (
+                <li key={expense.id as string} className="fin-item">
+                  <span className="fin-ic fin-ic-plain"><UiIcon name="euro" /></span>
+                  <span className="fin-item-body">
+                    <strong>{expense.category as string}</strong>
+                    <span className="fin-item-sub">{(expense.property?.name as string) ?? (expense.lease?.property?.name as string) ?? '—'} · {date(expense.incurredAt)}</span>
+                  </span>
+                  <span className="fin-item-right"><strong className="fin-amount">{money(Number(expense.amount ?? 0))}</strong></span>
+                  <button className="apt-mini-delete" type="button" disabled={submitting === `/api/expenses/${expense.id as string}`} onClick={() => { if (window.confirm('Apagar esta despesa?')) void postJson(`/api/expenses/${expense.id as string}`, {}, 'Despesa apagada.', 'DELETE') }}>Apagar</button>
+                </li>
+              ))}
+            </ul>
+          ) : <p className="muted">Ainda não há despesas registadas.</p>}
 
-          <Panel title="Despesas recentes" subtitle={`${state.expenses.length} ${state.expenses.length === 1 ? 'registada' : 'registadas'}`}>
-            <RecordList items={state.expenses} empty={{ title: 'Ainda não existem despesas.', hint: 'Registe custos (manutenção, IMI, seguros...) para o lucro líquido refletir a realidade.', actionLabel: 'Registar despesa', actionHref: '#expense-category' }} render={(expense) => (
-              <div key={expense.id} className="empty">
-                <strong>{expense.category as string}</strong><br />
-                <span className="muted">{money(Number(expense.amount ?? 0))} · {(expense.property?.name as string) ?? (expense.lease?.property?.name as string) ?? '—'} · {date(expense.incurredAt)}</span>
-                {expense.description ? <><br /><span className="muted">{expense.description as string}</span></> : null}
-                <div className="form-actions" style={{ marginTop: 10 }}>
-                  <button className="small-button small-button-danger" type="button" onClick={() => { if (window.confirm('Apagar esta despesa?')) { void postJson(`/api/expenses/${expense.id as string}`, {}, 'Despesa apagada.', 'DELETE') } }}>Apagar</button>
-                </div>
+          {propertyOptions.length ? (
+            <form className="apt-bill-form" onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/expenses', payload(form), 'Despesa registada.'); form.reset() } catch { /* erro já mostrado */ } }}>
+              <div className="apt-bill-grid">
+                <div className="field"><label htmlFor="fin-exp-cat">Tipo</label><select id="fin-exp-cat" name="category" defaultValue="Condomínio">{EXPENSE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
+                <div className="field"><label htmlFor="fin-exp-amount">Valor (€)</label><input id="fin-exp-amount" name="amount" type="number" step="0.01" min="0.01" required /></div>
+                <div className="field"><label htmlFor="fin-exp-prop">Imóvel</label><select id="fin-exp-prop" name="propertyId" required defaultValue=""><option value="" disabled>Selecionar imóvel</option>{propertyOptions.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></div>
+                <div className="field"><label htmlFor="fin-exp-date">Data</label><input id="fin-exp-date" name="incurredAt" type="date" defaultValue={todayISO()} /></div>
+                <div className="field field-full"><label htmlFor="fin-exp-desc">Descrição (opcional)</label><input id="fin-exp-desc" name="description" placeholder="Ex.: Reparação de canalização" /></div>
               </div>
-            )} />
-          </Panel>
+              <button className="button button-primary" type="submit" disabled={submitting === '/api/expenses'}>{submitting === '/api/expenses' ? 'A registar…' : 'Adicionar despesa'}</button>
+            </form>
+          ) : null}
         </div>
       </section> : null}
 
@@ -1479,7 +1564,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
         <div className="section-header">
           <div>
             <SectionHeading className="section-title">Manutenção</SectionHeading>
-            <p>Crie e acompanhe pedidos de reparação dos seus imóveis.</p>
+            <p>Crie e acompanhe pedidos de reparação dos seus apartamentos.</p>
           </div>
           <span className="pill pill-soft">Pedidos: {filteredTickets.length}/{state.maintenance.length}</span>
         </div>
@@ -1489,8 +1574,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
               <div className="form-grid">
                 <div className="field field-full"><label htmlFor="ticket-title">Qual é o problema?</label><input id="ticket-title" name="title" required placeholder="Ex.: Infiltração na cozinha" /></div>
                 <div className="field field-full"><label htmlFor="ticket-description">Conte-nos mais</label><textarea id="ticket-description" name="description" placeholder="Descreva o que aconteceu e quando começou." /></div>
-                <div className="field"><label htmlFor="ticket-property">Onde aconteceu?</label><select id="ticket-property" name="propertyId" value={ticketPropertyId} onChange={(event) => setTicketPropertyId(event.target.value)}><option value="">Selecionar imóvel</option>{propertyOptions.map((property) => <option key={property.id} value={property.id}>{property.label}</option>)}</select></div>
-                {ticketPropertyId ? <div className="field"><label htmlFor="ticket-unit">Unidade</label><select id="ticket-unit" name="unitId" defaultValue=""><option value="">Sem unidade específica</option>{unitOptions.filter((unit) => unit.propertyId === ticketPropertyId).map((unit) => <option key={unit.id} value={unit.id}>{unit.label}</option>)}</select></div> : null}
+                <div className="field field-full"><label htmlFor="ticket-property">Qual apartamento?</label><select id="ticket-property" name="propertyId" value={ticketPropertyId} onChange={(event) => setTicketPropertyId(event.target.value)}><option value="">Selecionar apartamento</option>{propertyOptions.map((property) => <option key={property.id} value={property.id}>{property.label}</option>)}</select></div>
                 <div className="field field-full"><label>Qual é a urgência?</label>
                   <div className="segmented" role="radiogroup" aria-label="Urgência">
                     {([['Low', 'Baixa'], ['Normal', 'Normal'], ['High', 'Alta'], ['Urgent', 'Urgente']] as const).map(([value, label]) => (
@@ -1509,33 +1593,31 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
               <div className="field"><label htmlFor="ticket-filter-status">Estado</label><select id="ticket-filter-status" value={ticketStatusFilter} onChange={(event) => setTicketStatusFilter(event.target.value)}><option value="">Todos</option><option value="New">Novo</option><option value="Triaged">Em análise</option><option value="Waiting">A aguardar</option><option value="Resolved">Resolvido</option><option value="Closed">Fechado</option></select></div>
               <div className="field"><label htmlFor="ticket-filter-priority">Urgência</label><select id="ticket-filter-priority" value={ticketPriorityFilter} onChange={(event) => setTicketPriorityFilter(event.target.value)}><option value="">Todas</option><option value="Low">Baixa</option><option value="Normal">Normal</option><option value="High">Alta</option><option value="Urgent">Urgente</option></select></div>
             </div> : null}
-            <RecordList
-              items={filteredTickets}
-              empty={{
-                title: state.maintenance.length ? 'Não existem pedidos com estes filtros.' : 'Ainda não existem pedidos de manutenção.',
-                hint: state.maintenance.length ? 'Experimente escolher outro estado ou urgência.' : 'Quando surgir um problema num imóvel, ele aparecerá aqui.',
-                actionLabel: 'Criar pedido',
-                actionHref: '#ticket-title',
-              }}
-              render={(ticket) => (
-              <div key={ticket.id} className="empty">
-                <strong>{ticket.title as string}</strong><br />
-                <span className="muted">{ticket.property?.name ?? 'Sem imóvel associado'} {ticket.unit?.name ? `· ${ticket.unit?.name}` : ''} {ticket.renter?.fullName ? `· ${ticket.renter?.fullName}` : ''}</span><br />
-                <span className={chipClass(ticket.status as string)}>{statusLabel(ticket.status as string)}</span> <span className={chipClass(ticket.priority as string)}>{statusLabel(ticket.priority as string)}</span>
-                {ticket.currentEventAt ? <p className="meta">Atualizado em {dateTime(ticket.currentEventAt as string)}</p> : null}
-                <div className="form-actions" style={{ marginTop: 8 }}>
-                  {ticket.status === 'New' ? <button className="small-button" type="button" onClick={() => void postJson(`/api/tickets/${ticket.id as string}`, { status: 'Triaged', note: 'Pedido analisado no painel.' }, 'Pedido marcado como em análise.', 'PATCH')}>Começar análise</button> : null}
-                  {ticket.status !== 'Waiting' && ticket.status !== 'Closed' ? <button className="small-button" type="button" onClick={() => void postJson(`/api/tickets/${ticket.id as string}`, { status: 'Waiting', note: 'A aguardar fornecedor, peça ou resposta.' }, 'Pedido marcado como a aguardar.', 'PATCH')}>Marcar como a aguardar</button> : null}
-                  {ticket.status !== 'Resolved' && ticket.status !== 'Closed' ? <button className="small-button" type="button" onClick={() => void postJson(`/api/tickets/${ticket.id as string}`, { status: 'Resolved', note: 'Problema resolvido.' }, 'Pedido resolvido.', 'PATCH')}>Marcar como resolvido</button> : null}
-                  {ticket.status === 'Resolved' ? <button className="small-button" type="button" onClick={() => {
-                    if (window.confirm('Fechar este pedido? Continuará disponível no histórico de manutenção.')) {
-                      void postJson(`/api/tickets/${ticket.id as string}`, { status: 'Closed', note: 'Encerramento confirmado.' }, 'Pedido fechado.', 'PATCH')
-                    }
-                  }}>Fechar pedido</button> : null}
-                </div>
-              </div>
-              )}
-            />
+            {filteredTickets.length ? (
+              <ul className="fin-list">
+                {filteredTickets.map((ticket) => {
+                  const tone = ticket.status === 'Resolved' ? 'paid' : ticket.status === 'Closed' ? 'muted' : 'due'
+                  return (
+                    <li key={ticket.id as string} className="fin-ticket">
+                      <div className="fin-ticket-top">
+                        <span className="fin-ic fin-ic-plain"><UiIcon name="tools" /></span>
+                        <div className="fin-item-body">
+                          <strong>{ticket.title as string}</strong>
+                          <span className="fin-item-sub">{(ticket.property?.name as string) ?? 'Sem apartamento'}{ticket.renter?.fullName ? ` · ${ticket.renter.fullName as string}` : ''}{ticket.priority && ticket.priority !== 'Normal' ? ` · ${statusLabel(ticket.priority as string)}` : ''}</span>
+                        </div>
+                        <span className={`fin-status fin-status-${tone}`}>{statusLabel(ticket.status as string)}</span>
+                      </div>
+                      <div className="fin-ticket-actions">
+                        {ticket.status === 'New' ? <button className="small-button" type="button" onClick={() => void postJson(`/api/tickets/${ticket.id as string}`, { status: 'Triaged', note: 'Pedido analisado no painel.' }, 'Pedido marcado como em análise.', 'PATCH')}>Começar análise</button> : null}
+                        {ticket.status !== 'Waiting' && ticket.status !== 'Closed' ? <button className="small-button" type="button" onClick={() => void postJson(`/api/tickets/${ticket.id as string}`, { status: 'Waiting', note: 'A aguardar fornecedor, peça ou resposta.' }, 'Pedido marcado como a aguardar.', 'PATCH')}>A aguardar</button> : null}
+                        {ticket.status !== 'Resolved' && ticket.status !== 'Closed' ? <button className="small-button" type="button" onClick={() => void postJson(`/api/tickets/${ticket.id as string}`, { status: 'Resolved', note: 'Problema resolvido.' }, 'Pedido resolvido.', 'PATCH')}>Marcar resolvido</button> : null}
+                        {ticket.status === 'Resolved' ? <button className="small-button" type="button" onClick={() => { if (window.confirm('Fechar este pedido? Continuará no histórico.')) void postJson(`/api/tickets/${ticket.id as string}`, { status: 'Closed', note: 'Encerramento confirmado.' }, 'Pedido fechado.', 'PATCH') }}>Fechar</button> : null}
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            ) : <p className="muted">{state.maintenance.length ? 'Não há pedidos com estes filtros.' : 'Ainda não há pedidos de manutenção.'}</p>}
           </Panel>
         </div>
       </section> : null}

@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-07-01 (v0.10.0 — Finanças e restantes páginas redesenhadas + botão "carregar demo")
+- **Autor:** Vinicius + Claude
+- **Tipo:** ui/ux + feat
+- **Descrição:**
+  - **Finanças redesenhadas** (eram densas e feias): cartões de resumo com ícones (recebido/por receber/em atraso/despesas), botão claro para gerar cobranças do mês, e listas limpas (avatares, estado colorido, sem pastel) de **cobranças**, **pagamentos por confirmar** e **despesas**. Removido o formulário redundante de registar pagamento (a home já marca como pago num toque).
+  - **Manutenção redesenhada:** pedidos em cartões limpos com ícone, estado colorido e ações; o formulário deixa de pedir "unidade" ("Qual apartamento?").
+  - **Contratos redesenhados:** lista de contratos ativos com avatar, renda e "Terminar"; o **assistente de contrato deixa de mostrar "Unidade"** (a unidade do apartamento é escolhida automaticamente; só aparece se um imóvel tiver mais que uma).
+  - **Botão "Carregar dados de demonstração"** (endpoint protegido `/api/demo/seed`, só para a conta `demo@applandlord.local`): com 1 clique carrega 2 apartamentos, 2 inquilinos e histórico — para mostrar a app em produção sem tocar em dados reais.
+- **Validação:** typecheck 0, build de produção OK, e verificação ao vivo (screenshots de Finanças/Manutenção/Contratos + teste E2E do botão demo: conta vazia → clicar → 2 apartamentos).
+- **A fazer a seguir:** repensar a página **Imóveis** (agora que adicionar/editar acontece na home, o seu papel muda).
+
+## 2026-07-01 (v0.9.0 — Home mais visual (ícones, avatares, "Este mês") + dados demo)
+- **Autor:** Vinicius + Claude
+- **Tipo:** ui/ux + dados
+- **Descrição:**
+  - **"Este mês" redesenhado:** montante recebido em destaque, **barra de progresso** até ao previsto, e chips com ícones (✓ pagos / 🕐 por pagar).
+  - **Mini-barra iconificada:** apartamentos / em atraso / avarias passam a **ícone + número** (sem etiqueta de texto), com `aria-label` para leitores de ecrã.
+  - **Cards com mais intenção:** **avatar do inquilino** (iniciais, cor forte) ou ícone de chave quando vago; factos com **ícones** em vez de texto (💶 renda · 📅 fim do contrato · 🔧 avarias).
+  - **Pesquisa** sempre visível com ícone de lupa.
+  - Conjunto de ícones alargado (carteira, relógio, calendário, utilizador, telefone, euro, alerta, chave…).
+  - **Regra nova de design:** preferir ícones a texto sempre que o ícone seja claro.
+  - **Dados demo** (`prisma/seed-demo.js`): **2 apartamentos, 2 inquilinos, contratos desde 2023 (~3 anos)**, com histórico de rendas pagas, uma renda por pagar este mês, despesas e uma avaria. Login: `demo@applandlord.local` (password definida no primeiro acesso).
+- **Validação:** typecheck 0, verificação visual com a app a correr.
+- **A fazer a seguir:** aplicar a mesma linguagem visual às Finanças e restantes páginas.
+
 ## 2026-07-01 (v0.8.0 — Redesenho dos cards: branco, com intenção)
 - **Autor:** Vinicius + Claude
 - **Tipo:** ui/ux (redesenho visual da página inicial)

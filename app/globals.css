@@ -2486,32 +2486,34 @@ button.inline-link {
 
 .apt-stat {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 14px 8px;
-  border: 1px solid #e3e7ec;
+  justify-content: center;
+  gap: 11px;
+  padding: 18px 8px;
+  border: 1px solid #e6e9ee;
   border-radius: 16px;
   background: #fff;
-  box-shadow: 0 8px 24px rgba(34, 51, 84, 0.05);
+  box-shadow: 0 1px 2px rgba(23, 32, 51, 0.04);
 }
 
+.apt-stat-ic {
+  display: grid;
+  place-items: center;
+  color: #94a1b2;
+}
+
+.apt-stat-ic .ui-icon { width: 23px; height: 23px; }
+
 .apt-stat strong {
-  color: #16243d;
-  font-size: 1.7rem;
+  color: #101828;
+  font-size: 1.75rem;
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.03em;
 }
 
-.apt-stat span {
-  color: #5b6577;
-  font-size: 0.9rem;
-  font-weight: 650;
-  text-align: center;
-}
-
-.apt-stat-warn strong { color: #b3261e; }
+.apt-stat-warn .apt-stat-ic { color: #c02617; }
+.apt-stat-warn strong { color: #c02617; }
 
 /* Pesquisa */
 .apt-search {
@@ -2569,8 +2571,30 @@ button.inline-link {
   text-align: center;
 }
 
-.apt-empty-avatar { width: 64px; height: 64px; }
+.apt-empty-avatar {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  border: 1px solid #e6e9ee;
+  border-radius: 18px;
+  color: #64748b;
+  background: #fff;
+}
 .apt-empty-avatar .ui-icon { width: 32px; height: 32px; }
+.apt-demo-link {
+  min-height: 44px;
+  padding: 8px 16px;
+  border: 0;
+  background: none;
+  color: #0b5c54;
+  font-family: inherit;
+  font-size: 0.98rem;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.apt-demo-link:disabled { color: #7bb99b; cursor: default; }
 .apt-empty-home h2 { margin: 0; color: #16243d; font-size: 1.25rem; }
 .apt-empty-home p { margin: 0 0 6px; max-width: 340px; color: #5b6577; font-size: 1.02rem; line-height: 1.5; }
 
@@ -2650,4 +2674,342 @@ button.inline-link {
   .apt-bill-grid { grid-template-columns: 1fr; }
   .apt-stat strong { font-size: 1.5rem; }
   .apt-stat span { font-size: 0.82rem; }
+}
+
+/* ============================================================
+   v0.9.0 — home mais visual: hero "Este mês", avatares, factos com ícones
+   ============================================================ */
+
+.apt-hero {
+  margin-bottom: 16px;
+  padding: 22px;
+  border: 1px solid #e6e9ee;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(23, 32, 51, 0.04), 0 16px 34px rgba(23, 32, 51, 0.06);
+}
+
+.apt-hero-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  color: #6b7688;
+  font-size: 0.9rem;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.apt-hero-kicker .ui-icon { width: 16px; height: 16px; }
+
+.apt-hero-amount {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin: 12px 0 14px;
+}
+
+.apt-hero-amount strong {
+  color: #0f7a3d;
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
+.apt-hero-amount span {
+  color: #6b7688;
+  font-size: 1.02rem;
+  font-weight: 600;
+}
+
+.apt-progress {
+  overflow: hidden;
+  height: 10px;
+  border-radius: 999px;
+  background: #eef1f5;
+}
+
+.apt-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #159a52, #0f7a3d);
+  transition: width 0.4s ease;
+}
+
+.apt-hero-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  margin-top: 16px;
+}
+
+.apt-hero-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 1rem;
+  font-weight: 750;
+}
+
+.apt-hero-chip .ui-icon { width: 18px; height: 18px; }
+.apt-hero-chip-paid { color: #0f7a3d; }
+.apt-hero-chip-due { color: #c02617; }
+.apt-hero-chip-confirm { color: #1d5fbf; }
+
+/* Avatar do inquilino (iniciais) — elemento visual com cor forte, não pastel */
+.apt-avatar {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 750;
+}
+
+.apt-avatar-vacant {
+  color: #8a97a8;
+  background: #f1f4f8;
+}
+
+.apt-avatar-vacant .ui-icon { width: 22px; height: 22px; }
+
+/* Factos do card com ícones em vez de texto */
+.apt-card-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-top: 9px;
+}
+
+.apt-fact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #475569;
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.apt-fact .ui-icon { width: 16px; height: 16px; color: #94a1b2; }
+.apt-fact-alert { color: #b45309; }
+.apt-fact-alert .ui-icon { color: #b45309; }
+
+/* ============================================================
+   Finanças — resumo, filtro e listas limpas (branco, ícones)
+   ============================================================ */
+
+.apt-add .ui-icon { width: 20px; height: 20px; }
+.apt-add { gap: 9px; }
+
+.fin-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.fin-card {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 16px;
+  border: 1px solid #e6e9ee;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(23, 32, 51, 0.04);
+}
+
+.fin-ic {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #e6e9ee;
+  border-radius: 12px;
+  color: #94a1b2;
+  background: #fff;
+}
+
+.fin-ic .ui-icon { width: 21px; height: 21px; }
+.fin-ic-green { color: #0f7a3d; }
+.fin-ic-amber { color: #b45309; }
+.fin-ic-red { color: #c02617; }
+.fin-ic-plain { width: 40px; height: 40px; }
+
+.fin-card-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fin-card-text small { color: #6b7688; font-size: 0.84rem; font-weight: 650; }
+.fin-card-text strong { color: #101828; font-size: 1.3rem; font-weight: 780; letter-spacing: -0.02em; }
+
+.fin-generate { margin-bottom: 20px; }
+
+.fin-block { margin-top: 24px; }
+
+.fin-block h2 {
+  margin: 0 0 12px;
+  color: #16243d;
+  font-size: 1.18rem;
+  font-weight: 750;
+}
+
+.fin-block-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.fin-block-head h2 { margin: 0; }
+
+.fin-filter {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid #e6e9ee;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.fin-filter-item {
+  min-height: 40px;
+  padding: 6px 14px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: #5b6577;
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fin-filter-item-active { color: #fff; background: #0f766e; }
+
+.fin-list {
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid #e6e9ee;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(23, 32, 51, 0.04);
+}
+
+.fin-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-top: 1px solid #f0f2f5;
+}
+
+.fin-item:first-child { border-top: 0; }
+
+.fin-avatar { width: 40px; height: 40px; font-size: 0.92rem; }
+
+.fin-item-body {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.fin-item-body strong {
+  overflow: hidden;
+  color: #16243d;
+  font-size: 1.02rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fin-item-sub { color: #6b7688; font-size: 0.86rem; }
+
+.fin-item-right {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.fin-amount { color: #101828; font-size: 1.05rem; font-weight: 750; }
+.fin-status { font-size: 0.82rem; font-weight: 750; }
+.fin-status-paid { color: #0f7a3d; }
+.fin-status-due { color: #b45309; }
+.fin-status-overdue { color: #c02617; }
+.fin-status-confirming { color: #1d5fbf; }
+.fin-status-muted { color: #667085; }
+
+.fin-remind {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #cfe0dc;
+  border-radius: 12px;
+  color: #0b5c54;
+  background: #fff;
+  cursor: pointer;
+}
+
+.fin-remind .ui-icon { width: 20px; height: 20px; }
+.fin-remind:hover { border-color: #0b5c54; }
+.fin-remind:disabled { opacity: 0.4; cursor: default; }
+
+.fin-confirm {
+  min-height: 44px;
+  flex: 0 0 auto;
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 12px;
+  color: #fff;
+  background: #147a4a;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.fin-confirm:disabled { background: #7bb99b; cursor: default; }
+
+.fin-block .apt-bill-form { margin-top: 16px; padding-top: 0; border-top: 0; }
+
+/* Contratos ativos + pedidos de manutenção (listas limpas) */
+.fin-block-flush { margin-top: 0; }
+
+.fin-ticket {
+  padding: 15px 16px;
+  border-top: 1px solid #f0f2f5;
+}
+.fin-ticket:first-child { border-top: 0; }
+
+.fin-ticket-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fin-ticket-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
 }

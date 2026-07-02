@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-07-02 (v0.14.0 — Painel assistente: primeiro tarefas, depois números)
+- **Autor:** Vinicius + Claude
+- **Tipo:** ux (nova mentalidade — "assistente do senhorio")
+- **Descrição:** o Painel deixa de responder "que informação tenho?" e passa a responder **"o que preciso de fazer?"**. Bloco **"O que fazer hoje"** no topo, com ações diretas:
+  - **Aluguéis por receber** (valor em destaque, inquilino por baixo) + botão **"Marcar como pago"** ali mesmo.
+  - **Pagamentos a confirmar** + botão "Confirmar".
+  - **Contratos a terminar** (≤ 60 dias) — "termina em X dias", abre o apartamento.
+  - **Avarias pendentes** — atalho para Manutenção.
+  - Quando não há nada: **"Está tudo em dia — não há nada pendente hoje."** (linguagem de assistente, não métricas).
+  - Os números ("Este mês", resumo) passam para **baixo** das ações.
+- **Base do brief de UX** (primeiro trabalho, depois informação); próximas frentes: formulários em modal, cartões que contam histórias, navegação por processo.
+- **Validação:** typecheck 0, build OK, screenshot ao vivo do Painel task-first.
+- **Risco/rollback:** baixo (aditivo no topo do Painel; sem alterar API/schema).
+
 ## 2026-07-02 (v0.13.0 — Mercado brasileiro: Reais (R$) e contexto BR)
 - **Autor:** Vinicius + Claude
 - **Tipo:** i18n / l10n (mercado-alvo Brasil)

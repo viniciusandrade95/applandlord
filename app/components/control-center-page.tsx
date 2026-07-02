@@ -1081,6 +1081,20 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
     .reduce((sum, payment) => sum + Number(payment.amount ?? 0), 0)
   const openTicketsTotal = state.maintenance.filter((ticket) => ticket.status !== 'Resolved' && ticket.status !== 'Closed').length
   const awaitingPayments = state.payments.filter((payment) => payment.confirmationStatus !== 'Confirmed')
+  // "O que fazer hoje" — o Painel lidera com AÇÕES, não com números (assistente do senhorio).
+  const daysUntil = (value?: string | Date | null) => {
+    if (!value) return null
+    const parsed = new Date(value)
+    if (Number.isNaN(parsed.getTime())) return null
+    return Math.ceil((parsed.getTime() - new Date().getTime()) / 86400000)
+  }
+  const dueTasks = occupiedApartments.filter((apt) => apt.monthStatus === 'due')
+  const confirmTasks = occupiedApartments.filter((apt) => apt.monthStatus === 'confirming')
+  const endingSoon = occupiedApartments
+    .map((apt) => ({ apt, days: daysUntil(apt.lease?.endDate as string) }))
+    .filter((item) => item.days !== null && item.days >= 0 && item.days <= 60)
+    .sort((a, b) => (a.days ?? 0) - (b.days ?? 0))
+  const attentionCount = dueTasks.length + confirmTasks.length + endingSoon.length + openTicketsTotal
   const apartmentSearch = apartmentQuery.trim().toLowerCase()
   const visibleApartments = apartmentSearch
     ? apartments.filter((apt) =>
@@ -1185,6 +1199,68 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
           />
         ) : (
           <>
+            <section className="assist" aria-label="O que precisa da sua atenção">
+              {attentionCount === 0 ? (
+                <div className="assist-ok">
+                  <span className="assist-ok-ic"><UiIcon name="check" /></span>
+                  <div>
+                    <strong>Está tudo em dia</strong>
+                    <span>Não há nada pendente hoje.</span>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="assist-title">O que fazer hoje</p>
+                  <div className="assist-tasks">
+                    {dueTasks.map((apt) => (
+                      <div className="assist-task" key={`due-${apt.unit.id as string}`}>
+                        <span className="assist-task-ic assist-ic-due"><UiIcon name="alert" /></span>
+                        <span className="assist-task-txt">
+                          <strong>{money(apt.rent)}</strong>
+                          <span>{(apt.renter?.fullName as string) ?? 'Inquilino'}</span>
+                        </span>
+                        <button className="assist-task-btn" type="button" disabled={payingUnitId === (apt.unit.id as string)} aria-busy={payingUnitId === (apt.unit.id as string)} onClick={() => markApartmentPaid(apt)}>
+                          {payingUnitId === (apt.unit.id as string) ? '…' : 'Marcar como pago'}
+                        </button>
+                      </div>
+                    ))}
+                    {confirmTasks.map((apt) => (
+                      <div className="assist-task" key={`conf-${apt.unit.id as string}`}>
+                        <span className="assist-task-ic assist-ic-info"><UiIcon name="clock" /></span>
+                        <span className="assist-task-txt">
+                          <strong>{money(apt.rent)}</strong>
+                          <span>{(apt.renter?.fullName as string) ?? 'Inquilino'} — confirmar</span>
+                        </span>
+                        <button className="assist-task-btn" type="button" disabled={payingUnitId === (apt.unit.id as string)} aria-busy={payingUnitId === (apt.unit.id as string)} onClick={() => markApartmentPaid(apt)}>
+                          {payingUnitId === (apt.unit.id as string) ? '…' : 'Confirmar'}
+                        </button>
+                      </div>
+                    ))}
+                    {endingSoon.map(({ apt, days }) => (
+                      <button className="assist-task assist-task-link" type="button" key={`end-${apt.unit.id as string}`} onClick={() => setOpenApartmentId(apt.unit.id as string)}>
+                        <span className="assist-task-ic assist-ic-info"><UiIcon name="calendar" /></span>
+                        <span className="assist-task-txt">
+                          <strong>Contrato {days === 0 ? 'termina hoje' : `termina em ${days} ${days === 1 ? 'dia' : 'dias'}`}</strong>
+                          <span>{(apt.renter?.fullName as string) ?? ''} · {apt.title}</span>
+                        </span>
+                        <span className="assist-task-arrow"><UiIcon name="arrow" /></span>
+                      </button>
+                    ))}
+                    {openTicketsTotal > 0 ? (
+                      <a className="assist-task assist-task-link" href="/operations">
+                        <span className="assist-task-ic assist-ic-warn"><UiIcon name="tools" /></span>
+                        <span className="assist-task-txt">
+                          <strong>{openTicketsTotal} {openTicketsTotal === 1 ? 'avaria pendente' : 'avarias pendentes'}</strong>
+                          <span>Ver manutenção</span>
+                        </span>
+                        <span className="assist-task-arrow"><UiIcon name="arrow" /></span>
+                      </a>
+                    ) : null}
+                  </div>
+                </>
+              )}
+            </section>
+
             <section className="apt-hero" aria-label="Resumo deste mês">
               <p className="apt-hero-kicker"><UiIcon name="calendar" />Este mês</p>
               <p className="apt-hero-amount">

@@ -1442,7 +1442,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
         <div className="fin-summary">
           <div className="fin-card">
             <span className="fin-ic fin-ic-green"><UiIcon name="wallet" /></span>
-            <span className="fin-card-text"><small>Recebido este mês</small><strong>{finances ? money(finances.monthlyConfirmedPayments) : '€0'}</strong></span>
+            <span className="fin-card-text"><small>Recebido</small><strong>{finances ? money(finances.monthlyConfirmedPayments) : '€0'}</strong></span>
           </div>
           <div className="fin-card">
             <span className="fin-ic fin-ic-amber"><UiIcon name="clock" /></span>
@@ -1454,7 +1454,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
           </div>
           <div className="fin-card">
             <span className="fin-ic"><UiIcon name="euro" /></span>
-            <span className="fin-card-text"><small>Despesas do mês</small><strong>{finances ? money(finances.monthlyExpenses) : '€0'}</strong></span>
+            <span className="fin-card-text"><small>Despesas</small><strong>{finances ? money(finances.monthlyExpenses) : '€0'}</strong></span>
           </div>
         </div>
 

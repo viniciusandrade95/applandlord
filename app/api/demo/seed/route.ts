@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { requireCurrentUserId } from '@/lib/auth'
 import { seedDemoForOwner } from '@/lib/demo-seed'
 
-const DEMO_EMAIL = 'demo@applandlord.local'
+const DEMO_EMAIL = 'adilson@teste.com'
 
 /**
  * Carrega os dados de demonstração na conta atual. Protegido: só funciona quando a sessão

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-07-01 (v0.10.1 — Credenciais da conta de demonstração)
+- **Autor:** Vinicius + Claude
+- **Tipo:** chore
+- **Descrição:** conta de demonstração passa a **`adilson@teste.com` / `password123!`** (antes `demo@applandlord.local`). Atualizado o endpoint protegido `/api/demo/seed`, a deteção da conta demo na interface e o seed local (que passa a definir a password real). Em produção: entrar com estas credenciais cria a conta (o formulário aceita-as) e o botão "Carregar dados de demonstração" popula os 2 apartamentos.
+
 ## 2026-07-01 (v0.10.0 — Finanças e restantes páginas redesenhadas + botão "carregar demo")
 - **Autor:** Vinicius + Claude
 - **Tipo:** ui/ux + feat

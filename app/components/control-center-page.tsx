@@ -772,7 +772,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
     let active = true
     fetch('/api/auth/session')
       .then((response) => (response.ok ? response.json() : null))
-      .then((data) => { if (active && data?.user?.email === 'demo@applandlord.local') setIsDemoUser(true) })
+      .then((data) => { if (active && data?.user?.email === 'adilson@teste.com') setIsDemoUser(true) })
       .catch(() => {})
     return () => { active = false }
   }, [])

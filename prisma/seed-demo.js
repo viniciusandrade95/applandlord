@@ -1,6 +1,14 @@
 const { PrismaClient } = require('@prisma/client')
+const { randomBytes, scryptSync } = require('crypto')
 
 const prisma = new PrismaClient()
+
+// Mesmo algoritmo de lib/auth.hashPassword (scrypt salt:hash), para definir a password demo.
+function hashPassword(password) {
+  const salt = randomBytes(16).toString('hex')
+  const hash = scryptSync(password, salt, 64).toString('hex')
+  return `${salt}:${hash}`
+}
 
 // Período "YYYY-MM" com `offset` meses para trás a partir do mês atual (UTC).
 function monthBack(offset) {
@@ -16,12 +24,13 @@ function dueDate(period, day) {
 }
 
 async function main() {
-  const ownerEmail = 'demo@applandlord.local'
+  const ownerEmail = 'adilson@teste.com'
+  const passwordHash = hashPassword('password123!')
 
   const owner = await prisma.user.upsert({
     where: { email: ownerEmail },
-    update: { name: 'Maria Santos', passwordHash: 'CHANGE_ME_ON_FIRST_LOGIN' },
-    create: { email: ownerEmail, name: 'Maria Santos', passwordHash: 'CHANGE_ME_ON_FIRST_LOGIN' },
+    update: { name: 'Adilson', passwordHash },
+    create: { email: ownerEmail, name: 'Adilson', passwordHash },
   })
   const ownerId = owner.id
 
@@ -128,7 +137,7 @@ async function main() {
   }
 
   console.log('✅ Seed demo concluído (2 apartamentos, 2 inquilinos, contratos ~3 anos).')
-  console.log('Login demo: demo@applandlord.local (a password fica definida no primeiro login).')
+  console.log('Login demo: adilson@teste.com / password123!')
   console.log(JSON.stringify(summary, null, 2))
 }
 

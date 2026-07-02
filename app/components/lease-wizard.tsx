@@ -55,7 +55,6 @@ export function LeaseWizard({ propertyOptions, unitOptions, renterOptions, submi
   )
 
   const selectedProperty = propertyOptions.find((p) => p.id === form.propertyId)
-  const selectedUnit = unitOptions.find((u) => u.id === form.unitId)
   const selectedRenter = renterOptions.find((r) => r.id === form.renterId)
 
   function updateField<K extends keyof typeof initialForm>(key: K, value: (typeof initialForm)[K]) {
@@ -65,7 +64,7 @@ export function LeaseWizard({ propertyOptions, unitOptions, renterOptions, submi
   function validateStep(currentStep: Step) {
     if (currentStep === 1) {
       if (!form.propertyId || !form.unitId) {
-        setNotice({ kind: 'error', text: 'Selecione o imóvel e a unidade para continuar com segurança.' })
+        setNotice({ kind: 'error', text: 'Selecione o apartamento para continuar.' })
         return false
       }
     }
@@ -168,27 +167,31 @@ export function LeaseWizard({ propertyOptions, unitOptions, renterOptions, submi
 
       {step === 1 && (
         <div className="form-grid">
-          <div className="field">
-            <label htmlFor="wizard-property">Imóvel</label>
+          <div className="field field-full">
+            <label htmlFor="wizard-property">Apartamento</label>
             <select id="wizard-property" value={form.propertyId} onChange={(event) => {
-              updateField('propertyId', event.target.value)
-              updateField('unitId', '')
+              const propertyId = event.target.value
+              const units = unitOptions.filter((unit) => unit.propertyId === propertyId)
+              updateField('propertyId', propertyId)
+              updateField('unitId', units.length === 1 ? units[0].id : '')
             }}>
-              <option value="">Selecionar imóvel</option>
+              <option value="">Selecionar apartamento</option>
               {propertyOptions.map((property) => (
                 <option key={property.id} value={property.id}>{property.label}</option>
               ))}
             </select>
           </div>
-          <div className="field">
-            <label htmlFor="wizard-unit">Unidade</label>
-            <select id="wizard-unit" value={form.unitId} onChange={(event) => updateField('unitId', event.target.value)}>
-              <option value="">Selecionar unidade</option>
-              {filteredUnits.map((unit) => (
-                <option key={unit.id} value={unit.id}>{unit.label}</option>
-              ))}
-            </select>
-          </div>
+          {form.propertyId && filteredUnits.length > 1 ? (
+            <div className="field field-full">
+              <label htmlFor="wizard-unit">Unidade</label>
+              <select id="wizard-unit" value={form.unitId} onChange={(event) => updateField('unitId', event.target.value)}>
+                <option value="">Selecionar unidade</option>
+                {filteredUnits.map((unit) => (
+                  <option key={unit.id} value={unit.id}>{unit.label}</option>
+                ))}
+              </select>
+            </div>
+          ) : null}
         </div>
       )}
 
@@ -238,8 +241,7 @@ export function LeaseWizard({ propertyOptions, unitOptions, renterOptions, submi
       {step === 4 && (
         <div className="empty">
           <strong>Confirmação final do contrato</strong><br />
-          <span className="muted">Imóvel: {selectedProperty?.label ?? '—'}</span><br />
-          <span className="muted">Unidade: {selectedUnit?.label ?? '—'}</span><br />
+          <span className="muted">Apartamento: {selectedProperty?.label ?? '—'}</span><br />
           <span className="muted">Inquilino: {form.renterMode === 'existing' ? (selectedRenter?.label ?? '—') : form.newRenterFullName}</span><br />
           <span className="muted">Início: {form.startDate || '—'} · Fim: {form.endDate || 'Sem data'}</span><br />
           <span className="muted">Renda: {form.monthlyRent || '—'} · Vencimento: dia {form.dueDay}</span><br />

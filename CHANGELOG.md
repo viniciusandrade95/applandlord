@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-07-02 (v0.16.0 — Lançar contas: lote de despesas + faixa financeira compacta)
+- **Autor:** Vinicius + Claude
+- **Tipo:** ux + feature (lançamento de despesas em massa)
+- **Problema:** lançar as contas do mês (luz, água, condomínio…) era CRUD cru — um formulário por despesa, um imóvel de cada vez. E os 4 cartões de topo das Finanças ocupavam meia página só para dizer 4 números.
+- **Descrição:**
+  - **"Lançar contas" (lote):** botão verde no cabeçalho das Despesas abre um fluxo em 2 passos — (1) **grelha de tipos** com ícone próprio por categoria (Energia ⚡, Água 💧, Gás 🔥, IPTU 🧾, Seguro 🛡, Limpeza ✨, Manutenção 🔧, Condomínio 🏢, Outros ➕); (2) **lista corrida**: um apartamento por linha, só o valor à frente. Digitar → ✓ verde + destaque; total corrido no rodapé fixo; "Guardar N" lança tudo num só pedido.
+  - **Memória do assistente:** botão "Preencher com o último valor" e valor-fantasma por linha ("usar R$ X"), a partir do último lançamento dessa categoria em cada imóvel.
+  - **Faixa financeira compacta:** os 4 cartões de topo deram lugar a uma **faixa fina e fixa** (recebido · a receber · em atraso · despesas) — mesma mensagem, ⅓ do espaço; mostra **"✓ sem atrasos"** a verde quando está tudo em dia (linguagem de orientação, não só métrica).
+  - **Backend:** `POST /api/expenses/batch` (`createMany` atómico, tudo-ou-nada) e `GET /api/expenses/last?category=` (último valor por imóvel).
+- **Validação ao vivo:** E2E de HTTP + UI — grelha de 9 tipos, lista paginada 50/N, 3 valores → 3 ✓ + "R$ 827" + "Guardar 3", save → "3 contas lançadas de energia", **zero erros de página**; BD confirma os lançamentos nos imóveis certos.
+- **Revisão adversarial (7 achados confirmados, corrigidos antes do envio):**
+  - **Parsing financeiro estrito:** o endpoint deixou de usar `asNumber` (que corrompia "1.234" → R$1,23 e descartava "1.234,56" em silêncio); agora só aceita números canónicos e devolve **400** para valores mal formatados (nunca corrompidos nem perdidos sem aviso).
+  - **Idempotência:** chave por lote (`idempotencyKey`) + **advisory lock** transacional + registo na auditoria — duplo-clique, retry de rede e **pedidos concorrentes** lançam o lote UMA vez (testado com 2 POSTs paralelos reais: um cria, o outro devolve `duplicate`, BD com um único lote).
+  - **Sugestões por imóvel via `DISTINCT ON`** (Postgres): uma linha por imóvel na base de dados — sem a janela de 2.000 despesas que deixava imóveis de fora e sem trazer o histórico inteiro para memória.
+  - **Cliente:** "Preencher com o último valor" passa a cobrir **todos** os imóveis (mesmo os ainda não paginados); confirmação ao voltar com valores por guardar; foco só na 1.ª página (deixa de saltar para o topo a cada "Ver mais"); cap do lote subido para 5.000.
+- **Fica para P1 (assumido):** editar/apagar despesa em massa, valores diferenciados por período, importação de faturas.
+- **Risco/rollback:** baixo (aditivo — 2 rotas novas + 1 componente novo; a faixa substitui as tiles na mesma secção). Sem alteração de schema. Rollback por reversão.
+
 ## 2026-07-02 (v0.15.0 — P0 de escala: paginação, agregados e mutações cirúrgicas)
 - **Autor:** Vinicius + Claude
 - **Tipo:** arquitetura/performance (fundação para carteiras grandes — auditoria "3.000 apartamentos")

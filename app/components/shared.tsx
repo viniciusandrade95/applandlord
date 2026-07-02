@@ -78,6 +78,20 @@ export function avatarColor(seed: string) {
 export type IconName =
   | 'building' | 'income' | 'check' | 'tools' | 'arrow'
   | 'wallet' | 'clock' | 'calendar' | 'user' | 'phone' | 'plus' | 'euro' | 'alert' | 'key' | 'pencil'
+  | 'bolt' | 'drop' | 'flame' | 'shield' | 'receipt' | 'sparkle'
+
+/** Ícone + cor por categoria de despesa (usado na grelha de "Lançar contas"). */
+export const EXPENSE_ICON: Record<string, { icon: IconName; color: string }> = {
+  Energia: { icon: 'bolt', color: '#b45309' },
+  Água: { icon: 'drop', color: '#0369a1' },
+  Condomínio: { icon: 'building', color: '#475569' },
+  Gás: { icon: 'flame', color: '#c2410c' },
+  Manutenção: { icon: 'tools', color: '#7c3aed' },
+  IPTU: { icon: 'receipt', color: '#0f7a3d' },
+  Seguro: { icon: 'shield', color: '#4f46e5' },
+  Limpeza: { icon: 'sparkle', color: '#0891b2' },
+  Outros: { icon: 'plus', color: '#64748b' },
+}
 
 export function UiIcon({ name }: { name: IconName }) {
   const paths: Record<IconName, ReactNode> = {
@@ -96,6 +110,12 @@ export function UiIcon({ name }: { name: IconName }) {
     alert: <><path d="M12 3.2 2.2 20.5h19.6z" /><path d="M12 10v4.5M12 18h.01" /></>,
     key: <><circle cx="8" cy="15" r="4" /><path d="m11 12 8-8 2 2M17 6l2 2" /></>,
     pencil: <><path d="M4 20h4L19 9l-4-4L4 16z" /><path d="m13.5 6.5 4 4" /></>,
+    bolt: <><path d="M13 2 4 14h7l-1 8 9-12h-7z" /></>,
+    drop: <><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z" /></>,
+    flame: <><path d="M12 3c1 4 4 5 4 9a4 4 0 0 1-8 0c0-2 1-3 1.5-4.5C10.5 9 12 8 12 3Z" /><path d="M10.5 20.5a4 4 0 0 0 3 0" /></>,
+    shield: <><path d="M12 3 5 6v6c0 4 3 6.5 7 9 4-2.5 7-5 7-9V6z" /></>,
+    receipt: <><path d="M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2z" /><path d="M9 8h6M9 12h6" /></>,
+    sparkle: <><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" /><path d="M18 15l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z" /></>,
   }
 
   return <svg className="ui-icon" viewBox="0 0 24 24" aria-hidden="true">{paths[name]}</svg>

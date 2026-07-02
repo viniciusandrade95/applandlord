@@ -3300,3 +3300,135 @@ button.assist-task:hover, a.assist-task:hover { border-color: #d3d9e2; box-shado
   font-size: 0.92rem;
   font-weight: 650;
 }
+
+/* ============================================================
+   Finanças v0.16.0 — faixa compacta sticky + "Lançar contas" em lote
+   ============================================================ */
+.fin-band {
+  position: sticky;
+  top: 8px;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 18px;
+  padding: 12px 8px;
+  border: 1px solid #e6e9ee;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: var(--shadow-card);
+}
+
+.fin-band-item { display: flex; min-width: 0; flex-direction: column; align-items: center; gap: 1px; text-align: center; }
+.fin-band-item strong { color: #101828; font-size: 1.06rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.1; }
+.fin-band-item span { color: #6b7688; font-size: 0.72rem; font-weight: 700; }
+.fin-band-warn strong { color: #c02617; }
+.fin-band-ok strong { display: inline-flex; color: #0f7a3d; }
+.fin-band-ok strong .ui-icon { width: 22px; height: 22px; }
+
+.fin-launch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 12px;
+  color: #fff;
+  background: #0f7a3d;
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.fin-launch:hover { background: #0f6b40; }
+.fin-launch .ui-icon { width: 17px; height: 17px; }
+
+/* ---- Ecrã "Lançar contas" ---- */
+.batch-hint { margin: 0 0 16px; color: #5b6577; font-size: 1rem; line-height: 1.5; }
+
+.batch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 12px;
+}
+
+.batch-cat {
+  display: flex;
+  min-height: 96px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 16px 8px;
+  border: 1px solid #e6e9ee;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.batch-cat:hover { border-color: #d3d9e2; box-shadow: var(--shadow-card-hover); }
+.batch-cat-ic { display: grid; place-items: center; }
+.batch-cat-ic .ui-icon { width: 30px; height: 30px; }
+.batch-cat-name { color: #16243d; font-size: 0.9rem; font-weight: 700; text-align: center; line-height: 1.15; }
+
+.batch-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.batch-date { display: inline-flex; align-items: center; gap: 8px; color: #5b6577; font-size: 0.9rem; font-weight: 700; }
+.batch-date input { min-height: 44px; padding: 8px 12px; border: 1px solid #e6e9ee; border-radius: 12px; background: #fff; color: #16243d; font: inherit; }
+.batch-fill {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 44px; padding: 8px 14px;
+  border: 1.5px solid #cfe0dc; border-radius: 12px;
+  color: #0b5c54; background: #fff; font-family: inherit; font-size: 0.9rem; font-weight: 750; cursor: pointer;
+}
+.batch-fill:hover { border-color: #0b5c54; background: #f7fbfa; }
+.batch-fill .ui-icon { width: 16px; height: 16px; }
+
+.batch-list { display: grid; gap: 8px; margin: 0 0 14px; padding: 0; list-style: none; }
+.batch-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 9px 14px; border: 1px solid #e6e9ee; border-radius: 14px; background: #fff;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.batch-row-filled { border-color: #bfe3d0; background: #f6fbf8; }
+.batch-row-name { min-width: 0; overflow: hidden; color: #16243d; font-size: 1rem; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.batch-row-input { display: inline-flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.batch-currency { color: #6b7688; font-size: 0.95rem; font-weight: 700; }
+.batch-row-input input {
+  width: 92px; min-height: 44px; padding: 8px 10px;
+  border: 1px solid #dde3ea; border-radius: 12px; background: #fff;
+  color: #101828; font: inherit; font-size: 1.02rem; font-weight: 700; text-align: right;
+}
+.batch-row-input input:focus-visible { border-color: #0b5c54; outline-offset: 1px; }
+.batch-check { display: grid; width: 22px; place-items: center; color: #0f7a3d; }
+.batch-check .ui-icon { width: 22px; height: 22px; }
+.batch-ghost { flex: 0 0 auto; padding: 4px 4px; border: 0; background: none; color: #94a1b2; font-family: inherit; font-size: 0.78rem; font-weight: 650; white-space: nowrap; cursor: pointer; }
+.batch-ghost:hover { color: #0b5c54; text-decoration: underline; }
+
+.batch-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+  padding: 14px 16px;
+  border: 1px solid #e6e9ee;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(8px);
+}
+.batch-total { color: #16243d; font-size: 1rem; }
+.batch-total strong { color: #101828; font-weight: 800; }
+.batch-save { min-width: 128px; }
+
+@media (max-width: 720px) {
+  .batch-footer { bottom: calc(80px + env(safe-area-inset-bottom)); }
+  .fin-band-item strong { font-size: 1rem; }
+}

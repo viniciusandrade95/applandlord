@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-07-01 (v0.12.0 — Auditoria de design: sistema de tokens, ritmo e consistência)
+- **Autor:** Vinicius + Claude
+- **Tipo:** ui/ux (sistema de design / polish)
+- **Escopo:** auditoria página a página (Painel, Imóveis, Finanças, Manutenção, Contratos) e harmonização.
+- **Medição (antes):** o CSS tinha *design drift* — **18 raios distintos**, **~25 tamanhos de fonte**, **~30 combinações de padding** e **~15 sombras**.
+- **Organização (depois):**
+  - **Tokens de design** no `:root`: escala de raios (`--r-sm/md/lg/pill`) e sombras (`--shadow-card`, `--shadow-card-hover`).
+  - **Sombras de card unificadas** — várias variantes passam a um único token (profundidade consistente em todos os cartões e tiles das várias páginas).
+  - **Raios normalizados** para uma escala de 2px (18 → 7 valores: 10/12/14/16/18 + pílula + círculo), sem alterar visualmente os cartões principais.
+  - **Tiles das Finanças alinhadas** — rótulos numa só linha (Recebido / Por receber / Em atraso / Despesas), números alinhados, mesma sombra das tiles de Imóveis.
+- **Nota:** também foi corrigido, no ambiente de dev, um erro de cache do `.next` (chunk em falta) que fazia algumas páginas renderizar sem CSS durante os testes — não afeta produção (o build compila limpo).
+- **Validação:** typecheck 0, build OK, **screenshots ao vivo dos 5 ecrãs** para confirmar consistência e ausência de regressões.
+- **Risco/rollback:** baixo (tokens + normalização de valores CSS). Sem alteração de API/schema. Fica por afinar (opcional) a escala tipográfica e os paddings.
+
 ## 2026-07-01 (v0.11.0 — Cards com cor e vida; morada = identificador; Imóveis visual)
 - **Autor:** Vinicius + Claude
 - **Tipo:** ui/ux (redesenho)

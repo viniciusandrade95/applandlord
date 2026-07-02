@@ -29,29 +29,29 @@ export async function seedDemoForOwner(ownerId: string) {
 
   const apartments = [
     {
-      property: { name: 'Casa das Flores', addressLine1: 'Rua das Flores, 12, 3.º Esq.', city: 'Porto', region: 'Porto', postalCode: '4000-123' },
-      unit: { bedrooms: 2, bathrooms: 1, areaSqm: 78, monthlyRent: 650 },
-      renter: { fullName: 'Carla Mendes', email: 'carla.mendes@example.com', phone: '+351912345678', governmentId: '124876330' },
-      lease: { startDate: new Date('2023-06-01T00:00:00Z'), endDate: new Date('2027-05-31T00:00:00Z'), monthlyRent: 650, depositAmount: 1300, dueDay: 8 },
+      property: { name: 'Apto Jardins', addressLine1: 'Rua Oscar Freire, 1200, Apto 45', city: 'São Paulo', region: 'SP', postalCode: '01426-001' },
+      unit: { bedrooms: 2, bathrooms: 1, areaSqm: 78, monthlyRent: 3200 },
+      renter: { fullName: 'Carla Mendes', email: 'carla.mendes@example.com', phone: '+55 11 91234-5678', governmentId: '123.456.789-00' },
+      lease: { startDate: new Date('2023-06-01T00:00:00Z'), endDate: new Date('2027-05-31T00:00:00Z'), monthlyRent: 3200, depositAmount: 6400, dueDay: 8 },
       currentPaid: true,
-      extraExpense: { category: 'IMI', description: 'IMI anual', amount: 120 },
-      expense: { category: 'Condomínio', description: 'Quota mensal do condomínio', amount: 45 },
-      ticket: 'Torneira da cozinha a pingar',
+      extraExpense: { category: 'IPTU', description: 'IPTU (parcela)', amount: 380 },
+      expense: { category: 'Condomínio', description: 'Taxa mensal do condomínio', amount: 650 },
+      ticket: 'Torneira da cozinha vazando',
     },
     {
-      property: { name: 'Av. Central, 45, 5.º Dto.', addressLine1: 'Av. Central, 45, 5.º Dto.', city: 'Lisboa', region: 'Lisboa', postalCode: '1000-200' },
-      unit: { bedrooms: 1, bathrooms: 1, areaSqm: 55, monthlyRent: 820 },
-      renter: { fullName: 'João Pereira', email: 'joao.pereira@example.com', phone: '+351934567890', governmentId: '208114552' },
-      lease: { startDate: new Date('2023-09-15T00:00:00Z'), endDate: new Date('2026-09-14T00:00:00Z'), monthlyRent: 820, depositAmount: 1640, dueDay: 1 },
+      property: { name: 'Av. Atlântica, 500, Apto 802', addressLine1: 'Av. Atlântica, 500, Apto 802', city: 'Rio de Janeiro', region: 'RJ', postalCode: '22021-001' },
+      unit: { bedrooms: 1, bathrooms: 1, areaSqm: 55, monthlyRent: 4100 },
+      renter: { fullName: 'João Pereira', email: 'joao.pereira@example.com', phone: '+55 21 99876-5432', governmentId: '987.654.321-00' },
+      lease: { startDate: new Date('2023-09-15T00:00:00Z'), endDate: new Date('2026-09-14T00:00:00Z'), monthlyRent: 4100, depositAmount: 8200, dueDay: 1 },
       currentPaid: false,
-      extraExpense: { category: 'Seguro', description: 'Seguro de recheio', amount: 90 },
-      expense: { category: 'Condomínio', description: 'Quota mensal do condomínio', amount: 60 },
+      extraExpense: { category: 'Seguro', description: 'Seguro do imóvel', amount: 240 },
+      expense: { category: 'Condomínio', description: 'Taxa mensal do condomínio', amount: 780 },
       ticket: null as string | null,
     },
   ]
 
   for (const apt of apartments) {
-    const property = await prisma.property.create({ data: { ownerId, country: 'Portugal', ...apt.property } })
+    const property = await prisma.property.create({ data: { ownerId, country: 'Brasil', ...apt.property } })
     const unit = await prisma.unit.create({ data: { ownerId, propertyId: property.id, name: apt.property.name, status: 'Occupied', ...apt.unit } })
     const renter = await prisma.renter.create({ data: { ownerId, ...apt.renter } })
     const lease = await prisma.lease.create({ data: { ownerId, propertyId: property.id, unitId: unit.id, renterId: renter.id, status: 'Active', ...apt.lease } })

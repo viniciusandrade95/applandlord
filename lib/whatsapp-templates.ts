@@ -14,14 +14,14 @@ export type WhatsAppTemplateContext = {
 }
 
 export function formatTemplateCurrency(amount: number) {
-  return new Intl.NumberFormat('pt-PT', {
+  return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
-    currency: 'EUR',
+    currency: 'BRL',
   }).format(amount)
 }
 
 export function formatTemplateDate(value: Date) {
-  return new Intl.DateTimeFormat('pt-PT', {
+  return new Intl.DateTimeFormat('pt-BR', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',

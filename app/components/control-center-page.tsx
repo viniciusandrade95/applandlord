@@ -78,7 +78,7 @@ const initialState: State = {
 }
 
 function money(value: number) {
-  return new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(
     Number.isFinite(value) ? value : 0
   )
 }
@@ -87,7 +87,7 @@ function date(value?: string | Date | null) {
   if (!value) return '—'
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) return '—'
-  return new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(parsed)
+  return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' }).format(parsed)
 }
 
 function todayISO() {
@@ -117,7 +117,7 @@ function dateTime(value?: string | Date | null) {
   if (!value) return '—'
   const parsed = new Date(value)
   if (Number.isNaN(parsed.getTime())) return '—'
-  return new Intl.DateTimeFormat('pt-PT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }).format(parsed)
+  return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }).format(parsed)
 }
 
 function periodLabel(period?: string) {
@@ -125,7 +125,7 @@ function periodLabel(period?: string) {
   const [year, month] = period.split('-')
   const parsed = new Date(Number(year), Number(month) - 1, 1)
   if (Number.isNaN(parsed.getTime())) return period
-  return new Intl.DateTimeFormat('pt-PT', { month: 'long', year: 'numeric' }).format(parsed)
+  return new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(parsed)
 }
 
 function chipClass(value?: string) {
@@ -194,7 +194,7 @@ function UiIcon({ name }: { name: IconName }) {
     user: <><circle cx="12" cy="8" r="3.6" /><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0" /></>,
     phone: <><path d="M4 4.5h4l2 5-2.5 1.6a12.5 12.5 0 0 0 5.4 5.4L18 14l5 2v4a2 2 0 0 1-2.2 2A18.5 18.5 0 0 1 2 6.7 2 2 0 0 1 4 4.5Z" /></>,
     plus: <><path d="M12 5v14M5 12h14" /></>,
-    euro: <><path d="M18.5 6.2a7 7 0 1 0 0 11.6" /><path d="M4 10h9.5M4 14h8" /></>,
+    euro: <><rect x="2.5" y="6" width="19" height="12" rx="2.5" /><circle cx="12" cy="12" r="2.6" /><path d="M6 9.5h.01M18 14.5h.01" /></>,
     alert: <><path d="M12 3.2 2.2 20.5h19.6z" /><path d="M12 10v4.5M12 18h.01" /></>,
     key: <><circle cx="8" cy="15" r="4" /><path d="m11 12 8-8 2 2M17 6l2 2" /></>,
     pencil: <><path d="M4 20h4L19 9l-4-4L4 16z" /><path d="m13.5 6.5 4 4" /></>,
@@ -406,15 +406,15 @@ function EditEntityForm({
                 <div className="field"><label htmlFor="edit-address1">Endereço</label><input id="edit-address1" name="addressLine1" autoComplete="address-line1" defaultValue={d.addressLine1 as string} required /></div>
                 <div className="field"><label htmlFor="edit-city">Cidade</label><input id="edit-city" name="city" autoComplete="address-level2" defaultValue={d.city as string} required /></div>
                 <div className="field"><label htmlFor="edit-region">Região</label><input id="edit-region" name="region" autoComplete="address-level1" defaultValue={d.region as string} required /></div>
-                <div className="field"><label htmlFor="edit-postal">Código postal</label><input id="edit-postal" name="postalCode" autoComplete="postal-code" inputMode="numeric" defaultValue={d.postalCode as string} required /></div>
-                <div className="field"><label htmlFor="edit-country">País</label><input id="edit-country" name="country" autoComplete="country-name" defaultValue={(d.country as string) ?? 'Portugal'} /></div>
+                <div className="field"><label htmlFor="edit-postal">CEP</label><input id="edit-postal" name="postalCode" autoComplete="postal-code" inputMode="numeric" defaultValue={d.postalCode as string} required /></div>
+                <div className="field"><label htmlFor="edit-country">País</label><input id="edit-country" name="country" autoComplete="country-name" defaultValue={(d.country as string) ?? 'Brasil'} /></div>
                 <div className="field field-full"><label htmlFor="edit-description">Descrição</label><textarea id="edit-description" name="description" defaultValue={(d.description as string) ?? ''} /></div>
               </>
             ) : null}
             {editing.type === 'unit' ? (
               <>
                 <div className="field"><label htmlFor="edit-uname">Nome</label><input id="edit-uname" name="name" defaultValue={d.name as string} required /></div>
-                <div className="field"><label htmlFor="edit-urent">Renda mensal</label><input id="edit-urent" name="monthlyRent" type="number" step="0.01" defaultValue={Number(d.monthlyRent ?? 0)} required /></div>
+                <div className="field"><label htmlFor="edit-urent">Aluguel mensal</label><input id="edit-urent" name="monthlyRent" type="number" step="0.01" defaultValue={Number(d.monthlyRent ?? 0)} required /></div>
                 <div className="field"><label htmlFor="edit-ustatus">Estado</label><select id="edit-ustatus" name="status" defaultValue={(d.status as string) ?? 'Vacant'}><option value="Vacant">Vaga</option><option value="Occupied">Ocupada</option><option value="Maintenance">Em manutenção</option></select></div>
                 <div className="field"><label htmlFor="edit-ubedrooms">Quartos</label><input id="edit-ubedrooms" name="bedrooms" type="number" step="1" defaultValue={Number(d.bedrooms ?? 0)} /></div>
                 <div className="field"><label htmlFor="edit-ubathrooms">Casas de banho</label><input id="edit-ubathrooms" name="bathrooms" type="number" step="0.5" defaultValue={Number(d.bathrooms ?? 0)} /></div>
@@ -455,7 +455,7 @@ type Apartment = {
   openTickets: number
 }
 
-const EXPENSE_CATEGORIES = ['Manutenção', 'Condomínio', 'IMI', 'Seguro', 'Água', 'Eletricidade', 'Gás', 'Limpeza', 'Outros'] as const
+const EXPENSE_CATEGORIES = ['Manutenção', 'Condomínio', 'IPTU', 'Seguro', 'Água', 'Energia', 'Gás', 'Limpeza', 'Outros'] as const
 
 const STATUS_WORD: Record<Apartment['monthStatus'], string> = {
   paid: 'Pago',
@@ -640,7 +640,7 @@ function ApartmentDetail({ apt, payments, expenses, submitting, onMarkPaid, payi
                 </select>
               </div>
               <div className="field">
-                <label htmlFor="bill-amount">Valor (€)</label>
+                <label htmlFor="bill-amount">Valor (R$)</label>
                 <input id="bill-amount" name="amount" type="number" step="0.01" min="0.01" required />
               </div>
               <div className="field">
@@ -687,7 +687,7 @@ function ApartmentForm({ apt, onSubmit, onCancel, submitting }: {
       <form onSubmit={(event) => { event.preventDefault(); onSubmit(event.currentTarget) }}>
         <div className="apt-bill-grid">
           <div className="field field-full">
-            <label htmlFor="apt-address">Morada <span className="apt-req">obrigatória</span></label>
+            <label htmlFor="apt-address">Endereço <span className="apt-req">obrigatória</span></label>
             <input id="apt-address" name="addressLine1" autoComplete="address-line1" defaultValue={(property?.addressLine1 as string) ?? ''} placeholder="Ex.: Rua das Flores, 12, 3.º Esq." required />
           </div>
           <div className="field field-full">
@@ -699,11 +699,11 @@ function ApartmentForm({ apt, onSubmit, onCancel, submitting }: {
             <input id="apt-city" name="city" autoComplete="address-level2" defaultValue={(property?.city as string) ?? ''} required />
           </div>
           <div className="field">
-            <label htmlFor="apt-postal">Código postal</label>
+            <label htmlFor="apt-postal">CEP</label>
             <input id="apt-postal" name="postalCode" autoComplete="postal-code" inputMode="numeric" defaultValue={(property?.postalCode as string) ?? ''} placeholder="0000-000" required />
           </div>
           <div className="field field-full">
-            <label htmlFor="apt-rent">Renda mensal (€)</label>
+            <label htmlFor="apt-rent">Aluguel mensal (R$)</label>
             <input id="apt-rent" name="monthlyRent" type="number" step="1" min="1" defaultValue={unit ? Number(unit.monthlyRent ?? 0) : ''} required />
           </div>
         </div>
@@ -901,7 +901,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
     try {
       let invoice = apt.currentInvoice
       if (invoice && invoice.status === 'Paid') {
-        setNotice({ kind: 'success', text: 'Esta renda já estava marcada como paga.' })
+        setNotice({ kind: 'success', text: 'Este aluguel já foi marcado como pago.' })
         return
       }
       if (!invoice) {
@@ -928,7 +928,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
         paymentId = (await apiSend('/api/payments', { invoiceId, amount: amountToPay }))?.id as string
       }
       await apiSend(`/api/payments/${paymentId}/confirm`, {})
-      setNotice({ kind: 'success', text: `Renda de ${(apt.renter?.fullName as string) ?? 'inquilino'} marcada como paga.` })
+      setNotice({ kind: 'success', text: `Aluguel de ${(apt.renter?.fullName as string) ?? 'inquilino'} marcada como paga.` })
       await load()
     } catch (error) {
       setNotice({ kind: 'error', text: error instanceof Error ? error.message : 'Não foi possível marcar como pago.' })
@@ -1315,8 +1315,8 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
                 <div className="field"><label htmlFor="property-address1">Endereço</label><input id="property-address1" name="addressLine1" autoComplete="address-line1" required /></div>
                 <div className="field"><label htmlFor="property-city">Cidade</label><input id="property-city" name="city" autoComplete="address-level2" required /></div>
                 <div className="field"><label htmlFor="property-region">Região</label><input id="property-region" name="region" autoComplete="address-level1" required /></div>
-                <div className="field"><label htmlFor="property-postal">Código postal</label><input id="property-postal" name="postalCode" autoComplete="postal-code" inputMode="numeric" required /></div>
-                <div className="field"><label htmlFor="property-country">País</label><input id="property-country" name="country" autoComplete="country-name" defaultValue="Portugal" /></div>
+                <div className="field"><label htmlFor="property-postal">CEP</label><input id="property-postal" name="postalCode" autoComplete="postal-code" inputMode="numeric" required /></div>
+                <div className="field"><label htmlFor="property-country">País</label><input id="property-country" name="country" autoComplete="country-name" defaultValue="Brasil" /></div>
                 <div className="field field-full"><label htmlFor="property-description">Descrição</label><textarea id="property-description" name="description" /></div>
               </div>
               <div className="form-actions"><button className="button button-primary" type="submit" disabled={submitting === '/api/properties'}>{submitting === '/api/properties' ? 'A criar...' : 'Criar imóvel'}</button></div>
@@ -1335,7 +1335,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
               <div className="form-grid">
                 <div className="field"><label htmlFor="unit-property">Imóvel</label><select id="unit-property" name="propertyId" required defaultValue=""><option value="" disabled>Selecionar</option>{propertyOptions.map((property) => <option key={property.id} value={property.id}>{property.label}</option>)}</select></div>
                 <div className="field"><label htmlFor="unit-name">Nome</label><input id="unit-name" name="name" required /></div>
-                <div className="field"><label htmlFor="unit-rent">Renda mensal</label><input id="unit-rent" name="monthlyRent" type="number" step="0.01" required /></div>
+                <div className="field"><label htmlFor="unit-rent">Aluguel mensal</label><input id="unit-rent" name="monthlyRent" type="number" step="0.01" required /></div>
                 <div className="field"><label htmlFor="unit-status">Estado</label><select id="unit-status" name="status" defaultValue="Vacant"><option value="Vacant">Vaga</option><option value="Occupied">Ocupada</option><option value="Maintenance">Em manutenção</option></select></div>
                 <div className="field"><label htmlFor="unit-bedrooms">Quartos</label><input id="unit-bedrooms" name="bedrooms" type="number" step="1" /></div>
                 <div className="field"><label htmlFor="unit-bathrooms">Casas de banho</label><input id="unit-bathrooms" name="bathrooms" type="number" step="0.5" /></div>
@@ -1442,11 +1442,11 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
         <div className="fin-summary">
           <div className="fin-card">
             <span className="fin-ic fin-ic-green"><UiIcon name="wallet" /></span>
-            <span className="fin-card-text"><small>Recebido</small><strong>{finances ? money(finances.monthlyConfirmedPayments) : '€0'}</strong></span>
+            <span className="fin-card-text"><small>Recebido</small><strong>{finances ? money(finances.monthlyConfirmedPayments) : money(0)}</strong></span>
           </div>
           <div className="fin-card">
             <span className="fin-ic fin-ic-amber"><UiIcon name="clock" /></span>
-            <span className="fin-card-text"><small>Por receber</small><strong>{finances ? money(finances.openInvoices) : '€0'}</strong></span>
+            <span className="fin-card-text"><small>Por receber</small><strong>{finances ? money(finances.openInvoices) : money(0)}</strong></span>
           </div>
           <div className="fin-card">
             <span className="fin-ic fin-ic-red"><UiIcon name="alert" /></span>
@@ -1454,7 +1454,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
           </div>
           <div className="fin-card">
             <span className="fin-ic"><UiIcon name="euro" /></span>
-            <span className="fin-card-text"><small>Despesas</small><strong>{finances ? money(finances.monthlyExpenses) : '€0'}</strong></span>
+            <span className="fin-card-text"><small>Despesas</small><strong>{finances ? money(finances.monthlyExpenses) : money(0)}</strong></span>
           </div>
         </div>
 
@@ -1552,7 +1552,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
             <form className="apt-bill-form" onSubmit={async (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = event.currentTarget; try { await postJson('/api/expenses', payload(form), 'Despesa registada.'); form.reset() } catch { /* erro já mostrado */ } }}>
               <div className="apt-bill-grid">
                 <div className="field"><label htmlFor="fin-exp-cat">Tipo</label><select id="fin-exp-cat" name="category" defaultValue="Condomínio">{EXPENSE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}</select></div>
-                <div className="field"><label htmlFor="fin-exp-amount">Valor (€)</label><input id="fin-exp-amount" name="amount" type="number" step="0.01" min="0.01" required /></div>
+                <div className="field"><label htmlFor="fin-exp-amount">Valor (R$)</label><input id="fin-exp-amount" name="amount" type="number" step="0.01" min="0.01" required /></div>
                 <div className="field"><label htmlFor="fin-exp-prop">Imóvel</label><select id="fin-exp-prop" name="propertyId" required defaultValue=""><option value="" disabled>Selecionar imóvel</option>{propertyOptions.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></div>
                 <div className="field"><label htmlFor="fin-exp-date">Data</label><input id="fin-exp-date" name="incurredAt" type="date" defaultValue={todayISO()} /></div>
                 <div className="field field-full"><label htmlFor="fin-exp-desc">Descrição (opcional)</label><input id="fin-exp-desc" name="description" placeholder="Ex.: Reparação de canalização" /></div>

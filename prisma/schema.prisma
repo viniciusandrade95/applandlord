@@ -39,7 +39,7 @@ model Property {
   city         String
   region       String
   postalCode   String
-  country      String              @default("Portugal")
+  country      String              @default("Brasil")
   description  String?
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt

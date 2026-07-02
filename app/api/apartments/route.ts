@@ -45,7 +45,7 @@ export async function POST(request: Request) {
           city,
           region,
           postalCode,
-          country: asString(body.country, 'Portugal'),
+          country: asString(body.country, 'Brasil'),
         },
       })
 

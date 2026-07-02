@@ -223,7 +223,7 @@ async function listOpenInvoices(ownerId: string) {
     'Faturas em aberto:',
     ...invoices.map(
       (invoice, index) =>
-        `${index + 1}. ${invoice.id} - ${invoice.lease.renter.fullName} - ${invoice.amount.toFixed(2)} EUR`
+        `${index + 1}. ${invoice.id} - ${invoice.lease.renter.fullName} - ${invoice.amount.toFixed(2)} BRL`
     ),
   ].join('\n')
 }
@@ -356,7 +356,7 @@ export async function handleWhatsappMenuMessage(senderId: string, text: string) 
           city: session.draft.city ?? 'Cidade por definir',
           region: session.draft.region ?? 'Regiao por definir',
           postalCode: text.trim(),
-          country: 'Portugal',
+          country: 'Brasil',
         },
       })
 

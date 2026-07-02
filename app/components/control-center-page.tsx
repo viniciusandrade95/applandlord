@@ -2,6 +2,7 @@
 
 import { FormEvent, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { LeaseWizard } from '@/app/components/lease-wizard'
+import { BatchExpenses } from '@/app/components/batch-expenses'
 import { appVersion } from '@/lib/version'
 import {
   EXPENSE_CATEGORIES,
@@ -376,6 +377,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
   const [setupStep, setSetupStep] = useState<SetupStep | null>(null)
   const [editing, setEditing] = useState<EditingEntity | null>(null)
   const [invoiceFilter, setInvoiceFilter] = useState<'all' | 'overdue' | 'open'>('all')
+  const [batchOpen, setBatchOpen] = useState(false)
 
   const showPortfolio = mode === 'all' || mode === 'portfolio'
   const showLeases = mode === 'all' || mode === 'leases'
@@ -784,7 +786,15 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
           </div>
         </div>
       </section> : null}
-      {showBilling ? <section className="section" id="financeiro">
+      {showBilling && batchOpen ? (
+        <BatchExpenses
+          onClose={() => setBatchOpen(false)}
+          onSaved={(message) => { setBatchOpen(false); setNotice({ kind: 'success', text: message }); void load() }}
+          setNotice={setNotice}
+        />
+      ) : null}
+
+      {showBilling && !batchOpen ? <section className="section" id="financeiro">
         <div className="section-header">
           <div>
             <SectionHeading className="section-title">Finanças</SectionHeading>
@@ -792,22 +802,29 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
           </div>
         </div>
 
-        <div className="fin-summary">
-          <div className="fin-card">
-            <span className="fin-ic fin-ic-green"><UiIcon name="wallet" /></span>
-            <span className="fin-card-text"><small>Recebido</small><strong>{finances ? money(finances.monthlyConfirmedPayments) : money(0)}</strong></span>
+        <div className="fin-band">
+          <div className="fin-band-item">
+            <strong>{finances ? money(finances.monthlyConfirmedPayments) : money(0)}</strong>
+            <span>recebido</span>
           </div>
-          <div className="fin-card">
-            <span className="fin-ic fin-ic-amber"><UiIcon name="clock" /></span>
-            <span className="fin-card-text"><small>Por receber</small><strong>{finances ? money(finances.openInvoices) : money(0)}</strong></span>
+          <div className="fin-band-item">
+            <strong>{finances ? money(finances.openInvoices) : money(0)}</strong>
+            <span>a receber</span>
           </div>
-          <div className="fin-card">
-            <span className="fin-ic fin-ic-red"><UiIcon name="alert" /></span>
-            <span className="fin-card-text"><small>Em atraso</small><strong>{money(overdueTotal)}</strong></span>
-          </div>
-          <div className="fin-card">
-            <span className="fin-ic"><UiIcon name="euro" /></span>
-            <span className="fin-card-text"><small>Despesas</small><strong>{finances ? money(finances.monthlyExpenses) : money(0)}</strong></span>
+          {overdueTotal > 0 ? (
+            <div className="fin-band-item fin-band-warn">
+              <strong>{money(overdueTotal)}</strong>
+              <span>em atraso</span>
+            </div>
+          ) : (
+            <div className="fin-band-item fin-band-ok">
+              <strong><UiIcon name="check" /></strong>
+              <span>sem atrasos</span>
+            </div>
+          )}
+          <div className="fin-band-item">
+            <strong>{finances ? money(finances.monthlyExpenses) : money(0)}</strong>
+            <span>despesas</span>
           </div>
         </div>
 
@@ -885,7 +902,12 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
         ) : null}
 
         <div className="fin-block">
-          <h2>Despesas</h2>
+          <div className="fin-block-head">
+            <h2>Despesas</h2>
+            <button className="fin-launch" type="button" onClick={() => setBatchOpen(true)}>
+              <UiIcon name="plus" />Lançar contas
+            </button>
+          </div>
           {state.expenses.length ? (
             <ul className="fin-list">
               {state.expenses.map((expense) => (

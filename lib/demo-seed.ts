@@ -29,7 +29,7 @@ export async function seedDemoForOwner(ownerId: string) {
 
   const apartments = [
     {
-      property: { name: 'Casa da Rua das Flores', addressLine1: 'Rua das Flores, 12, 3.º Esq.', city: 'Porto', region: 'Porto', postalCode: '4000-123' },
+      property: { name: 'Casa das Flores', addressLine1: 'Rua das Flores, 12, 3.º Esq.', city: 'Porto', region: 'Porto', postalCode: '4000-123' },
       unit: { bedrooms: 2, bathrooms: 1, areaSqm: 78, monthlyRent: 650 },
       renter: { fullName: 'Carla Mendes', email: 'carla.mendes@example.com', phone: '+351912345678', governmentId: '124876330' },
       lease: { startDate: new Date('2023-06-01T00:00:00Z'), endDate: new Date('2027-05-31T00:00:00Z'), monthlyRent: 650, depositAmount: 1300, dueDay: 8 },
@@ -39,7 +39,7 @@ export async function seedDemoForOwner(ownerId: string) {
       ticket: 'Torneira da cozinha a pingar',
     },
     {
-      property: { name: 'Apartamento Avenida Central', addressLine1: 'Av. Central, 45, 5.º Dto.', city: 'Lisboa', region: 'Lisboa', postalCode: '1000-200' },
+      property: { name: 'Av. Central, 45, 5.º Dto.', addressLine1: 'Av. Central, 45, 5.º Dto.', city: 'Lisboa', region: 'Lisboa', postalCode: '1000-200' },
       unit: { bedrooms: 1, bathrooms: 1, areaSqm: 55, monthlyRent: 820 },
       renter: { fullName: 'João Pereira', email: 'joao.pereira@example.com', phone: '+351934567890', governmentId: '208114552' },
       lease: { startDate: new Date('2023-09-15T00:00:00Z'), endDate: new Date('2026-09-14T00:00:00Z'), monthlyRent: 820, depositAmount: 1640, dueDay: 1 },

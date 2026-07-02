@@ -179,7 +179,7 @@ function paymentMethodLabel(value?: string) {
 
 type IconName =
   | 'building' | 'income' | 'check' | 'tools' | 'arrow'
-  | 'wallet' | 'clock' | 'calendar' | 'user' | 'phone' | 'plus' | 'euro' | 'alert' | 'key'
+  | 'wallet' | 'clock' | 'calendar' | 'user' | 'phone' | 'plus' | 'euro' | 'alert' | 'key' | 'pencil'
 
 function UiIcon({ name }: { name: IconName }) {
   const paths: Record<IconName, ReactNode> = {
@@ -197,6 +197,7 @@ function UiIcon({ name }: { name: IconName }) {
     euro: <><path d="M18.5 6.2a7 7 0 1 0 0 11.6" /><path d="M4 10h9.5M4 14h8" /></>,
     alert: <><path d="M12 3.2 2.2 20.5h19.6z" /><path d="M12 10v4.5M12 18h.01" /></>,
     key: <><circle cx="8" cy="15" r="4" /><path d="m11 12 8-8 2 2M17 6l2 2" /></>,
+    pencil: <><path d="M4 20h4L19 9l-4-4L4 16z" /><path d="m13.5 6.5 4 4" /></>,
   }
 
   return <svg className="ui-icon" viewBox="0 0 24 24" aria-hidden="true">{paths[name]}</svg>
@@ -319,51 +320,44 @@ function SmartEmptyState({ title, description, actionLabel, actionHref }: { titl
  * Cartão de gestão de um imóvel: mostra morada, resumo de ocupação e a lista de
  * unidades com renda, estado e inquilino ocupante (via contrato ativo).
  */
-function PropertyCard({ property, onEditProperty, onEditUnit }: { property: Row; onEditProperty: (property: Row) => void; onEditUnit: (unit: Row) => void }) {
+function PropertyCard({ property, onEditProperty }: { property: Row; onEditProperty: (property: Row) => void }) {
   const units: Row[] = Array.isArray(property.units) ? (property.units as Row[]) : []
-  const leases: Row[] = Array.isArray(property.leases) ? (property.leases as Row[]) : []
   const occupied = units.filter((unit) => unit.status === 'Occupied').length
   const vacant = units.filter((unit) => unit.status === 'Vacant').length
-  const other = units.length - occupied - vacant
+  const maintenance = units.length - occupied - vacant
   const monthlyRent = units.reduce((sum, unit) => sum + (unit.status === 'Occupied' ? Number(unit.monthlyRent ?? 0) : 0), 0)
+  const address = (property.addressLine1 as string) || (property.name as string)
+  const label = (property.name as string) && (property.name as string) !== address ? (property.name as string) : ''
 
   return (
-    <article className="card">
-      <div className="card-header">
-        <h2>{property.name as string}</h2>
-        <button className="small-button" type="button" onClick={() => onEditProperty(property)}>Editar</button>
-      </div>
-      <div className="card-body">
-        <p className="muted" style={{ margin: '0 0 12px' }}>{property.addressLine1 as string}{property.city ? `, ${property.city as string}` : ''}</p>
-        <div className="chips" style={{ marginBottom: 14 }}>
-          <span className="chip chip-accent">{units.length} {units.length === 1 ? 'unidade' : 'unidades'}</span>
-          {occupied ? <span className="chip chip-positive">{occupied} ocupada{occupied === 1 ? '' : 's'}</span> : null}
-          {vacant ? <span className="chip chip-warning">{vacant} vaga{vacant === 1 ? '' : 's'}</span> : null}
-          {other > 0 ? <span className="chip chip-accent">{other} em manutenção</span> : null}
-          {monthlyRent ? <span className="chip chip-accent">{money(monthlyRent)}/mês</span> : null}
+    <article className="prop-card">
+      <div className="prop-card-head">
+        <div className="prop-card-titles">
+          {label ? <span className="prop-card-label">{label}</span> : null}
+          <h2>{address}</h2>
+          {property.city ? <span className="prop-card-city">{property.city as string}</span> : null}
         </div>
-        {units.length ? (
-          <div className="stack">
-            {units.map((unit) => {
-              const tenant = leases.find((lease) => lease.unitId === unit.id && lease.status === 'Active')?.renter?.fullName as string | undefined
-              return (
-                <div key={unit.id as string} className="unit-row">
-                  <div>
-                    <strong>{unit.name as string}</strong>
-                    <span className="muted">{money(Number(unit.monthlyRent ?? 0))} · {tenant ?? 'Sem inquilino'}</span>
-                  </div>
-                  <div className="unit-row-actions">
-                    <span className={chipClass(unit.status as string)}>{statusLabel(unit.status as string)}</span>
-                    <button className="small-button" type="button" onClick={() => onEditUnit(unit)}>Editar</button>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        ) : (
-          <p className="muted">Ainda sem unidades neste imóvel.</p>
-        )}
+        <button className="prop-edit" type="button" aria-label="Editar imóvel" onClick={() => onEditProperty(property)}><UiIcon name="pencil" /></button>
       </div>
+
+      {units.length ? (
+        <div className="prop-occ">
+          <div className="prop-dots" role="img" aria-label={`${units.length} ${units.length === 1 ? 'unidade' : 'unidades'}, ${occupied} ocupada(s), ${vacant} livre(s)${maintenance ? `, ${maintenance} em manutenção` : ''}`}>
+            {units.map((unit) => (
+              <span key={unit.id as string} className={`prop-dot prop-dot-${unit.status === 'Occupied' ? 'occ' : unit.status === 'Vacant' ? 'free' : 'maint'}`} />
+            ))}
+          </div>
+          <div className="prop-counts">
+            <span className="prop-count" aria-label={`${units.length} unidades`}><UiIcon name="building" />{units.length}</span>
+            <span className="prop-count prop-count-occ" aria-label={`${occupied} ocupadas`}><UiIcon name="check" />{occupied}</span>
+            <span className="prop-count prop-count-free" aria-label={`${vacant} livres`}><UiIcon name="key" />{vacant}</span>
+            {maintenance > 0 ? <span className="prop-count prop-count-maint" aria-label={`${maintenance} em manutenção`}><UiIcon name="tools" />{maintenance}</span> : null}
+            {monthlyRent ? <span className="prop-count prop-count-rent" aria-label={`${money(monthlyRent)} por mês`}><UiIcon name="euro" />{money(monthlyRent)}</span> : null}
+          </div>
+        </div>
+      ) : (
+        <p className="muted" style={{ margin: 0 }}>Ainda sem unidades.</p>
+      )}
     </article>
   )
 }
@@ -455,8 +449,9 @@ type Apartment = {
   currentInvoice: Row | null
   monthStatus: 'paid' | 'confirming' | 'due' | 'vacant'
   rent: number
-  title: string
-  address: string
+  title: string   // identificador = morada (Rua + nº)
+  label: string   // nome opcional (só quando difere da morada)
+  address: string // cidade / linha secundária
   openTickets: number
 }
 
@@ -492,7 +487,7 @@ function ApartmentCard({ apt, onOpen, onMarkPaid, paying }: {
   onMarkPaid: (apt: Apartment) => void
   paying: boolean
 }) {
-  const { unit, lease, renter, monthStatus, rent, title, openTickets } = apt
+  const { unit, lease, renter, monthStatus, rent, title, label, openTickets } = apt
   const tenantName = (renter?.fullName as string) || ''
   return (
     <div className="apt-card">
@@ -502,7 +497,10 @@ function ApartmentCard({ apt, onOpen, onMarkPaid, paying }: {
           : <span className="apt-avatar apt-avatar-vacant"><UiIcon name="key" /></span>}
         <span className="apt-card-body">
           <span className="apt-card-top">
-            <strong className="apt-card-title">{title}</strong>
+            <span className="apt-card-titles">
+              {label ? <span className="apt-card-label">{label}</span> : null}
+              <strong className="apt-card-title">{title}</strong>
+            </span>
             <StatusMark status={monthStatus} />
           </span>
           <span className="apt-card-tenant">{renter ? tenantName : 'Sem inquilino'}</span>
@@ -538,7 +536,7 @@ function ApartmentDetail({ apt, payments, expenses, submitting, onMarkPaid, payi
   onAddExpense: (apt: Apartment, form: HTMLFormElement) => void
   onDeleteExpense: (id: string) => void
 }) {
-  const { property, lease, renter, monthStatus, rent, address, openTickets } = apt
+  const { property, lease, renter, monthStatus, rent, label, address, openTickets } = apt
   const phone = renter?.phone ? String(renter.phone) : ''
   const leasePayments = lease
     ? payments.filter((payment) => (payment.invoice?.lease?.id as string) === (lease.id as string))
@@ -556,7 +554,7 @@ function ApartmentDetail({ apt, payments, expenses, submitting, onMarkPaid, payi
         : 'Apartamento vago'
   return (
     <section className="apt-detail">
-      <p className="apt-detail-address">{address}</p>
+      <p className="apt-detail-address">{label ? `${label} · ${address}` : address}</p>
 
       <div className={`apt-detail-month apt-detail-month-${monthStatus}`}>
         <div>
@@ -682,17 +680,19 @@ function ApartmentForm({ apt, onSubmit, onCancel, submitting }: {
   const property = apt?.property
   const unit = apt?.unit
   const isEdit = !!apt
+  // O nome só é mostrado quando é um rótulo próprio (diferente da morada).
+  const aptName = property && (property.name as string) !== (property.addressLine1 as string) ? (property.name as string) : ''
   return (
     <section className="apt-form-card">
       <form onSubmit={(event) => { event.preventDefault(); onSubmit(event.currentTarget) }}>
         <div className="apt-bill-grid">
           <div className="field field-full">
-            <label htmlFor="apt-name">Nome do apartamento</label>
-            <input id="apt-name" name="name" defaultValue={(property?.name as string) ?? ''} placeholder="Ex.: Casa das Flores" required />
+            <label htmlFor="apt-address">Morada <span className="apt-req">obrigatória</span></label>
+            <input id="apt-address" name="addressLine1" autoComplete="address-line1" defaultValue={(property?.addressLine1 as string) ?? ''} placeholder="Ex.: Rua das Flores, 12, 3.º Esq." required />
           </div>
           <div className="field field-full">
-            <label htmlFor="apt-address">Morada</label>
-            <input id="apt-address" name="addressLine1" autoComplete="address-line1" defaultValue={(property?.addressLine1 as string) ?? ''} placeholder="Rua e número" required />
+            <label htmlFor="apt-name">Nome <span className="apt-optional">opcional</span></label>
+            <input id="apt-name" name="name" defaultValue={aptName} placeholder="Um nome à sua escolha (ex.: Casa das Flores)" />
           </div>
           <div className="field">
             <label htmlFor="apt-city">Cidade</label>
@@ -702,7 +702,7 @@ function ApartmentForm({ apt, onSubmit, onCancel, submitting }: {
             <label htmlFor="apt-postal">Código postal</label>
             <input id="apt-postal" name="postalCode" autoComplete="postal-code" inputMode="numeric" defaultValue={(property?.postalCode as string) ?? ''} placeholder="0000-000" required />
           </div>
-          <div className="field">
+          <div className="field field-full">
             <label htmlFor="apt-rent">Renda mensal (€)</label>
             <input id="apt-rent" name="monthlyRent" type="number" step="1" min="1" defaultValue={unit ? Number(unit.monthlyRent ?? 0) : ''} required />
           </div>
@@ -1049,11 +1049,14 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
               ? 'confirming'
               : 'due'
         const rent = lease ? Number(lease.monthlyRent ?? 0) : Number(unit.monthlyRent ?? 0)
-        // Um imóvel = um apartamento. Só juntamos o nome da unidade se o imóvel tiver mais que uma.
+        // O identificador é a morada (Rua + nº). O nome é um rótulo opcional (só se diferir da morada).
+        // Se o imóvel tiver mais que uma unidade, juntamos o nome da unidade para desambiguar.
+        const addressLine = (property?.addressLine1 as string) || (unit.name as string) || 'Apartamento'
         const propertyUnitCount = state.units.filter((item) => (item.propertyId as string) === (unit.propertyId as string)).length
-        const propertyName = (property?.name as string) || (unit.name as string)
-        const title = propertyUnitCount > 1 ? `${propertyName} · ${unit.name as string}` : propertyName
-        const address = property ? `${property.addressLine1 as string}${property.city ? `, ${property.city as string}` : ''}` : ''
+        const title = propertyUnitCount > 1 ? `${addressLine} · ${unit.name as string}` : addressLine
+        const customName = (property?.name as string) || ''
+        const label = customName && customName !== addressLine ? customName : ''
+        const address = (property?.city as string) || ''
         const openTickets = state.maintenance.filter((ticket) => {
           // Ticket com unidade específica conta só nessa unidade; sem unidade, conta no imóvel.
           const matches = ticket.unitId
@@ -1061,7 +1064,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
             : (!!property && (ticket.propertyId as string) === (property.id as string))
           return matches && ticket.status !== 'Resolved' && ticket.status !== 'Closed'
         }).length
-        return { unit, property, lease, renter, currentInvoice, monthStatus, rent, title, address, openTickets }
+        return { unit, property, lease, renter, currentInvoice, monthStatus, rent, title, label, address, openTickets }
       })
       .sort((a, b) => order[a.monthStatus] - order[b.monthStatus])
   }, [state.units, state.leases, state.properties, state.invoices, state.maintenance, currentPeriod])
@@ -1082,6 +1085,7 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
   const visibleApartments = apartmentSearch
     ? apartments.filter((apt) =>
         apt.title.toLowerCase().includes(apartmentSearch) ||
+        apt.label.toLowerCase().includes(apartmentSearch) ||
         apt.address.toLowerCase().includes(apartmentSearch) ||
         ((apt.renter?.fullName as string) ?? '').toLowerCase().includes(apartmentSearch)
       )
@@ -1271,15 +1275,14 @@ export function ControlCenterPage({ mode = 'all' }: { mode?: ControlCenterMode }
 
         {setupComplete && !currentSetupStep && !editing ? (
         <>
-          <div className="stat-tiles">
-            <div className="stat-tile"><span className="stat-label">Imóveis</span><strong className="stat-value">{state.properties.length}</strong></div>
-            <div className="stat-tile"><span className="stat-label">Unidades</span><strong className="stat-value">{state.units.length}</strong></div>
-            <div className="stat-tile stat-tile-positive"><span className="stat-label">Ocupadas</span><strong className="stat-value">{state.units.filter((unit) => unit.status === 'Occupied').length}</strong></div>
-            <div className="stat-tile stat-tile-warning"><span className="stat-label">Vagas</span><strong className="stat-value">{state.units.filter((unit) => unit.status === 'Vacant').length}</strong></div>
-            {state.units.filter((unit) => unit.status !== 'Occupied' && unit.status !== 'Vacant').length ? <div className="stat-tile"><span className="stat-label">Em manutenção</span><strong className="stat-value">{state.units.filter((unit) => unit.status !== 'Occupied' && unit.status !== 'Vacant').length}</strong></div> : null}
+          <div className="prop-summary">
+            <div className="prop-sum-tile" aria-label={`${state.properties.length} imóveis`}><UiIcon name="building" /><strong>{state.properties.length}</strong><span>imóveis</span></div>
+            <div className="prop-sum-tile prop-sum-occ" aria-label={`${state.units.filter((unit) => unit.status === 'Occupied').length} ocupadas`}><UiIcon name="check" /><strong>{state.units.filter((unit) => unit.status === 'Occupied').length}</strong><span>ocupadas</span></div>
+            <div className="prop-sum-tile prop-sum-free" aria-label={`${state.units.filter((unit) => unit.status === 'Vacant').length} livres`}><UiIcon name="key" /><strong>{state.units.filter((unit) => unit.status === 'Vacant').length}</strong><span>livres</span></div>
+            <div className="prop-sum-tile prop-sum-rent" aria-label="renda mensal ocupada"><UiIcon name="euro" /><strong>{money(state.units.reduce((sum, unit) => sum + (unit.status === 'Occupied' ? Number(unit.monthlyRent ?? 0) : 0), 0))}</strong><span>por mês</span></div>
           </div>
-          <div className="grid-2">
-            {state.properties.map((property) => <PropertyCard key={property.id as string} property={property} onEditProperty={(p) => setEditing({ type: 'property', data: p })} onEditUnit={(u) => setEditing({ type: 'unit', data: u })} />)}
+          <div className="prop-grid">
+            {state.properties.map((property) => <PropertyCard key={property.id as string} property={property} onEditProperty={(p) => setEditing({ type: 'property', data: p })} />)}
           </div>
           {state.renters.length ? (
             <article className="card">

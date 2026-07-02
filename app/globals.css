@@ -2170,9 +2170,24 @@ button.inline-link {
   gap: 12px;
 }
 
+.apt-card-titles {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.apt-card-label {
+  color: #7c56d6;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .apt-card-title {
   color: #101828;
-  font-size: 1.24rem;
+  font-size: 1.22rem;
   font-weight: 750;
   line-height: 1.2;
   letter-spacing: -0.015em;
@@ -2198,39 +2213,53 @@ button.inline-link {
 
 .apt-foot-alert { color: #b45309; }
 
-/* Estado do apartamento: âncora à direita, cor apenas no texto/marca (fundo branco) */
+/* Estado do apartamento: pill sólido e vívido, texto branco (âncora à direita) */
 .apt-status {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   flex: 0 0 auto;
-  padding-top: 3px;
-  font-size: 0.95rem;
+  padding: 6px 13px 6px 11px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.85rem;
   font-weight: 750;
   white-space: nowrap;
+  box-shadow: 0 4px 10px rgba(16, 24, 40, 0.14);
 }
 
 .apt-status-icon {
-  width: 19px;
-  height: 19px;
+  width: 15px;
+  height: 15px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 2.6;
+  stroke-width: 3;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
 .apt-status-dot {
-  width: 11px;
-  height: 11px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: currentColor;
 }
 
-.apt-status-paid { color: #0f7a3d; }
-.apt-status-due { color: #c02617; }
-.apt-status-confirming { color: #1d5fbf; }
-.apt-status-vacant { color: #667085; }
+.apt-status-paid { background: #0f7a3d; }
+.apt-status-due { background: #c2410c; }
+.apt-status-confirming { background: #1d4ed8; }
+.apt-status-vacant { background: #475569; }
+
+/* Etiquetas "obrigatória/opcional" nos rótulos do formulário (só texto) */
+.apt-req, .apt-optional {
+  margin-left: 8px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.apt-req { color: #c2410c; }
+.apt-optional { color: #94a1b2; }
 
 /* Selo de texto (usado no detalhe): só cor, sem fundo pastel */
 .apt-badge {
@@ -3012,4 +3041,113 @@ button.inline-link {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
+}
+
+/* ============================================================
+   Página Imóveis (v0.11.0) — resumo icon-led + cartões visuais
+   ============================================================ */
+.prop-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.prop-sum-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 16px;
+  border: 1px solid #e6e9ee;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(23, 32, 51, 0.04), 0 12px 26px rgba(23, 32, 51, 0.05);
+}
+
+.prop-sum-tile .ui-icon { width: 22px; height: 22px; color: #94a1b2; }
+.prop-sum-tile strong { color: #101828; font-size: 1.7rem; font-weight: 800; line-height: 1.05; letter-spacing: -0.03em; }
+.prop-sum-tile span { color: #64748b; font-size: 0.8rem; font-weight: 650; }
+.prop-sum-occ .ui-icon { color: #0f7a3d; }
+.prop-sum-free .ui-icon { color: #64748b; }
+.prop-sum-rent .ui-icon { color: #b45309; }
+
+.prop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.prop-card {
+  padding: 20px;
+  border: 1px solid #e6e9ee;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(23, 32, 51, 0.04), 0 14px 30px rgba(23, 32, 51, 0.06);
+  transition: box-shadow 0.16s ease, border-color 0.16s ease;
+}
+
+.prop-card:hover { border-color: #d3d9e2; box-shadow: 0 2px 4px rgba(23, 32, 51, 0.05), 0 20px 44px rgba(23, 32, 51, 0.10); }
+
+.prop-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.prop-card-titles { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+.prop-card-label { color: #7c56d6; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+.prop-card-head h2 { margin: 0; color: #101828; font-size: 1.18rem; font-weight: 750; letter-spacing: -0.01em; }
+.prop-card-city { color: #64748b; font-size: 0.92rem; }
+
+.prop-edit {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #e6e9ee;
+  border-radius: 11px;
+  color: #64748b;
+  background: #fff;
+  cursor: pointer;
+}
+
+.prop-edit:hover { border-color: #cbd3dd; color: #16243d; }
+.prop-edit .ui-icon { width: 19px; height: 19px; }
+
+.prop-occ { margin-top: 16px; }
+
+.prop-dots { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.prop-dot { width: 24px; height: 10px; border-radius: 999px; background: #e2e7ee; }
+.prop-dot-occ { background: #0f7a3d; }
+.prop-dot-free { background: #cbd3dd; }
+.prop-dot-maint { background: #c2410c; }
+
+.prop-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-top: 14px;
+}
+
+.prop-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #344256;
+  font-size: 0.98rem;
+  font-weight: 750;
+}
+
+.prop-count .ui-icon { width: 17px; height: 17px; color: #94a1b2; }
+.prop-count-occ .ui-icon { color: #0f7a3d; }
+.prop-count-free .ui-icon { color: #64748b; }
+.prop-count-maint { color: #c2410c; }
+.prop-count-maint .ui-icon { color: #c2410c; }
+.prop-count-rent .ui-icon { color: #b45309; }
+
+@media (max-width: 720px) {
+  .prop-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

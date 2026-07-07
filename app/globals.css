@@ -1,15 +1,16 @@
 :root {
-  --bg: #f3efe8;
-  --bg-strong: #e8e0d6;
-  --surface: rgba(255, 255, 255, 0.72);
+  /* Daylight: claro premium frio (sem bege) — cinza-azulado quase branco. */
+  --bg: #f4f6f8;
+  --bg-strong: #e7eaee;
+  --surface: rgba(255, 255, 255, 0.78);
   --surface-solid: #ffffff;
-  --ink: #172033;
-  --muted: #5f6b80;
+  --ink: #1a1e26;
+  --muted: #5f6772;
   --accent: #0f766e;
   --accent-strong: #115e59;
-  --accent-warm: #c2410c;
-  --border: rgba(23, 32, 51, 0.12);
-  --shadow: 0 24px 60px rgba(23, 32, 51, 0.12);
+  --accent-warm: #b45309;
+  --border: rgba(18, 22, 30, 0.1);
+  --shadow: 0 24px 60px rgba(18, 22, 30, 0.1);
   --radius-xl: 28px;
   --radius-lg: 20px;
   --radius-md: 14px;
@@ -19,9 +20,22 @@
   --r-md: 14px;
   --r-lg: 18px;
   --r-pill: 999px;
-  --shadow-card: 0 1px 2px rgba(23, 32, 51, 0.04), 0 14px 30px rgba(23, 32, 51, 0.06);
-  --shadow-card-hover: 0 2px 4px rgba(23, 32, 51, 0.05), 0 20px 44px rgba(23, 32, 51, 0.10);
+  --shadow-card: 0 1px 2px rgba(18, 22, 30, 0.04), 0 14px 30px rgba(18, 22, 30, 0.06);
+  --shadow-card-hover: 0 2px 4px rgba(18, 22, 30, 0.05), 0 20px 44px rgba(18, 22, 30, 0.1);
   color-scheme: light;
+
+  /* Paleta "jóia" da Daylight (estados) — usada pela home posto-de-comando. */
+  --dl-mint: #158a5e;
+  --dl-mint-ink: #127a50;
+  --dl-mint-bg: rgba(21, 138, 94, 0.12);
+  --dl-ember: #d2543a;
+  --dl-ember-ink: #bc4229;
+  --dl-ember-bg: rgba(210, 84, 58, 0.12);
+  --dl-topaz: #a9843a;
+  --dl-topaz-ink: #856726;
+  --dl-topaz-bg: rgba(169, 132, 58, 0.16);
+  --dl-slate: #7a828f;
+  --dl-slate-bg: rgba(122, 130, 143, 0.14);
 }
 
 * {
@@ -39,9 +53,8 @@ body {
   font-size: 17px;
   line-height: 1.5;
   background:
-    radial-gradient(circle at top left, rgba(15, 118, 110, 0.18), transparent 32%),
-    radial-gradient(circle at top right, rgba(194, 65, 12, 0.12), transparent 28%),
-    linear-gradient(180deg, #faf6f0 0%, var(--bg) 100%);
+    radial-gradient(circle at top left, rgba(15, 118, 110, 0.08), transparent 34%),
+    linear-gradient(180deg, #f7f8fa 0%, var(--bg) 100%);
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
@@ -3432,3 +3445,109 @@ button.assist-task:hover, a.assist-task:hover { border-color: #d3d9e2; box-shado
   .batch-footer { bottom: calc(80px + env(safe-area-inset-bottom)); }
   .fin-band-item strong { font-size: 1rem; }
 }
+
+/* =========================================================================
+   Daylight — home "posto de comando" (43+ apartamentos)
+   Gestão por exceção: pulso em contagem, "para resolver", lista densa.
+   ========================================================================= */
+.dl-shell {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 20px 18px 40px;
+  min-width: 0;
+}
+.dl-notice-region { position: sticky; top: 0; z-index: 20; }
+.dl-notice { border-radius: var(--r-md); padding: 11px 14px; font-size: 14px; font-weight: 600; margin-bottom: 10px; }
+.dl-notice-success { background: var(--dl-mint-bg); color: var(--dl-mint-ink); }
+.dl-notice-error { background: var(--dl-ember-bg); color: var(--dl-ember-ink); }
+
+.dl-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 4px 2px 0; }
+.dl-head h1 { margin: 0; font-size: 21px; font-weight: 600; letter-spacing: -0.02em; }
+.dl-head .dl-sub { font-size: 13px; color: var(--muted); font-weight: 500; white-space: nowrap; }
+.dl-signout { font: inherit; font-size: 13px; font-weight: 600; color: var(--muted); background: none; border: 0; cursor: pointer; padding: 4px; }
+
+/* pulso: pagos / por pagar / vazios (contagem, não dinheiro) */
+.dl-pulse { margin: 14px 0 4px; }
+.dl-pline { display: flex; gap: 16px; font-size: 13px; color: var(--muted); font-weight: 500; }
+.dl-pitem b { font-weight: 600; font-variant-numeric: tabular-nums; margin-right: 2px; }
+.dl-pitem.mint b { color: var(--dl-mint-ink); }
+.dl-pitem.ember b { color: var(--dl-ember-ink); }
+.dl-pitem.slate b { color: var(--dl-slate); }
+.dl-ptrack { display: flex; gap: 3px; height: 5px; margin-top: 10px; }
+.dl-ptrack i { border-radius: 3px; height: 100%; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); min-width: 0; }
+.dl-seg-mint { background: var(--dl-mint); }
+.dl-seg-ember { background: var(--dl-ember); }
+.dl-seg-slate { background: var(--dl-slate); }
+
+.dl-sec { display: flex; justify-content: space-between; align-items: baseline; margin: 22px 2px 10px; }
+.dl-sec h2 { margin: 0; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.dl-sec .dl-n { font-size: 11px; color: var(--dl-mint-ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* para resolver — linhas compactas com ação inline */
+.dl-solve { display: flex; flex-direction: column; gap: 8px; }
+.dl-scard {
+  background: var(--surface-solid); border: 1px solid var(--border); border-radius: var(--r-md);
+  padding: 11px 13px; display: flex; align-items: center; gap: 11px;
+  box-shadow: var(--shadow-card);
+}
+.dl-scard .dl-who { min-width: 0; flex: 1; }
+.dl-scard .dl-who b { display: block; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dl-scard .dl-who span { font-size: 12px; color: var(--muted); }
+.dl-scard .dl-who em { font-style: normal; color: var(--dl-ember-ink); font-weight: 600; }
+
+.dl-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; }
+.is-due .dl-dot, .dl-dot.is-due { background: var(--dl-ember); }
+.is-confirming .dl-dot, .dl-dot.is-confirming { background: var(--dl-topaz); }
+.is-paid .dl-dot, .dl-dot.is-paid { background: var(--dl-mint); }
+.is-vacant .dl-dot, .dl-dot.is-vacant { background: var(--dl-slate); }
+
+.dl-recv {
+  font: inherit; font-size: 13px; font-weight: 600; letter-spacing: 0.01em; cursor: pointer;
+  border-radius: var(--r-pill); padding: 9px 15px; border: 0;
+  background: linear-gradient(180deg, #2a2f38, #191d24); color: #fff; white-space: nowrap;
+}
+.dl-recv:disabled { opacity: 0.6; cursor: default; }
+.dl-recv:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.dl-scard .dl-amt { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* busca */
+.dl-search { display: flex; align-items: center; gap: 9px; background: var(--surface-solid); border: 1px solid var(--border); border-radius: var(--r-md); padding: 10px 13px; margin-top: 4px; box-shadow: var(--shadow-card); }
+.dl-search svg { width: 17px; height: 17px; color: var(--muted); flex: 0 0 auto; }
+.dl-search input { border: 0; background: none; outline: none; font: inherit; font-size: 14px; color: var(--ink); width: 100%; }
+
+/* chips de filtro por estado */
+.dl-chips { display: flex; gap: 7px; overflow-x: auto; padding: 12px 0 2px; scrollbar-width: none; }
+.dl-chips::-webkit-scrollbar { display: none; }
+.dl-chip { font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; background: var(--surface-solid); border: 1px solid var(--border); color: var(--muted); border-radius: var(--r-pill); padding: 7px 13px; flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; }
+.dl-chip b { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--ink); }
+.dl-chip .dl-cdot { width: 6px; height: 6px; border-radius: 50%; }
+.dl-chip[aria-pressed='true'] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); color: var(--ink); }
+.dl-chip:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* lista densa */
+.dl-roster { border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; background: var(--surface-solid); box-shadow: var(--shadow-card); margin-top: 12px; }
+.dl-rrow { width: 100%; text-align: left; font: inherit; cursor: pointer; display: flex; align-items: center; gap: 11px; padding: 11px 14px; border: 0; border-bottom: 1px solid var(--border); background: none; color: var(--ink); }
+.dl-rrow:last-child { border-bottom: 0; }
+.dl-rrow:hover { background: rgba(18, 22, 30, 0.025); }
+.dl-rrow:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+.dl-rrow .dl-who { min-width: 0; flex: 1; }
+.dl-rrow .dl-who b { display: block; font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dl-rrow .dl-who span { font-size: 11.5px; color: var(--muted); }
+.dl-rrow .dl-amt { font-size: 13.5px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dl-tag { font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; width: 62px; text-align: right; flex: 0 0 auto; }
+.dl-tag.is-due { color: var(--dl-ember-ink); }
+.dl-tag.is-confirming { color: var(--dl-topaz-ink); }
+.dl-tag.is-paid { color: var(--dl-mint-ink); }
+.dl-tag.is-vacant { color: var(--dl-slate); }
+.dl-empty-list { padding: 22px 14px; text-align: center; color: var(--muted); font-size: 13.5px; }
+.dl-more { width: 100%; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--muted); background: rgba(18, 22, 30, 0.02); border: 0; border-top: 1px solid var(--border); padding: 13px; cursor: pointer; }
+.dl-more:disabled { opacity: 0.6; }
+
+.dl-add { margin-top: 14px; width: 100%; border: 1.5px dashed var(--border); background: transparent; color: var(--accent-strong); font: inherit; font-weight: 600; font-size: 14px; padding: 14px; border-radius: var(--r-md); cursor: pointer; }
+
+.dl-loading { padding: 24px 4px; color: var(--muted); font-size: 14px; }
+
+/* empty state (sem apartamentos) */
+.dl-empty { text-align: center; padding: 48px 20px; }
+.dl-empty h2 { margin: 0 0 6px; font-size: 18px; font-weight: 600; }
+.dl-empty p { margin: 0 0 16px; color: var(--muted); font-size: 14px; }

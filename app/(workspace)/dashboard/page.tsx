@@ -1,7 +1,7 @@
 'use client'
 
-import { HomePage } from '@/app/components/home-page'
+import { DaylightHome } from '@/app/components/daylight-home'
 
 export default function DashboardPage() {
-  return <HomePage />
+  return <DaylightHome />
 }

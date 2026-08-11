@@ -1,17 +1,1 @@
-# Dependencies
-/node_modules
-
-# Next.js
-/.next
-/out
-
-# Build / TS
-*.tsbuildinfo
-
-# Env
-.env
-.env*.local
-
-# Logs / OS
-*.log
-.DS_Store
+Nothing should be ignored in this case, as only a markdown file (.md) was added and there are no build artifacts, dependencies, or temporary files in the changes.
